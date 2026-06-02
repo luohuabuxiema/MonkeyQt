@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [tool.setuptools.dynamic]
-version = { attr = "ultralytics.__version__" }
+version = { attr = "monkeyui.__version__" }
 
 [project.urls]
 "Homepage" = "https://github.com/luohuabuxiema/MonkeyUI"

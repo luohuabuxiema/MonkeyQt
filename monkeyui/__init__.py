@@ -29,6 +29,8 @@ from .components.feedback.alert import MkAlert
 from .components.feedback.progress_bar import MkProgressBar
 from .components.feedback.progress_ring import MkProgressRing
 
+__version__ = "0.1.0"
+
 __all__ = [
     "MkButton",
     "MkCheckBox",
