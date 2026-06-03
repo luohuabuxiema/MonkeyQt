@@ -45,5 +45,6 @@ Desktop.ini
 test_images/
 core-main/
 scripts/
+ultralytics/
 
 mainui.py
