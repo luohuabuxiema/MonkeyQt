@@ -123,7 +123,7 @@ class MkPagination(QWidget):
                 btn.setCursor(Qt.PointingHandCursor)
                 if p == self._current_page:
                     btn.setProperty("class", "active")
-                btn.clicked.connect(lambda checked, page=p: self.set_current_page(page))
+                btn.clicked.connect(lambda *args, page=p: self.set_current_page(page))
             self.buttons_layout.addWidget(btn)
 
         # Next button

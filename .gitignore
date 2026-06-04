@@ -49,5 +49,6 @@ ultralytics/
 weights/
 core/
 ui/
+docs-site/
 
 mainui.py

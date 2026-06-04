@@ -310,6 +310,7 @@ class MkDataTable(QWidget):
 
     def refresh_table(self):
         """Re-populates table cells based on current page slice."""
+        self.table_widget.clearContents()
         current_page = self.pagination.current_page
         start_idx = (current_page - 1) * self.page_size
         end_idx = min(start_idx + self.page_size, len(self._all_data))
@@ -436,7 +437,7 @@ class MkDataTable(QWidget):
                     """)
                     # Connect absolute index pass closures
                     edit_btn.clicked.connect(
-                        lambda checked, a_idx=abs_row_idx, r_val=row_dict: self.editRequested.emit(a_idx, r_val)
+                        lambda *args, a_idx=abs_row_idx, r_val=row_dict: self.editRequested.emit(a_idx, r_val)
                     )
                     actions_layout.addWidget(edit_btn)
                     
@@ -457,7 +458,7 @@ class MkDataTable(QWidget):
                         }
                     """)
                     del_btn.clicked.connect(
-                        lambda checked, a_idx=abs_row_idx, r_val=row_dict: self.deleteRequested.emit(a_idx, r_val)
+                        lambda *args, a_idx=abs_row_idx, r_val=row_dict: self.deleteRequested.emit(a_idx, r_val)
                     )
                     actions_layout.addWidget(del_btn)
                     
