@@ -12,7 +12,8 @@ from monkeyqt import (
     MkPagination, MkDropdown, MkSwitch, MkSlider, MkDatePicker, MkForm,
     MkInput, MkCaptchaWidget, MkAuthScreen, MkMessage,
     MkAvatar, MkTable, MkDataTable, MkImageCompare, MkImageSplit,
-    MkTitleBar, MkWindow, MkUpload, MkComboBox, MkMultiComboBox
+    MkTitleBar, MkWindow, MkUpload, MkComboBox, MkMultiComboBox,
+    ThemeEngine, MkThemeSelector, apply_monkeyqt_theme
 )
 
 class ButtonGallery(QWidget):
@@ -112,7 +113,7 @@ class TopbarGallery(QWidget):
         # 为了演示顶部导航栏的完整效果，我们在这个页面模拟一个完整的窗口结构
         
         # 1. 顶部导航栏
-        self.topbar = MkTopbar(logo_text="MONKEY UI")
+        self.topbar = MkTopbar(logo_text="Monkey Qt")
         self.topbar.add_item("home", "处理中心")
         self.topbar.add_item("workspace", "我的工作台")
         self.topbar.add_item("orders", "订单管理")
@@ -370,6 +371,7 @@ class DataTableGallery(QWidget):
         
         # 3. 实时交互回显区域
         self.interaction_card = QFrame(self)
+        self.interaction_card.setObjectName("DataTableInteractionCard")
         self.interaction_card.setStyleSheet("""
             QFrame {
                 background-color: #f8fafc;
@@ -467,9 +469,10 @@ class AuthGallery(QWidget):
         
         # --- 1. Left Control Panel ---
         control_panel = QFrame(self)
+        control_panel.setObjectName("AuthControlPanel")
         control_panel.setFixedWidth(260)
         control_panel.setStyleSheet("""
-            QFrame {
+            QFrame#AuthControlPanel {
                 background-color: #f8fafc;
                 border: 1px solid #e2e8f0;
                 border-radius: 8px;
@@ -499,12 +502,13 @@ class AuthGallery(QWidget):
         control_layout.setSpacing(12)
         
         panel_title = QLabel("Auth 自定义控制台")
+        panel_title.setObjectName("AuthPanelTitle")
         panel_title.setStyleSheet("font-size: 15px; color: #0f172a; margin-bottom: 5px;")
         control_layout.addWidget(panel_title)
         
         # Background setting
         control_layout.addWidget(QLabel("背景主题配置"))
-        self.bg_combo = QComboBox()
+        self.bg_combo = MkComboBox()
         self.bg_combo.addItems([
             "极光深蓝渐变",
             "皇家魅紫渐变",
@@ -515,17 +519,17 @@ class AuthGallery(QWidget):
         
         # Avatar option
         control_layout.addWidget(QLabel("头像配置"))
-        self.avatar_check = QCheckBox("启用顶部头像")
+        self.avatar_check = MkCheckBox("启用顶部头像")
         self.avatar_check.setChecked(True)
         control_layout.addWidget(self.avatar_check)
         
-        self.avatar_shape_combo = QComboBox()
+        self.avatar_shape_combo = MkComboBox()
         self.avatar_shape_combo.addItems(["圆形头像 (circle)", "方形头像 (square)"])
         control_layout.addWidget(self.avatar_shape_combo)
         
         # Captcha Type
         control_layout.addWidget(QLabel("安全验证码"))
-        self.captcha_combo = QComboBox()
+        self.captcha_combo = MkComboBox()
         self.captcha_combo.addItems([
             "图形验证码 (graphic)",
             "短信验证码 (sms)",
@@ -535,7 +539,7 @@ class AuthGallery(QWidget):
         
         # Register Custom Fields Config
         control_layout.addWidget(QLabel("注册页自定义字段"))
-        self.custom_fields_combo = QComboBox()
+        self.custom_fields_combo = MkComboBox()
         self.custom_fields_combo.addItems([
             "默认字段 (用户名+邮箱+密码)",
             "性别 + 手机号",
@@ -544,56 +548,20 @@ class AuthGallery(QWidget):
         control_layout.addWidget(self.custom_fields_combo)
         
         # Rebuild trigger button
-        self.rebuild_btn = QPushButton("一键生成登录界面")
+        self.rebuild_btn = MkButton("一键生成登录界面", type="primary")
         self.rebuild_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.rebuild_btn.setFixedHeight(36)
-        self.rebuild_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #3b82f6;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #2563eb;
-            }
-        """)
         self.rebuild_btn.clicked.connect(self.rebuild_auth_screen)
         control_layout.addWidget(self.rebuild_btn)
         
         # Dynamic Custom Fields Input & Button
         control_layout.addWidget(QLabel("动态添加单字段"))
-        self.custom_field_input = QLineEdit()
-        self.custom_field_input.setPlaceholderText("例如: 兴趣爱好 / 毕业院校")
-        self.custom_field_input.setStyleSheet("""
-            QLineEdit {
-                border: 1px solid #cbd5e1;
-                border-radius: 4px;
-                padding: 5px;
-                background-color: #ffffff;
-                color: #0f172a;
-                font-size: 12px;
-                min-height: 24px;
-            }
-        """)
+        self.custom_field_input = MkInput("例如: 兴趣爱好 / 毕业院校")
         control_layout.addWidget(self.custom_field_input)
         
-        self.add_field_btn = QPushButton("一键添加此字段")
+        self.add_field_btn = MkButton("一键添加此字段", type="success")
         self.add_field_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.add_field_btn.setFixedHeight(36)
-        self.add_field_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #10b981;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #059669;
-            }
-        """)
         self.add_field_btn.clicked.connect(self.add_single_custom_field)
         control_layout.addWidget(self.add_field_btn)
         
@@ -664,7 +632,7 @@ class AuthGallery(QWidget):
             
         # 5. Instantiate new MkAuthScreen
         self.auth_screen = MkAuthScreen(
-            logo_text="MONKEY UI",
+            logo_text="Monkey Qt",
             description="风格极简授权中心",
             avatar=avatar_path,
             avatar_shape=avatar_shape,
@@ -681,6 +649,8 @@ class AuthGallery(QWidget):
         self.auth_screen.forgotPasswordClicked.connect(self._on_forgot_password_clicked)
         
         self.preview_layout.addWidget(self.auth_screen)
+        if ThemeEngine.current_theme() != ThemeEngine.DEFAULT_THEME_NAME:
+            apply_monkeyqt_theme(self.window())
  
     def _on_login_submitted(self, username, password, captcha_code, remember_me=False):
         remember_str = " (记住密码: 是)" if remember_me else " (记住密码: 否)"
@@ -1130,6 +1100,7 @@ class UploadGallery(QWidget):
         layout.addWidget(label_logs)
         
         self.log_area = QLabel("等待上传交互...")
+        self.log_area.setObjectName("UploadLogArea")
         self.log_area.setStyleSheet("""
             QLabel {
                 background-color: #f1f5f9;
@@ -1164,15 +1135,24 @@ class UploadGallery(QWidget):
     def _on_file_removed(self, category, file_path):
         self.log_area.setText(f"[{category} 移除了文件]: {os.path.basename(file_path)}")
 
-class MainGallery(QWidget):
+class MainGallery(MkWindow):
     def __init__(self):
-        super().__init__()
+        super().__init__(use_custom_title_bar=True, preset="default")
         self.setWindowTitle("MonkeyQt - Enterprise Gallery")
-        self.resize(900, 600)
-        self.setStyleSheet("background-color: #ffffff;")
+        self.resize(1000, 700)
+        
+        # 自定义标题栏：高度加高，移除下边框线
+        self.titlebar._height = 48
+        self.titlebar._border_bottom = "none"
+        self.titlebar.apply_theme_colors()
+        self.titlebar.rebuild_layout()
+        self.update_style()
+        self._setup_theme_selector()
         
         # 主布局是水平的：左侧侧边栏，右侧内容区
-        main_layout = QHBoxLayout(self)
+        self.central_widget = QWidget()
+        self.central_widget.setObjectName("GalleryCentralWidget")
+        main_layout = QHBoxLayout(self.central_widget)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
         
@@ -1212,6 +1192,7 @@ class MainGallery(QWidget):
         
         # --- 2. 初始化右侧的内容区 (使用 QStackedWidget 进行页面切换) ---
         self.content_area = QStackedWidget()
+        self.content_area.setObjectName("GalleryContentArea")
         
         self.page_button = ButtonGallery()
         self.page_checkbox = CheckboxGallery()
@@ -1251,6 +1232,88 @@ class MainGallery(QWidget):
         # 默认选中第一项
         self.sidebar.set_active("btn")
         self.switch_page("btn")
+        
+        self.setCentralWidget(self.central_widget)
+        self._apply_gallery_theme_shell(ThemeEngine.current_theme())
+
+    def _setup_theme_selector(self):
+        """在标题栏加入 MonkeyQt 默认样式 + 67 种 UI 风格切换。"""
+        self.theme_label = QLabel("主题样式")
+        self.theme_label.setObjectName("GalleryThemeLabel")
+        self.theme_selector = MkThemeSelector()
+
+        self.titlebar.center_layout.addStretch()
+        self.titlebar.center_layout.addWidget(self.theme_label)
+        self.titlebar.center_layout.addWidget(self.theme_selector)
+        self.titlebar.center_layout.addStretch()
+
+        ThemeEngine.instance().themeChanged.connect(self._apply_gallery_theme_shell)
+        self._apply_gallery_theme_shell(ThemeEngine.current_theme())
+
+    def _apply_gallery_theme_shell(self, theme_name: str):
+        """主题选择同时刷新演示外壳和当前 MonkeyQt 原组件样式。"""
+        if theme_name == ThemeEngine.DEFAULT_THEME_NAME:
+            apply_monkeyqt_theme(self)
+            self.titlebar._bg_color = "#f3f4f6"
+            self.titlebar._text_color = "#374151"
+            self.titlebar._hover_color = "#e5e7eb"
+            self.titlebar._border_bottom = "none"
+            self.titlebar.apply_theme_colors()
+            self.update_style()
+            if self.container_frame:
+                radius = 0 if self.isMaximized() else self._border_radius
+                self.container_frame.setStyleSheet(f"""
+                    QFrame#MkWindowContainer {{
+                        background-color: #ffffff;
+                        border: 1px solid #d1d5db;
+                        border-radius: {radius}px;
+                    }}
+                """)
+            if hasattr(self, "content_area"):
+                self.content_area.setStyleSheet("")
+            if hasattr(self, "central_widget"):
+                self.central_widget.setStyleSheet("")
+            self.theme_label.setStyleSheet(
+                "QLabel#GalleryThemeLabel { background: transparent; color: #475569; "
+                "font-size: 12px; font-weight: 700; }"
+            )
+            return
+
+        tokens = ThemeEngine.current_tokens()
+        bg = tokens.get("--bg", "#FFFFFF")
+        surface = tokens.get("--glass-surface", tokens.get("--surface", "#FFFFFF")) if ThemeEngine.is_glass() else tokens.get("--surface", "#FFFFFF")
+        fg = tokens.get("--glass-text", tokens.get("--fg", "#1E293B")) if ThemeEngine.is_glass() else tokens.get("--fg", "#1E293B")
+        border = tokens.get("--glass-border", tokens.get("--border", "#E2E8F0")) if ThemeEngine.is_glass() else tokens.get("--border", "#E2E8F0")
+        hover = tokens.get("--surface-muted", "#F1F5F9")
+
+        self.titlebar._bg_color = surface
+        self.titlebar._text_color = fg
+        self.titlebar._hover_color = hover
+        self.titlebar._border_bottom = "none"
+        self.titlebar.apply_theme_colors()
+
+        radius = 0 if self.isMaximized() else self._border_radius
+        if self.container_frame:
+            self.container_frame.setStyleSheet(f"""
+                QFrame#MkWindowContainer {{
+                    background-color: {bg};
+                    border: 1px solid {border};
+                    border-radius: {radius}px;
+                }}
+            """)
+        if hasattr(self, "central_widget"):
+            self.central_widget.setStyleSheet(f"QWidget#GalleryCentralWidget {{ background-color: {bg}; }}")
+        if hasattr(self, "content_area"):
+            self.content_area.setStyleSheet(f"QStackedWidget {{ background-color: {bg}; }}")
+        self.theme_label.setStyleSheet(f"""
+            QLabel#GalleryThemeLabel {{
+                background: transparent;
+                color: {fg};
+                font-size: 12px;
+                font-weight: 700;
+            }}
+        """)
+        apply_monkeyqt_theme(self)
 
     def switch_page(self, item_id):
         # 演示侧边栏收缩

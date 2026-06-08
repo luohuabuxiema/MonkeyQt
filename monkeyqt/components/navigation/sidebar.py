@@ -151,6 +151,7 @@ class MkSubMenu(QWidget):
 
         # 标题按钮（使用与 MkMenuItem 类似的布局以保证对齐）
         self.title_btn = QPushButton()
+        self.title_btn.setObjectName("SubMenuTitleButton")
         self.title_btn.setFixedHeight(self._item_height) # 设置前端标准高度
         self.title_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.title_btn.setStyleSheet("""
@@ -270,6 +271,7 @@ class MkMenu(QWidget):
         
         # 带有右边框的内部框架
         self.inner_frame = QFrame(self)
+        self.inner_frame.setObjectName("SidebarInnerFrame")
         self.inner_frame.setStyleSheet("""
             QFrame {
                 background-color: #ffffff;
@@ -290,6 +292,7 @@ class MkMenu(QWidget):
         
         # 汉堡包按钮 (如果模式为 hamburger)
         self.hamburger_btn = QPushButton("≡")
+        self.hamburger_btn.setObjectName("SidebarHamburgerButton")
         self.hamburger_btn.setFixedSize(64, 60)
         self.hamburger_btn.setCursor(Qt.PointingHandCursor)
         self.hamburger_btn.setStyleSheet("""
@@ -346,6 +349,7 @@ class MkMenu(QWidget):
         
         # --- 2. 核心滚动区域 ---
         self.scroll_area = QScrollArea()
+        self.scroll_area.setObjectName("SidebarScrollArea")
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
         self.scroll_area.setStyleSheet("""
@@ -395,6 +399,7 @@ class MkMenu(QWidget):
         # --- 3. 悬浮在边框上的收缩展开按钮 ---
         # 作为 MkMenu 的子组件，使用 resizeEvent 进行绝对定位
         self.collapse_btn = QPushButton("❮", self)
+        self.collapse_btn.setObjectName("SidebarCollapseButton")
         self.collapse_btn.setFixedSize(24, 24)
         self.collapse_btn.setCursor(Qt.PointingHandCursor)
         self.collapse_btn.setStyleSheet("""
@@ -430,6 +435,7 @@ class MkMenu(QWidget):
 
     def set_border_right(self, border_style: str):
         """设置右侧边框样式，例如 'none' 或者 '1px solid #dcdfe6'"""
+        self._border_right_style = border_style
         self.inner_frame.setStyleSheet(f"""
             QFrame {{
                 background-color: #ffffff;

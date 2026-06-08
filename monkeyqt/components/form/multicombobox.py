@@ -59,6 +59,7 @@ class MkMultiComboPopup(QFrame):
         
         # Scroll Area
         self.scroll_area = QScrollArea(self)
+        self.scroll_area.setObjectName("MultiComboPopupScrollArea")
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
         self.scroll_area.setStyleSheet("""
@@ -162,6 +163,7 @@ class MkMultiComboBox(QFrame):
         
         # Scroll Area for the selected text labels
         self.scroll_area = QScrollArea(self)
+        self.scroll_area.setObjectName("MultiComboFaceScrollArea")
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
         self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -312,29 +314,43 @@ class MkMultiComboBox(QFrame):
 
     def _update_text(self):
         checked_texts = self.get_checked_texts()
+        
+        try:
+            from monkeyqt.themes.engine import ThemeEngine
+            is_themed = ThemeEngine.current_theme() != ThemeEngine.DEFAULT_THEME_NAME
+        except ImportError:
+            is_themed = False
+            
+        if is_themed:
+            color_active = ThemeEngine.get("--fg", "#0f172a")
+            color_placeholder = ThemeEngine.get("--text-muted", "#94a3b8")
+        else:
+            color_active = "#0f172a"
+            color_placeholder = "#94a3b8"
+            
         if checked_texts:
             full_text = ", ".join(checked_texts)
             self.text_label.setText(full_text)
-            self.text_label.setStyleSheet("""
-                QLabel#text_label {
-                    color: #0f172a;
+            self.text_label.setStyleSheet(f"""
+                QLabel#text_label {{
+                    color: {color_active};
                     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
                     font-size: 13px;
                     background: transparent;
                     border: none;
-                }
+                }}
             """)
             self.text_label.adjustSize()
         else:
             self.text_label.setText("默认检测所有类别")
-            self.text_label.setStyleSheet("""
-                QLabel#text_label {
-                    color: #94a3b8;
+            self.text_label.setStyleSheet(f"""
+                QLabel#text_label {{
+                    color: {color_placeholder};
                     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
                     font-size: 13px;
                     background: transparent;
                     border: none;
-                }
+                }}
             """)
 
     def paintEvent(self, event):

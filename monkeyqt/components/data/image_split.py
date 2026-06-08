@@ -49,8 +49,13 @@ class MkImagePanel(QWidget):
         else:
             ideal_w = W_total
             
-        # 根据面板左右对齐，计算实际绘制宽度
-        max_w = min(W, int(H * r_pixmap))
+        # 根据面板左右对齐，计算实际绘制宽度。
+        # 50% 分屏时左右面板常因取整相差 1-2px；若各自 contain，
+        # 右侧会算出稍高的图片。这里用父组件提供的统一宽度对齐两侧高度。
+        balanced_w = None
+        if isinstance(self.parent(), QWidget) and hasattr(self.parent(), "get_balanced_panel_width"):
+            balanced_w = self.parent().get_balanced_panel_width()
+        max_w = min(W, int(H * r_pixmap), balanced_w) if balanced_w else min(W, int(H * r_pixmap))
         if self._align_right:
             # 右面板：当 split_ratio > 0.5 时收缩至 0
             if split_ratio > 0.5:
@@ -377,6 +382,18 @@ class MkImageSplit(QWidget):
             return int(H * r_pixmap)
         else:
             return W
+
+    def get_balanced_panel_width(self):
+        """Return a shared width when the split line is visually centered."""
+        if not hasattr(self, "left_panel") or not hasattr(self, "right_panel"):
+            return None
+        left_w = self.left_panel.width()
+        right_w = self.right_panel.width()
+        if left_w <= 0 or right_w <= 0:
+            return None
+        if abs(self._split_ratio - 0.5) <= 0.01 and abs(left_w - right_w) <= 2:
+            return min(left_w, right_w)
+        return None
 
     def update_layout(self):
         W = self.width()

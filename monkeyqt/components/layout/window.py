@@ -58,8 +58,11 @@ class MkTitleBar(QWidget):
         
         # Window control buttons
         self.btn_min = QPushButton()
+        self.btn_min.setObjectName("TitleBarMinButton")
         self.btn_max = QPushButton()
+        self.btn_max.setObjectName("TitleBarMaxButton")
         self.btn_close = QPushButton()
+        self.btn_close.setObjectName("TitleBarCloseButton")
         
         self.btn_min.setFixedSize(28, 28)
         self.btn_max.setFixedSize(28, 28)

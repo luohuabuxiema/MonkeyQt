@@ -160,7 +160,7 @@ class MkAuthScreen(QWidget):
 
     def __init__(
         self,
-        logo_text: str = "MONKEY UI",
+        logo_text: str = "Monkey Qt",
         description: str = "企业级桌面快速开发组件库",
         avatar: str = None,
         avatar_shape: str = "circle",

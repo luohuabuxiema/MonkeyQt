@@ -18,6 +18,7 @@ class CheckBoxHeader(QHeaderView):
     def __init__(self, parent=None):
         super().__init__(Qt.Orientation.Horizontal, parent)
         self._checked = False
+        self._checkbox_palette = None
         self.setSectionsClickable(True)
         self.sectionClicked.connect(self._on_section_clicked)
         # Give generous height to the header
@@ -30,23 +31,44 @@ class CheckBoxHeader(QHeaderView):
         painter.restore()
 
         if logicalIndex == 0:
-            # Draw standard clean styling checkbox centered in section 0
-            from PySide6.QtWidgets import QStyle, QStyleOptionButton
-            option = QStyleOptionButton()
-            
-            # Center checkbox in the cell
-            box_size = 16
-            x = rect.x() + (rect.width() - box_size) // 2
-            y = rect.y() + (rect.height() - box_size) // 2
-            option.rect = QRect(x, y, box_size, box_size)
-            
-            option.state = QStyle.StateFlag.State_Enabled
-            if self._checked:
-                option.state |= QStyle.StateFlag.State_On
-            else:
-                option.state |= QStyle.StateFlag.State_Off
-            
-            self.style().drawPrimitive(QStyle.PrimitiveElement.PE_IndicatorCheckBox, option, painter)
+            self._paint_checkbox(painter, rect)
+
+    def _paint_checkbox(self, painter, rect):
+        palette = self._checkbox_palette or {
+            "surface": "#ffffff",
+            "border": "#dcdfe6",
+            "primary": "#409eff",
+            "check": "#ffffff",
+            "radius": 2,
+            "border_width": 1.2,
+        }
+
+        box_size = 16
+        x = rect.x() + (rect.width() - box_size) // 2
+        y = rect.y() + (rect.height() - box_size) // 2
+        box_rect = QRect(x, y, box_size, box_size).adjusted(0, 0, -1, -1)
+
+        radius = int(palette.get("radius", 2))
+        border_width = float(palette.get("border_width", 1.2))
+        fill = QColor(palette["primary"] if self._checked else palette["surface"])
+        border = QColor(palette["primary"] if self._checked else palette["border"])
+
+        painter.save()
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setPen(QPen(border, border_width))
+        painter.setBrush(fill)
+        painter.drawRoundedRect(box_rect, radius, radius)
+
+        if self._checked:
+            check = QColor(palette["check"])
+            painter.setPen(QPen(check, 1.8, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+            painter.drawLine(x + 4, y + 8, x + 7, y + 11)
+            painter.drawLine(x + 7, y + 11, x + 12, y + 5)
+        painter.restore()
+
+    def set_checkbox_palette(self, palette=None):
+        self._checkbox_palette = palette
+        self.viewport().update()
 
     def _on_section_clicked(self, logicalIndex):
         if logicalIndex == 0:
@@ -360,11 +382,13 @@ class MkDataTable(QWidget):
             # Render selection checkbox if enabled
             if self.selection_enabled:
                 chk = MkCheckBox()
-                chk.setFixedSize(16, 16)  # Enforce exact size for perfect alignment
+                chk.setObjectName("DataTableRowCheckBox")
+                chk.setFixedSize(20, 20)
                 chk.setChecked(unique_key in self._selected_keys)
                 
                 # Prevent checkbox from stealing click triggers and wrap cleanly
                 container = QWidget()
+                container.setObjectName("DataTableCheckCell")
                 h_layout = QHBoxLayout(container)
                 h_layout.addWidget(chk)
                 h_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
