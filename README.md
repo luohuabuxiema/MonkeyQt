@@ -2,12 +2,26 @@
 
 MonkeyQt 是一个专为 PySide6 打造的**企业级 UI 组件库**。设计灵感来源于前端极其流行的 Element Plus、shadcn-ui，为桌面应用程序开发者提供极高颜值、一致交互、并且开箱即用的 Web 风格组件。
 
+📖 **[在线使用文档](https://luohuabuxiema.github.io/MonkeyQt/)** | 🚀 **[快速开始](#🚀-快速开始)** | 🎨 **[主题预览](https://luohuabuxiema.github.io/MonkeyQt/guide/theme/)**
+
 ## ✨ 特性
 
 - **现代化风格**：复刻流行的前端组件。
 - **组件丰富**：支持按钮、复选框、下拉菜单、表格、时间选择器、导航栏、分页器、进度条、滑块等丰富组件。
 - **开箱即用**：一键导入即可使用，极其简单。
 - **无缝集成**：纯 PySide6 原生实现（QWidget、QSS、QPainter），不依赖任何第三方重量级渲染引擎。
+
+## 📖 使用文档
+
+你可以通过以下链接访问我们的完整使用指南、主题样式预览以及所有组件的使用手册：
+
+👉 **[MonkeyQt 官方使用文档](https://luohuabuxiema.github.io/MonkeyQt/)**
+
+文档内包含：
+- **安装与配置指南**
+- **快速开始范例**
+- **67 种内置设计风格（主题样式）的滑动切换与定制 API**
+- **所有基础/高级组件开发预览与参数详解（包括 MkButton、MkDataTable、MkAuthScreen、MkUpload、MkImageCompare 等）**
 
 ## 📦 安装
 
