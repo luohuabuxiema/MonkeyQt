@@ -200,6 +200,8 @@ class MkMultiComboBox(QFrame):
         self.text_label = QLabel(self.scroll_area)
         self.text_label.setObjectName("text_label")
         self.text_label.setWordWrap(False)
+        self.text_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        self.text_label.setContentsMargins(4, 0, 0, 0)
         self.text_label.setStyleSheet("""
             QLabel#text_label {
                 color: #94a3b8;
@@ -212,6 +214,7 @@ class MkMultiComboBox(QFrame):
         self.text_label.setText("默认检测所有类别")
         
         self.scroll_area.setWidget(self.text_label)
+        self._sync_text_label_geometry()
         layout.addWidget(self.scroll_area)
         
         # Setup popup
@@ -312,6 +315,14 @@ class MkMultiComboBox(QFrame):
         self._update_text()
         self.selectionChanged.emit(self.get_checked_data())
 
+    def _sync_text_label_geometry(self):
+        """Keep the face text vertically centered and wide enough for its content."""
+        metrics = self.text_label.fontMetrics()
+        self.text_label.setMinimumWidth(max(1, metrics.horizontalAdvance(self.text_label.text()) + 8))
+        self.text_label.setMinimumHeight(max(24, metrics.height() + 4))
+        self.text_label.adjustSize()
+        self.scroll_area.viewport().updateGeometry()
+
     def _update_text(self):
         checked_texts = self.get_checked_texts()
         
@@ -352,6 +363,7 @@ class MkMultiComboBox(QFrame):
                     border: none;
                 }}
             """)
+        self._sync_text_label_geometry()
 
     def paintEvent(self, event):
         super().paintEvent(event)

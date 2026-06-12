@@ -2553,7 +2553,9 @@ def _apply_multicombobox(widget: QWidget, p: dict[str, str | int | bool]) -> Non
             self.text_label.setText(full_text)
             color = str(_palette()["text"] if checked_texts else _palette()["muted"])
             _style_label(self.text_label, f"color: {color}; background: transparent; border: none; font-family: {_palette()['font']}; font-size: 13px;")
-            if checked_texts:
+            if hasattr(self, "_sync_text_label_geometry"):
+                self._sync_text_label_geometry()
+            else:
                 self.text_label.adjustSize()
 
         widget._update_text = types.MethodType(_theme_update_text, widget)
@@ -2573,6 +2575,8 @@ def _apply_multicombobox(widget: QWidget, p: dict[str, str | int | bool]) -> Non
     if hasattr(widget, "text_label"):
         label_color = text if getattr(widget.text_label, "text", lambda: "")() else muted
         _style_label(widget.text_label, f"color: {label_color}; background: transparent; border: none; font-family: {p['font']}; font-size: 13px;")
+        widget.text_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        widget.text_label.setContentsMargins(4, 0, 0, 0)
         try:
             widget._update_text()
         except RuntimeError:
@@ -3335,6 +3339,12 @@ def _apply_menu(widget: QWidget, p: dict[str, str | int | bool]) -> None:
         """)
     if hasattr(widget, "title_label"):
         _style_label(widget.title_label, f"font-size: 16px; font-weight: 800; color: {p['sidebar_text']}; background: transparent;")
+        title_font = widget.title_label.font()
+        title_font.setBold(True)
+        widget.title_label.setFont(title_font)
+        widget.title_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        widget.title_label.setMinimumHeight(24)
+        widget.title_label.updateGeometry()
     if hasattr(widget, "collapse_btn"):
         _save_widget(widget.collapse_btn)
         widget.collapse_btn.setProperty("_mk_theme_fixed_width", 24)

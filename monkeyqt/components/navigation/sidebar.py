@@ -342,6 +342,11 @@ class MkMenu(QWidget):
         # 标题文本
         self.title_label = QLabel(self._title)
         self.title_label.setStyleSheet("font-size: 16px; font-weight: bold; color: #303133;")
+        title_font = self.title_label.font()
+        title_font.setBold(True)
+        self.title_label.setFont(title_font)
+        self.title_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        self.title_label.setMinimumHeight(24)
         self.title_layout.addWidget(self.title_label)
         
         self.title_layout.addStretch()
