@@ -209,6 +209,14 @@ class MkSplitterHandle(QWidget):
             event.accept()
 
     def paintEvent(self, event):
+        # Dynamically load ThemeEngine if available to support 68-theme styles
+        t = None
+        try:
+            from monkeyqt.themes.engine import ThemeEngine
+            t = ThemeEngine.instance()
+        except Exception:
+            pass
+
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         
@@ -216,9 +224,36 @@ class MkSplitterHandle(QWidget):
         img_top = self._image_top
         img_bottom = self._image_bottom if self._image_bottom > self._image_top else self.height()
         
+        # Determine colors based on active theme
+        primary_color = t.get("--primary", "#409eff") if t else "#409eff"
+        border_color = t.get("--border", "#dcdfe6") if t else "#dcdfe6"
+        text_muted = t.get("--text-muted", "#909399") if t else "#909399"
+        surface_color = t.get("--surface", "#ffffff") if t else "#ffffff"
+        
+        # For Brutalism / Pixel styles, make the divider lines thick black
+        is_brutal_or_pixel = (t.is_brutal() or t.is_pixel()) if (t and hasattr(t, "is_brutal")) else False
+        
+        if is_brutal_or_pixel:
+            line_color = QColor("#000000")
+            line_width = 2.0
+            capsule_bg = QColor("#ffffff")
+            capsule_border = QColor("#000000")
+            capsule_border_width = 2
+            capsule_radius = 0
+        else:
+            # For other themes, use themed border and surface color
+            line_color = QColor(border_color)
+            line_width = 1.5
+            capsule_bg = QColor(surface_color)
+            # Add subtle opacity for modern themes
+            capsule_bg.setAlpha(245)
+            capsule_border = QColor(border_color)
+            capsule_border_width = 1
+            capsule_radius = 10
+
         # 1. 绘制纵向极细分割线 —— 仅在图片渲染区域内绘制
-        line_pen = QPen(QColor("#ebeef5"))
-        line_pen.setWidth(1.5)
+        line_pen = QPen(line_color)
+        line_pen.setWidthF(line_width)
         painter.setPen(line_pen)
         painter.drawLine(12, img_top, 12, img_bottom)
         
@@ -226,21 +261,21 @@ class MkSplitterHandle(QWidget):
         cy = self._capsule_center_y()
         capsule_rect = QRect(2, cy - 30, 20, 60)
         
-        # 半透明磨砂背景
-        painter.setBrush(QColor(255, 255, 255, 240))
-        painter.setPen(QPen(QColor("#dcdfe6"), 1))
-        painter.drawRoundedRect(capsule_rect, 10, 10)
+        # 绘制背景
+        painter.setBrush(capsule_bg)
+        painter.setPen(QPen(capsule_border, capsule_border_width))
+        painter.drawRoundedRect(capsule_rect, capsule_radius, capsule_radius)
         
         # 3. 绘制胶囊内部的短中分线
-        painter.setPen(QPen(QColor("#ebeef5"), 1))
+        painter.setPen(QPen(line_color, 1))
         painter.drawLine(12, cy - 20, 12, cy + 20)
         
         # 4. 绘制左/右侧悬浮高亮状态的矢量方向箭头
         # 左箭头
         if self._hover_area == "left":
-            painter.setPen(QPen(QColor("#409eff"), 2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+            painter.setPen(QPen(QColor(primary_color), 2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
         else:
-            painter.setPen(QPen(QColor("#909399"), 2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+            painter.setPen(QPen(QColor(text_muted), 2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
             
         left_path = QPainterPath()
         left_path.moveTo(8, cy - 4)
@@ -250,9 +285,9 @@ class MkSplitterHandle(QWidget):
         
         # 右箭头
         if self._hover_area == "right":
-            painter.setPen(QPen(QColor("#409eff"), 2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+            painter.setPen(QPen(QColor(primary_color), 2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
         else:
-            painter.setPen(QPen(QColor("#909399"), 2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+            painter.setPen(QPen(QColor(text_muted), 2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
             
         right_path = QPainterPath()
         right_path.moveTo(16, cy - 4)
@@ -288,6 +323,12 @@ class MkImageSplit(QWidget):
         self.right_panel = MkImagePanel(label="迁移结果", align_right=True, parent=self)
         self.handle = MkSplitterHandle(parent=self)
         
+        try:
+            from monkeyqt.themes.engine import ThemeEngine
+            ThemeEngine.instance().themeChanged.connect(lambda name=None: self.handle.update())
+        except Exception:
+            pass
+            
         if left_img is not None and right_img is not None:
             self.set_images(left_img, right_img)
             
