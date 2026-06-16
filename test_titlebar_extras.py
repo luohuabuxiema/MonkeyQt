@@ -198,7 +198,7 @@ class TestApp(MkWindow):
             ("🔧", "组件数量", "36 个", "#409EFF"),
             ("🎨", "主题风格", "68 种", "#67C23A"),
             ("⭐", "GitHub Star", "1,247", "#E6A23C"),
-            ("📦", "版本号", "v0.1.0", "#F56C6C"),
+            ("📦", "版本号", "v0.1.1", "#F56C6C"),
         ]
         for emoji, title, value, color in stats_data:
             card = QFrame()
