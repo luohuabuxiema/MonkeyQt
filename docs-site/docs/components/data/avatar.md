@@ -76,6 +76,8 @@ avatar_menu.actionTriggered.connect(self._on_avatar_action)
 
     适合开源项目、开发者个人面板。包含个人介绍、统计数据卡片与最近项目网格：
 
+    ![极客/开发者个人主页预览](../../assets/images/profile_page_preview.png)
+
     ```python
     import os
     from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QGridLayout

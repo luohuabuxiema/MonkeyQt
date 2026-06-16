@@ -32,6 +32,8 @@ window.resize(800, 600)
 
 ## 标题栏扩展：头像菜单与历史导航 (Titlebar Extras)
 
+![标题栏扩展预览](../../assets/images/titlebar_extras_preview.png)
+
 MonkeyQt 提供了一键式启用账户管理与历史导航的 API：`enable_titlebar_extras()`。它能够：
 1. **自动感知内容区**：自动检测中心控件下的 `QStackedWidget`，若不是带动画的版本，会自动升级为具有水平滑动转场效果的 `MkAnimatedStackedWidget`。
 2. **前进/后退追踪**：自动捕获 `QStackedWidget` 中各个页面的切换历史，控制按钮的可用状态（Enabled/Disabled）。
