@@ -654,9 +654,9 @@ class ThemeEngine(QObject):
             QToolTip {{
                 background-color: {card_bg};
                 color: {fg};
-                border: 1px solid {panel_border};
-                border-radius: 6px;
-                padding: 6px 8px;
+                border: {border_w} solid {panel_border};
+                border-radius: 0px;
+                padding: 5px 8px;
             }}
 
             QScrollBar:vertical {{
