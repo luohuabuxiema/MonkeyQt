@@ -137,7 +137,7 @@ class QuickStartApp(MkWindow):
         # --- 5. 一行代码启用标题栏头像 + 前进后退 ---
         avatar_path = os.path.join(os.path.dirname(__file__), "user_avatar.png")
         self.enable_titlebar_extras(
-            avatar=True,
+            avatar=False,
             history_nav=True,
             user_name="落花不写码",
             subtitle="PySide6 组件开发者",

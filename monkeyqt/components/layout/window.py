@@ -813,6 +813,8 @@ class MkWindow(QMainWindow):
             self.titlebar.center_layout.addStretch()
             self.titlebar.center_layout.addWidget(self.titlebar_avatar)
             self.titlebar.center_layout.addSpacing(8)
+        elif self.titlebar_history_nav:
+            self.titlebar.center_layout.addStretch()
 
         self._titlebar_extras_enabled = True
 

@@ -13,7 +13,7 @@ from PySide6.QtCore import (
     Signal,
 )
 from PySide6.QtGui import QPalette
-from PySide6.QtWidgets import QHBoxLayout, QPushButton, QStackedWidget, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QPushButton, QStackedWidget, QWidget, QSizePolicy
 
 from monkeyqt.core.icons import MkPhosphorIcon
 
@@ -115,6 +115,7 @@ class MkHistoryNavigation(QWidget):
         parent=None,
     ):
         super().__init__(parent)
+        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
         self.stack = stack
         self.pages = dict(pages)
         self._history: list[str] = []
