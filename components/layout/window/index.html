@@ -1548,17 +1548,6 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        用于构建桌面应用的自定义无边框窗口和精美标题栏。支持多种现代化预设风格、边缘拉伸缩放、圆角效果和阴影。
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#mkwindow" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1571,7 +1560,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         基础用法
@@ -1587,10 +1576,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#mktitlebar" class="md-nav__link">
+  <a href="#titlebar-extras" class="md-nav__link">
     <span class="md-ellipsis">
       
-        MkTitleBar 自定义标题栏
+        标题栏扩展：头像菜单与历史导航 (Titlebar Extras)
       
     </span>
   </a>
@@ -1613,7 +1602,7 @@
   <a href="#mkwindow_1" class="md-nav__link">
     <span class="md-ellipsis">
       
-        MkWindow 构造函数 &amp;
+        MkWindow 构造函数
       
     </span>
   </a>
@@ -1631,16 +1620,27 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#enable_titlebar_extras" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        enable_titlebar_extras 方法参数
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
+  <a href="#_2" class="md-nav__link">
     <span class="md-ellipsis">
       
-        示例代码
+        最佳实践与双向状态同步
       
     </span>
   </a>
@@ -1725,17 +1725,6 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        用于构建桌面应用的自定义无边框窗口和精美标题栏。支持多种现代化预设风格、边缘拉伸缩放、圆角效果和阴影。
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#mkwindow" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1748,7 +1737,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         基础用法
@@ -1764,10 +1753,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#mktitlebar" class="md-nav__link">
+  <a href="#titlebar-extras" class="md-nav__link">
     <span class="md-ellipsis">
       
-        MkTitleBar 自定义标题栏
+        标题栏扩展：头像菜单与历史导航 (Titlebar Extras)
       
     </span>
   </a>
@@ -1790,7 +1779,7 @@
   <a href="#mkwindow_1" class="md-nav__link">
     <span class="md-ellipsis">
       
-        MkWindow 构造函数 &amp;
+        MkWindow 构造函数
       
     </span>
   </a>
@@ -1808,16 +1797,27 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#enable_titlebar_extras" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        enable_titlebar_extras 方法参数
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
+  <a href="#_2" class="md-nav__link">
     <span class="md-ellipsis">
       
-        示例代码
+        最佳实践与双向状态同步
       
     </span>
   </a>
@@ -1845,41 +1845,37 @@
 
 
 <h1 id="window">Window 自定义窗口与标题栏<a class="headerlink" href="#window" title="Permanent link">&para;</a></h1>
-<h2 id="_1">用于构建桌面应用的自定义无边框窗口和精美标题栏。支持多种现代化预设风格、边缘拉伸缩放、圆角效果和阴影。<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>用于构建桌面应用的自定义无边框窗口和精美标题栏。支持多种现代化预设风格、边缘拉伸缩放、圆角效果和窗口阴影。
+此外，窗口内置了强大的<strong>标题栏扩展功能 (Titlebar Extras)</strong>，允许开发者通过一行代码，直接在标题栏嵌入<strong>前进后退历史导航按钮</strong>和<strong>账户头像下拉菜单</strong>。</p>
+<hr />
 <h2 id="mkwindow">MkWindow 无边框窗口<a class="headerlink" href="#mkwindow" title="Permanent link">&para;</a></h2>
 <p><code>MkWindow</code> 继承自 <code>QMainWindow</code>。当使用自定义标题栏时，它会自动去除系统原生边框，添加漂亮的阴影和圆角，并支持通过鼠标拖动窗口边缘进行缩放。</p>
-<h3 id="_2">基础用法<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h3>
+<h3 id="_1">基础用法<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h3>
 <p><img alt="自定义窗口与标题栏预览" src="../../../assets/images/window_preview.png" /></p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">PySide6.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QLabel</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">monkeyqt</span><span class="w"> </span><span class="kn">import</span> <span class="n">MkWindow</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># 创建一个使用自定义标题栏和 &#39;shadcn&#39; 预设风格的窗口window = MkWindow(use_custom_title_bar=True, preset=&quot;shadcn&quot;)</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">window</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="s2">&quot;我的现代化应用&quot;</span><span class="p">)</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="c1"># 设置中心窗口组件</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">label</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;中心内容区&quot;</span><span class="p">)</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="n">window</span><span class="o">.</span><span class="n">setCentralWidget</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="n">window</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="mi">800</span><span class="p">,</span> <span class="mi">600</span><span class="p">)</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># 创建一个使用自定义标题栏和 &#39;shadcn&#39; 预设风格的窗口</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">window</span> <span class="o">=</span> <span class="n">MkWindow</span><span class="p">(</span><span class="n">use_custom_title_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">preset</span><span class="o">=</span><span class="s2">&quot;shadcn&quot;</span><span class="p">)</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">window</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="s2">&quot;我的现代化应用&quot;</span><span class="p">)</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="c1"># 设置中心窗口组件</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="n">label</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;中心内容区&quot;</span><span class="p">)</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">window</span><span class="o">.</span><span class="n">setCentralWidget</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="n">window</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="mi">800</span><span class="p">,</span> <span class="mi">600</span><span class="p">)</span>
 </span></code></pre></div>
 <hr />
-<h2 id="mktitlebar">MkTitleBar 自定义标题栏<a class="headerlink" href="#mktitlebar" title="Permanent link">&para;</a></h2>
-<p><code>MkTitleBar</code> 是放置于 <code>MkWindow</code> 顶部的自定义标题栏，通常不需要开发者手动实例化。它支持六种现代化的主题风格预设：
-| 预设名称 | 风格说明 |
-| :--- | :--- |
-| <code>"default"</code> | 经典的淡雅现代风格 "|
-| <code>"shadcn"</code> | 极简白风格，边框细致，适合简约应用 "|
-| <code>"ida"</code> | 深色科技感风格，适合工具、逆向等软件 "|
-| <code>"sunlogin"</code> | 类似向日葵控制端的现代化深色风格 |
-| <code>"soda"</code> | 极简黑风格，对比度强烈 "|
-| <code>"antigravity"</code> | 独特的暗黑紫色太空风格，神秘而极|</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># 动态切换窗口的主题预设</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">window</span><span class="o">.</span><span class="n">set_preset</span><span class="p">(</span><span class="s2">&quot;antigravity&quot;</span><span class="p">)</span>
-</span></code></pre></div>
+<h2 id="titlebar-extras">标题栏扩展：头像菜单与历史导航 (Titlebar Extras)<a class="headerlink" href="#titlebar-extras" title="Permanent link">&para;</a></h2>
+<p>MonkeyQt 提供了一键式启用账户管理与历史导航的 API：<code>enable_titlebar_extras()</code>。它能够：
+1. <strong>自动感知内容区</strong>：自动检测中心控件下的 <code>QStackedWidget</code>，若不是带动画的版本，会自动升级为具有水平滑动转场效果的 <code>MkAnimatedStackedWidget</code>。
+2. <strong>前进/后退追踪</strong>：自动捕获 <code>QStackedWidget</code> 中各个页面的切换历史，控制按钮的可用状态（Enabled/Disabled）。
+3. <strong>支持极简仅图标模式</strong>：如果觉得默认的按钮背景比较重，可以开启 <code>nav_icon_only=True</code>，这样按钮的所有状态背景都是透明的，只留出极简的 carets 图标，非常精致。
+4. <strong>适配 68 种主题样式</strong>：组件的渲染完全基于 <code>ThemeEngine</code> 的 token 变化而实时重绘刷新。</p>
 <hr />
 <h2 id="api">API 属性与方法<a class="headerlink" href="#api" title="Permanent link">&para;</a></h2>
-<h3 id="mkwindow_1">MkWindow 构造函数 &amp;<a class="headerlink" href="#mkwindow_1" title="Permanent link">&para;</a></h3>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">MkWindow</span><span class="p">(</span><span class="n">use_custom_title_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">preset</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<h3 id="mkwindow_1">MkWindow 构造函数<a class="headerlink" href="#mkwindow_1" title="Permanent link">&para;</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">MkWindow</span><span class="p">(</span><span class="n">use_custom_title_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">preset</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">,</span> <span class="n">sidebar_full_height</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 </span></code></pre></div>
 <table>
 <thead>
@@ -1895,16 +1891,23 @@
 <td style="text-align: left;"><code>use_custom_title_bar</code></td>
 <td style="text-align: left;"><code>bool</code></td>
 <td style="text-align: left;"><code>True</code></td>
-<td style="text-align: left;">是否使用自定义无边框标题栏。为 <code>False</code> 时回退为系统原生窗口框架</td>
+<td style="text-align: left;">是否使用自定义无边框标题栏。为 <code>False</code> 时回退为系统原生窗口</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>preset</code></td>
 <td style="text-align: left;"><code>str</code></td>
 <td style="text-align: left;"><code>"default"</code></td>
-<td style="text-align: left;">自定义标题栏的主题预设，可选值为 <code>"default"</code>, <code>"shadcn"</code>, <code>"ida"</code>, <code>"sunlogin"</code>, <code>"soda"</code>, <code>"antigravity"</code></td>
+<td style="text-align: left;">自定义标题栏的主题预设风格（<code>"default"</code>, <code>"shadcn"</code>, <code>"ida"</code>, <code>"sunlogin"</code>, <code>"soda"</code>, <code>"antigravity"</code>）</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>sidebar_full_height</code></td>
+<td style="text-align: left;"><code>bool</code></td>
+<td style="text-align: left;"><code>False</code></td>
+<td style="text-align: left;">是否允许左侧的 <code>MkMenu</code> 侧边栏高度撑满整个窗口（即标题栏在侧边栏右侧开始，类似 汽水音乐 布局）</td>
 </tr>
 </tbody>
 </table>
+<hr />
 <h3 id="mkwindow_2">MkWindow 核心方法<a class="headerlink" href="#mkwindow_2" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -1920,7 +1923,7 @@
 <td style="text-align: left;"><code>setCentralWidget(widget)</code></td>
 <td style="text-align: left;"><code>QWidget</code></td>
 <td style="text-align: left;"><code>None</code></td>
-<td style="text-align: left;">设置窗口的中心控件。如果是自定义无边框模式，该控件会被放置在自定义标题栏下方，且自动撑满空间</td>
+<td style="text-align: left;">设置中心控件。在无边框模式下，该控件会自动填充标题栏下方的全部空间</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>setWindowTitle(title)</code></td>
@@ -1932,7 +1935,7 @@
 <td style="text-align: left;"><code>setWindowIcon(icon)</code></td>
 <td style="text-align: left;"><code>QIcon</code></td>
 <td style="text-align: left;"><code>None</code></td>
-<td style="text-align: left;">设置窗口图标，并自动同步缩放渲染在自定义标题栏左侧</td>
+<td style="text-align: left;">设置窗口图标，并自动同步缩放渲染在标题栏最左侧</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>set_preset(preset)</code></td>
@@ -1941,66 +1944,237 @@
 <td style="text-align: left;">动态更改标题栏和窗口容器的主题预设</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>set_border_radius(radius)</code></td>
-<td style="text-align: left;"><code>int</code></td>
+<td style="text-align: left;"><code>enable_titlebar_extras(...)</code></td>
+<td style="text-align: left;"><em>(详见下表)</em></td>
 <td style="text-align: left;"><code>None</code></td>
-<td style="text-align: left;">设置窗口容器的圆角大小（像素，默认 8px）。最大化时圆角会自动失效以贴合屏幕</td>
+<td style="text-align: left;"><strong>一键开启标题栏头像和前进后退导航</strong></td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>set_close_behavior(behavior)</code></td>
-<td style="text-align: left;"><code>str</code></td>
+<td style="text-align: left;"><code>disable_titlebar_extras()</code></td>
 <td style="text-align: left;"><code>None</code></td>
-<td style="text-align: left;">设置点击关闭按钮时的行为。可选值为 <code>"close"</code>（退出窗口））或 " "<code>"hide"</code>（隐藏窗口）</td>
+<td style="text-align: left;"><code>None</code></td>
+<td style="text-align: left;">彻底移除头像和前进后退导航组件并清理状态</td>
 </tr>
 </tbody>
 </table>
 <hr />
-<h2 id="_3">示例代码<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="enable_titlebar_extras">enable_titlebar_extras 方法参数<a class="headerlink" href="#enable_titlebar_extras" title="Permanent link">&para;</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">enable_titlebar_extras</span><span class="p">(</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="n">avatar</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="n">history_nav</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="n">user_name</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="n">subtitle</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="n">avatar_image</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="n">avatar_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="n">avatar_actions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>    <span class="n">animation_duration</span><span class="o">=</span><span class="mi">280</span><span class="p">,</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>    <span class="n">stack</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>    <span class="n">nav_icon_only</span><span class="o">=</span><span class="kc">False</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="p">)</span>
+</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">参数</th>
+<th style="text-align: left;">类型</th>
+<th style="text-align: left;">默认值</th>
+<th style="text-align: left;">说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>avatar</code></td>
+<td style="text-align: left;"><code>bool</code></td>
+<td style="text-align: left;"><code>True</code></td>
+<td style="text-align: left;">是否在标题栏右侧显示可点击头像菜单</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>history_nav</code></td>
+<td style="text-align: left;"><code>bool</code></td>
+<td style="text-align: left;"><code>True</code></td>
+<td style="text-align: left;">是否在标题栏显示前进后退按钮</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>user_name</code></td>
+<td style="text-align: left;"><code>str</code></td>
+<td style="text-align: left;"><code>""</code></td>
+<td style="text-align: left;">账户下拉菜单中顶部显示的用户名</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>subtitle</code></td>
+<td style="text-align: left;"><code>str</code></td>
+<td style="text-align: left;"><code>""</code></td>
+<td style="text-align: left;">用户名下方显示的副标题/个性签名</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>avatar_image</code></td>
+<td style="text-align: left;"><code>str</code></td>
+<td style="text-align: left;"><code>""</code></td>
+<td style="text-align: left;">头像图片的本地文件路径</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>avatar_size</code></td>
+<td style="text-align: left;"><code>int</code></td>
+<td style="text-align: left;"><code>32</code></td>
+<td style="text-align: left;">头像显示的宽度与高度像素大小</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>avatar_actions</code></td>
+<td style="text-align: left;"><code>list[dict]</code></td>
+<td style="text-align: left;"><code>None</code></td>
+<td style="text-align: left;">菜单中的操作项列表。如果为 <code>None</code>，默认显示：个人主页、系统设置。每项包含 <code>id</code>、<code>text</code>、<code>icon</code> 等键值</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>animation_duration</code></td>
+<td style="text-align: left;"><code>int</code></td>
+<td style="text-align: left;"><code>280</code></td>
+<td style="text-align: left;">内容页进行滑动切换时的动画持续时间（毫秒）</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>stack</code></td>
+<td style="text-align: left;"><code>QStackedWidget</code></td>
+<td style="text-align: left;"><code>None</code></td>
+<td style="text-align: left;">显式指定要绑定的堆叠控件。如果为 <code>None</code>，会在中心组件下自动遍历查找并绑定</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>nav_icon_only</code></td>
+<td style="text-align: left;"><code>bool</code></td>
+<td style="text-align: left;"><code>False</code></td>
+<td style="text-align: left;"><strong>设置为 <code>True</code> 时，前进后退按钮彻底去除矩形背景框与悬浮底色，只展示纯图标，实现最简极现代视觉效果</strong></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="_2">最佳实践与双向状态同步<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>在同时使用侧边栏菜单（<code>MkMenu</code>）与历史导航（前进后退）时，我们需要实现<strong>双向同步</strong>：
+- 点击侧边栏 $\rightarrow$ 历史导航记录页面，并切换页面。
+- 点击历史导航（前进/后退）或头像菜单 $\rightarrow$ 侧边栏菜单的高亮选中状态自动随之更新（并在跳转到隐藏页面时自动清空选中状态）。</p>
+<p>以下提供了一个完整运行的最佳实践示例代码：</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">PySide6.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QApplication</span><span class="p">,</span> <span class="n">QLabel</span><span class="p">,</span> <span class="n">QVBoxLayout</span><span class="p">,</span> <span class="n">QWidget</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">PySide6.QtGui</span><span class="w"> </span><span class="kn">import</span> <span class="n">QIcon</span>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">monkeyqt</span><span class="w"> </span><span class="kn">import</span> <span class="n">MkWindow</span><span class="p">,</span> <span class="n">MkButton</span>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="k">class</span><span class="w"> </span><span class="nc">AppDemo</span><span class="p">(</span><span class="n">MkWindow</span><span class="p">):</span>
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>        <span class="c1"># 实例化并使用 &#39;antigravity&#39; 预设</span>
-</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">use_custom_title_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">preset</span><span class="o">=</span><span class="s2">&quot;antigravity&quot;</span><span class="p">)</span>
-</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>
-</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="s2">&quot;Antigravity 极客窗口&quot;</span><span class="p">)</span>
-</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="mi">700</span><span class="p">,</span> <span class="mi">450</span><span class="p">)</span>
-</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>
-</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>        <span class="c1"># 1. 中心主面板        central_widget = QWidget()</span>
-</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>        <span class="n">layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">(</span><span class="n">central_widget</span><span class="p">)</span>
-</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>        <span class="n">layout</span><span class="o">.</span><span class="n">setContentsMargins</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span>
-</span><span id="__span-3-17"><a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>        <span class="n">layout</span><span class="o">.</span><span class="n">setSpacing</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
-</span><span id="__span-3-18"><a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>
-</span><span id="__span-3-19"><a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>        <span class="n">title_lbl</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;🚀 欢迎使用 Antigravity 主题窗口&quot;</span><span class="p">)</span>
-</span><span id="__span-3-20"><a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a>        <span class="n">title_lbl</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;color: #cdd6f4; font-size: 20px; font-weight: bold;&quot;</span><span class="p">)</span>
-</span><span id="__span-3-21"><a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a>        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">title_lbl</span><span class="p">)</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">PySide6.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QApplication</span><span class="p">,</span> <span class="n">QWidget</span><span class="p">,</span> <span class="n">QVBoxLayout</span><span class="p">,</span> <span class="n">QHBoxLayout</span><span class="p">,</span> <span class="n">QLabel</span><span class="p">,</span> <span class="n">QStackedWidget</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">PySide6.QtCore</span><span class="w"> </span><span class="kn">import</span> <span class="n">Qt</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="kn">from</span><span class="w"> </span><span class="nn">monkeyqt</span><span class="w"> </span><span class="kn">import</span> <span class="n">MkWindow</span><span class="p">,</span> <span class="n">MkMenu</span><span class="p">,</span> <span class="n">MkMessage</span><span class="p">,</span> <span class="n">use_theme</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="k">class</span><span class="w"> </span><span class="nc">ModernAppDemo</span><span class="p">(</span><span class="n">MkWindow</span><span class="p">):</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>            <span class="n">use_custom_title_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>            <span class="n">preset</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">,</span>
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>            <span class="n">sidebar_full_height</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="c1"># 侧边栏全高</span>
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>        <span class="p">)</span>
+</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="s2">&quot;导航同步与极简按钮测试&quot;</span><span class="p">)</span>
+</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="mi">1100</span><span class="p">,</span> <span class="mi">750</span><span class="p">)</span>
+</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>
+</span><span id="__span-3-17"><a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>        <span class="c1"># 1. 左右侧主要布局</span>
+</span><span id="__span-3-18"><a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">central_widget</span> <span class="o">=</span> <span class="n">QWidget</span><span class="p">()</span>
+</span><span id="__span-3-19"><a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">main_layout</span> <span class="o">=</span> <span class="n">QHBoxLayout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">central_widget</span><span class="p">)</span>
+</span><span id="__span-3-20"><a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">main_layout</span><span class="o">.</span><span class="n">setContentsMargins</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+</span><span id="__span-3-21"><a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">main_layout</span><span class="o">.</span><span class="n">setSpacing</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 </span><span id="__span-3-22"><a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a>
-</span><span id="__span-3-23"><a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a>        <span class="n">desc_lbl</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;这是一个完全自定义的无边框窗口，支持缩放、圆角、窗口阴影和多套预设。&quot;</span> <span class="p">))</span>
-</span><span id="__span-3-24"><a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a>        <span class="n">desc_lbl</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;color: #a6adc8; font-size: 14px;&quot;</span><span class="p">)</span>
-</span><span id="__span-3-25"><a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a>        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">desc_lbl</span><span class="p">)</span>
-</span><span id="__span-3-26"><a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a>
-</span><span id="__span-3-27"><a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a>        <span class="c1"># 添加一些按钮来测试交互</span>
-</span><span id="__span-3-28"><a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a>        <span class="n">btn_layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">()</span>
-</span><span id="__span-3-29"><a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a>        <span class="n">presets</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;default&quot;</span><span class="p">,</span> <span class="s2">&quot;shadcn&quot;</span><span class="p">,</span> <span class="s2">&quot;ida&quot;</span><span class="p">,</span> <span class="s2">&quot;sunlogin&quot;</span><span class="p">,</span> <span class="s2">&quot;soda&quot;</span><span class="p">,</span> <span class="s2">&quot;antigravity&quot;</span><span class="p">]</span>
-</span><span id="__span-3-30"><a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a>        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">presets</span><span class="p">:</span>
-</span><span id="__span-3-31"><a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a>            <span class="n">btn</span> <span class="o">=</span> <span class="n">MkButton</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;切换至主题预设: </span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;info&quot;</span> <span class="k">if</span> <span class="n">p</span> <span class="o">==</span> <span class="s2">&quot;default&quot;</span> <span class="k">else</span> <span class="s2">&quot;primary&quot;</span><span class="p">)</span>
-</span><span id="__span-3-32"><a id="__codelineno-3-32" name="__codelineno-3-32" href="#__codelineno-3-32"></a>            <span class="c1"># 通过 lambda 传递参数            btn.clicked.connect(lambda checked=False, name=p: self.set_preset(name))</span>
-</span><span id="__span-3-33"><a id="__codelineno-3-33" name="__codelineno-3-33" href="#__codelineno-3-33"></a>            <span class="n">btn_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">btn</span><span class="p">)</span>
-</span><span id="__span-3-34"><a id="__codelineno-3-34" name="__codelineno-3-34" href="#__codelineno-3-34"></a>
-</span><span id="__span-3-35"><a id="__codelineno-3-35" name="__codelineno-3-35" href="#__codelineno-3-35"></a>        <span class="n">layout</span><span class="o">.</span><span class="n">addLayout</span><span class="p">(</span><span class="n">btn_layout</span><span class="p">)</span>
-</span><span id="__span-3-36"><a id="__codelineno-3-36" name="__codelineno-3-36" href="#__codelineno-3-36"></a>        <span class="n">layout</span><span class="o">.</span><span class="n">addStretch</span><span class="p">()</span>
-</span><span id="__span-3-37"><a id="__codelineno-3-37" name="__codelineno-3-37" href="#__codelineno-3-37"></a>
-</span><span id="__span-3-38"><a id="__codelineno-3-38" name="__codelineno-3-38" href="#__codelineno-3-38"></a>        <span class="c1"># 2. 设置中心控件</span>
-</span><span id="__span-3-39"><a id="__codelineno-3-39" name="__codelineno-3-39" href="#__codelineno-3-39"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">setCentralWidget</span><span class="p">(</span><span class="n">central_widget</span><span class="p">)</span>
-</span><span id="__span-3-40"><a id="__codelineno-3-40" name="__codelineno-3-40" href="#__codelineno-3-40"></a>
-</span><span id="__span-3-41"><a id="__codelineno-3-41" name="__codelineno-3-41" href="#__codelineno-3-41"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
-</span><span id="__span-3-42"><a id="__codelineno-3-42" name="__codelineno-3-42" href="#__codelineno-3-42"></a>    <span class="n">app</span> <span class="o">=</span> <span class="n">QApplication</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span>
-</span><span id="__span-3-43"><a id="__codelineno-3-43" name="__codelineno-3-43" href="#__codelineno-3-43"></a>    <span class="n">window</span> <span class="o">=</span> <span class="n">AppDemo</span><span class="p">()</span>
-</span><span id="__span-3-44"><a id="__codelineno-3-44" name="__codelineno-3-44" href="#__codelineno-3-44"></a>    <span class="n">window</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-</span><span id="__span-3-45"><a id="__codelineno-3-45" name="__codelineno-3-45" href="#__codelineno-3-45"></a>    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">exec</span><span class="p">())</span>
+</span><span id="__span-3-23"><a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a>        <span class="c1"># 2. 侧边栏初始化</span>
+</span><span id="__span-3-24"><a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span> <span class="o">=</span> <span class="n">MkMenu</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;我的应用&quot;</span><span class="p">,</span> <span class="n">collapse_mode</span><span class="o">=</span><span class="s2">&quot;hamburger&quot;</span><span class="p">)</span>
+</span><span id="__span-3-25"><a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">add_item</span><span class="p">(</span><span class="s2">&quot;home&quot;</span><span class="p">,</span> <span class="s2">&quot;首页大厅&quot;</span><span class="p">,</span> <span class="n">icon</span><span class="o">=</span><span class="s2">&quot;house&quot;</span><span class="p">)</span>
+</span><span id="__span-3-26"><a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">add_item</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;统计看板&quot;</span><span class="p">,</span> <span class="n">icon</span><span class="o">=</span><span class="s2">&quot;chart-bar&quot;</span><span class="p">)</span>
+</span><span id="__span-3-27"><a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">add_item</span><span class="p">(</span><span class="s2">&quot;settings&quot;</span><span class="p">,</span> <span class="s2">&quot;配置中心&quot;</span><span class="p">,</span> <span class="n">icon</span><span class="o">=</span><span class="s2">&quot;gear&quot;</span><span class="p">)</span>
+</span><span id="__span-3-28"><a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">main_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span><span class="p">)</span>
+</span><span id="__span-3-29"><a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a>
+</span><span id="__span-3-30"><a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a>        <span class="c1"># 3. 内容展示区 (QStackedWidget)</span>
+</span><span id="__span-3-31"><a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">right_widget</span> <span class="o">=</span> <span class="n">QWidget</span><span class="p">()</span>
+</span><span id="__span-3-32"><a id="__codelineno-3-32" name="__codelineno-3-32" href="#__codelineno-3-32"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">right_layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">right_widget</span><span class="p">)</span>
+</span><span id="__span-3-33"><a id="__codelineno-3-33" name="__codelineno-3-33" href="#__codelineno-3-33"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">right_layout</span><span class="o">.</span><span class="n">setContentsMargins</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
+</span><span id="__span-3-34"><a id="__codelineno-3-34" name="__codelineno-3-34" href="#__codelineno-3-34"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">content_area</span> <span class="o">=</span> <span class="n">QStackedWidget</span><span class="p">()</span>
+</span><span id="__span-3-35"><a id="__codelineno-3-35" name="__codelineno-3-35" href="#__codelineno-3-35"></a>
+</span><span id="__span-3-36"><a id="__codelineno-3-36" name="__codelineno-3-36" href="#__codelineno-3-36"></a>        <span class="c1"># 创建各个内容页面并设置 ObjectName（使 enable_titlebar_extras 能够正确映射）</span>
+</span><span id="__span-3-37"><a id="__codelineno-3-37" name="__codelineno-3-37" href="#__codelineno-3-37"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">page_home</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_page</span><span class="p">(</span><span class="s2">&quot;🏠 这里是主页大厅&quot;</span><span class="p">,</span> <span class="s2">&quot;#409eff&quot;</span><span class="p">)</span>
+</span><span id="__span-3-38"><a id="__codelineno-3-38" name="__codelineno-3-38" href="#__codelineno-3-38"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">page_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_page</span><span class="p">(</span><span class="s2">&quot;📊 统计看板详情数据&quot;</span><span class="p">,</span> <span class="s2">&quot;#67c23a&quot;</span><span class="p">)</span>
+</span><span id="__span-3-39"><a id="__codelineno-3-39" name="__codelineno-3-39" href="#__codelineno-3-39"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">page_settings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_page</span><span class="p">(</span><span class="s2">&quot;⚙️ 应用程序系统设置&quot;</span><span class="p">,</span> <span class="s2">&quot;#e6a23c&quot;</span><span class="p">)</span>
+</span><span id="__span-3-40"><a id="__codelineno-3-40" name="__codelineno-3-40" href="#__codelineno-3-40"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">page_profile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_page</span><span class="p">(</span><span class="s2">&quot;👤 个人中心（模拟假数据）&quot;</span><span class="p">,</span> <span class="s2">&quot;#5b8ff9&quot;</span><span class="p">)</span>
+</span><span id="__span-3-41"><a id="__codelineno-3-41" name="__codelineno-3-41" href="#__codelineno-3-41"></a>
+</span><span id="__span-3-42"><a id="__codelineno-3-42" name="__codelineno-3-42" href="#__codelineno-3-42"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">page_home</span><span class="o">.</span><span class="n">setObjectName</span><span class="p">(</span><span class="s2">&quot;home&quot;</span><span class="p">)</span>
+</span><span id="__span-3-43"><a id="__codelineno-3-43" name="__codelineno-3-43" href="#__codelineno-3-43"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">page_data</span><span class="o">.</span><span class="n">setObjectName</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">)</span>
+</span><span id="__span-3-44"><a id="__codelineno-3-44" name="__codelineno-3-44" href="#__codelineno-3-44"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">page_settings</span><span class="o">.</span><span class="n">setObjectName</span><span class="p">(</span><span class="s2">&quot;settings&quot;</span><span class="p">)</span>
+</span><span id="__span-3-45"><a id="__codelineno-3-45" name="__codelineno-3-45" href="#__codelineno-3-45"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">page_profile</span><span class="o">.</span><span class="n">setObjectName</span><span class="p">(</span><span class="s2">&quot;profile&quot;</span><span class="p">)</span>
+</span><span id="__span-3-46"><a id="__codelineno-3-46" name="__codelineno-3-46" href="#__codelineno-3-46"></a>
+</span><span id="__span-3-47"><a id="__codelineno-3-47" name="__codelineno-3-47" href="#__codelineno-3-47"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">content_area</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">page_home</span><span class="p">)</span>
+</span><span id="__span-3-48"><a id="__codelineno-3-48" name="__codelineno-3-48" href="#__codelineno-3-48"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">content_area</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">page_data</span><span class="p">)</span>
+</span><span id="__span-3-49"><a id="__codelineno-3-49" name="__codelineno-3-49" href="#__codelineno-3-49"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">content_area</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">page_settings</span><span class="p">)</span>
+</span><span id="__span-3-50"><a id="__codelineno-3-50" name="__codelineno-3-50" href="#__codelineno-3-50"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">content_area</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">page_profile</span><span class="p">)</span>
+</span><span id="__span-3-51"><a id="__codelineno-3-51" name="__codelineno-3-51" href="#__codelineno-3-51"></a>
+</span><span id="__span-3-52"><a id="__codelineno-3-52" name="__codelineno-3-52" href="#__codelineno-3-52"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">right_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">content_area</span><span class="p">,</span> <span class="n">stretch</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-3-53"><a id="__codelineno-3-53" name="__codelineno-3-53" href="#__codelineno-3-53"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">main_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">right_widget</span><span class="p">,</span> <span class="n">stretch</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-3-54"><a id="__codelineno-3-54" name="__codelineno-3-54" href="#__codelineno-3-54"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">setCentralWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">central_widget</span><span class="p">)</span>
+</span><span id="__span-3-55"><a id="__codelineno-3-55" name="__codelineno-3-55" href="#__codelineno-3-55"></a>
+</span><span id="__span-3-56"><a id="__codelineno-3-56" name="__codelineno-3-56" href="#__codelineno-3-56"></a>        <span class="c1"># 4. 一键启用标题栏扩展（隐藏背景，仅图标模式）</span>
+</span><span id="__span-3-57"><a id="__codelineno-3-57" name="__codelineno-3-57" href="#__codelineno-3-57"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">enable_titlebar_extras</span><span class="p">(</span>
+</span><span id="__span-3-58"><a id="__codelineno-3-58" name="__codelineno-3-58" href="#__codelineno-3-58"></a>            <span class="n">avatar</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-3-59"><a id="__codelineno-3-59" name="__codelineno-3-59" href="#__codelineno-3-59"></a>            <span class="n">history_nav</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-3-60"><a id="__codelineno-3-60" name="__codelineno-3-60" href="#__codelineno-3-60"></a>            <span class="n">user_name</span><span class="o">=</span><span class="s2">&quot;落花不写码&quot;</span><span class="p">,</span>
+</span><span id="__span-3-61"><a id="__codelineno-3-61" name="__codelineno-3-61" href="#__codelineno-3-61"></a>            <span class="n">subtitle</span><span class="o">=</span><span class="s2">&quot;PySide6 开发者&quot;</span><span class="p">,</span>
+</span><span id="__span-3-62"><a id="__codelineno-3-62" name="__codelineno-3-62" href="#__codelineno-3-62"></a>            <span class="n">nav_icon_only</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="c1"># 启用无底色纯图标模式</span>
+</span><span id="__span-3-63"><a id="__codelineno-3-63" name="__codelineno-3-63" href="#__codelineno-3-63"></a>            <span class="n">avatar_actions</span><span class="o">=</span><span class="p">[</span>
+</span><span id="__span-3-64"><a id="__codelineno-3-64" name="__codelineno-3-64" href="#__codelineno-3-64"></a>                <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;profile&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="s2">&quot;个人主页&quot;</span><span class="p">,</span> <span class="s2">&quot;icon&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">},</span>
+</span><span id="__span-3-65"><a id="__codelineno-3-65" name="__codelineno-3-65" href="#__codelineno-3-65"></a>                <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;logout&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="s2">&quot;安全登出&quot;</span><span class="p">,</span> <span class="s2">&quot;icon&quot;</span><span class="p">:</span> <span class="s2">&quot;sign-out&quot;</span><span class="p">,</span> <span class="s2">&quot;separator_before&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+</span><span id="__span-3-66"><a id="__codelineno-3-66" name="__codelineno-3-66" href="#__codelineno-3-66"></a>            <span class="p">]</span>
+</span><span id="__span-3-67"><a id="__codelineno-3-67" name="__codelineno-3-67" href="#__codelineno-3-67"></a>        <span class="p">)</span>
+</span><span id="__span-3-68"><a id="__codelineno-3-68" name="__codelineno-3-68" href="#__codelineno-3-68"></a>
+</span><span id="__span-3-69"><a id="__codelineno-3-69" name="__codelineno-3-69" href="#__codelineno-3-69"></a>        <span class="c1"># 5. 连接信号</span>
+</span><span id="__span-3-70"><a id="__codelineno-3-70" name="__codelineno-3-70" href="#__codelineno-3-70"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">itemClicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">on_menu_clicked</span><span class="p">)</span>
+</span><span id="__span-3-71"><a id="__codelineno-3-71" name="__codelineno-3-71" href="#__codelineno-3-71"></a>
+</span><span id="__span-3-72"><a id="__codelineno-3-72" name="__codelineno-3-72" href="#__codelineno-3-72"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">titlebar_avatar</span><span class="p">:</span>
+</span><span id="__span-3-73"><a id="__codelineno-3-73" name="__codelineno-3-73" href="#__codelineno-3-73"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">titlebar_avatar</span><span class="o">.</span><span class="n">actionTriggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_on_avatar_action</span><span class="p">)</span>
+</span><span id="__span-3-74"><a id="__codelineno-3-74" name="__codelineno-3-74" href="#__codelineno-3-74"></a>
+</span><span id="__span-3-75"><a id="__codelineno-3-75" name="__codelineno-3-75" href="#__codelineno-3-75"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">titlebar_history_nav</span><span class="p">:</span>
+</span><span id="__span-3-76"><a id="__codelineno-3-76" name="__codelineno-3-76" href="#__codelineno-3-76"></a>            <span class="c1"># 监听历史导航页的切换，同步高亮侧边栏</span>
+</span><span id="__span-3-77"><a id="__codelineno-3-77" name="__codelineno-3-77" href="#__codelineno-3-77"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">titlebar_history_nav</span><span class="o">.</span><span class="n">pageChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_on_page_changed</span><span class="p">)</span>
+</span><span id="__span-3-78"><a id="__codelineno-3-78" name="__codelineno-3-78" href="#__codelineno-3-78"></a>
+</span><span id="__span-3-79"><a id="__codelineno-3-79" name="__codelineno-3-79" href="#__codelineno-3-79"></a>        <span class="c1"># 默认高亮第一项</span>
+</span><span id="__span-3-80"><a id="__codelineno-3-80" name="__codelineno-3-80" href="#__codelineno-3-80"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">set_active</span><span class="p">(</span><span class="s2">&quot;home&quot;</span><span class="p">)</span>
+</span><span id="__span-3-81"><a id="__codelineno-3-81" name="__codelineno-3-81" href="#__codelineno-3-81"></a>
+</span><span id="__span-3-82"><a id="__codelineno-3-82" name="__codelineno-3-82" href="#__codelineno-3-82"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">on_menu_clicked</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_id</span><span class="p">):</span>
+</span><span id="__span-3-83"><a id="__codelineno-3-83" name="__codelineno-3-83" href="#__codelineno-3-83"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;点击侧边栏菜单切换页面，并记入历史轨迹&quot;&quot;&quot;</span>
+</span><span id="__span-3-84"><a id="__codelineno-3-84" name="__codelineno-3-84" href="#__codelineno-3-84"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">titlebar_history_nav</span><span class="p">:</span>
+</span><span id="__span-3-85"><a id="__codelineno-3-85" name="__codelineno-3-85" href="#__codelineno-3-85"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">titlebar_history_nav</span><span class="o">.</span><span class="n">navigate</span><span class="p">(</span><span class="n">item_id</span><span class="p">)</span>
+</span><span id="__span-3-86"><a id="__codelineno-3-86" name="__codelineno-3-86" href="#__codelineno-3-86"></a>
+</span><span id="__span-3-87"><a id="__codelineno-3-87" name="__codelineno-3-87" href="#__codelineno-3-87"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_on_page_changed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">page_id</span><span class="p">):</span>
+</span><span id="__span-3-88"><a id="__codelineno-3-88" name="__codelineno-3-88" href="#__codelineno-3-88"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;前进后退按钮被触发时，同步侧边栏菜单状态&quot;&quot;&quot;</span>
+</span><span id="__span-3-89"><a id="__codelineno-3-89" name="__codelineno-3-89" href="#__codelineno-3-89"></a>        <span class="n">found</span> <span class="o">=</span> <span class="kc">False</span>
+</span><span id="__span-3-90"><a id="__codelineno-3-90" name="__codelineno-3-90" href="#__codelineno-3-90"></a>        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">_all_items</span><span class="p">:</span>
+</span><span id="__span-3-91"><a id="__codelineno-3-91" name="__codelineno-3-91" href="#__codelineno-3-91"></a>            <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">item_id</span> <span class="o">==</span> <span class="n">page_id</span><span class="p">:</span>
+</span><span id="__span-3-92"><a id="__codelineno-3-92" name="__codelineno-3-92" href="#__codelineno-3-92"></a>                <span class="n">item</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-3-93"><a id="__codelineno-3-93" name="__codelineno-3-93" href="#__codelineno-3-93"></a>                <span class="k">for</span> <span class="n">other</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">_all_items</span><span class="p">:</span>
+</span><span id="__span-3-94"><a id="__codelineno-3-94" name="__codelineno-3-94" href="#__codelineno-3-94"></a>                    <span class="k">if</span> <span class="n">other</span> <span class="o">!=</span> <span class="n">item</span><span class="p">:</span>
+</span><span id="__span-3-95"><a id="__codelineno-3-95" name="__codelineno-3-95" href="#__codelineno-3-95"></a>                        <span class="n">other</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+</span><span id="__span-3-96"><a id="__codelineno-3-96" name="__codelineno-3-96" href="#__codelineno-3-96"></a>                <span class="n">found</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span id="__span-3-97"><a id="__codelineno-3-97" name="__codelineno-3-97" href="#__codelineno-3-97"></a>                <span class="k">break</span>
+</span><span id="__span-3-98"><a id="__codelineno-3-98" name="__codelineno-3-98" href="#__codelineno-3-98"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">found</span><span class="p">:</span>
+</span><span id="__span-3-99"><a id="__codelineno-3-99" name="__codelineno-3-99" href="#__codelineno-3-99"></a>            <span class="c1"># 切换到了不在侧边栏中的界面（如个人主页），清除侧边栏的所有选中状态</span>
+</span><span id="__span-3-100"><a id="__codelineno-3-100" name="__codelineno-3-100" href="#__codelineno-3-100"></a>            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">_all_items</span><span class="p">:</span>
+</span><span id="__span-3-101"><a id="__codelineno-3-101" name="__codelineno-3-101" href="#__codelineno-3-101"></a>                <span class="n">item</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+</span><span id="__span-3-102"><a id="__codelineno-3-102" name="__codelineno-3-102" href="#__codelineno-3-102"></a>
+</span><span id="__span-3-103"><a id="__codelineno-3-103" name="__codelineno-3-103" href="#__codelineno-3-103"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_on_avatar_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action_id</span><span class="p">):</span>
+</span><span id="__span-3-104"><a id="__codelineno-3-104" name="__codelineno-3-104" href="#__codelineno-3-104"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;处理头像菜单选择&quot;&quot;&quot;</span>
+</span><span id="__span-3-105"><a id="__codelineno-3-105" name="__codelineno-3-105" href="#__codelineno-3-105"></a>        <span class="k">if</span> <span class="n">action_id</span> <span class="o">==</span> <span class="s2">&quot;profile&quot;</span><span class="p">:</span>
+</span><span id="__span-3-106"><a id="__codelineno-3-106" name="__codelineno-3-106" href="#__codelineno-3-106"></a>            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">titlebar_history_nav</span><span class="p">:</span>
+</span><span id="__span-3-107"><a id="__codelineno-3-107" name="__codelineno-3-107" href="#__codelineno-3-107"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">titlebar_history_nav</span><span class="o">.</span><span class="n">navigate</span><span class="p">(</span><span class="s2">&quot;profile&quot;</span><span class="p">)</span>
+</span><span id="__span-3-108"><a id="__codelineno-3-108" name="__codelineno-3-108" href="#__codelineno-3-108"></a>        <span class="k">elif</span> <span class="n">action_id</span> <span class="o">==</span> <span class="s2">&quot;logout&quot;</span><span class="p">:</span>
+</span><span id="__span-3-109"><a id="__codelineno-3-109" name="__codelineno-3-109" href="#__codelineno-3-109"></a>            <span class="n">MkMessage</span><span class="o">.</span><span class="n">success</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;已安全登出账户&quot;</span><span class="p">)</span>
+</span><span id="__span-3-110"><a id="__codelineno-3-110" name="__codelineno-3-110" href="#__codelineno-3-110"></a>
+</span><span id="__span-3-111"><a id="__codelineno-3-111" name="__codelineno-3-111" href="#__codelineno-3-111"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_create_page</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">color</span><span class="p">):</span>
+</span><span id="__span-3-112"><a id="__codelineno-3-112" name="__codelineno-3-112" href="#__codelineno-3-112"></a>        <span class="n">page</span> <span class="o">=</span> <span class="n">QWidget</span><span class="p">()</span>
+</span><span id="__span-3-113"><a id="__codelineno-3-113" name="__codelineno-3-113" href="#__codelineno-3-113"></a>        <span class="n">lay</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
+</span><span id="__span-3-114"><a id="__codelineno-3-114" name="__codelineno-3-114" href="#__codelineno-3-114"></a>        <span class="n">lbl</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+</span><span id="__span-3-115"><a id="__codelineno-3-115" name="__codelineno-3-115" href="#__codelineno-3-115"></a>        <span class="n">lbl</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;color: </span><span class="si">{</span><span class="n">color</span><span class="si">}</span><span class="s2">; font-size: 24px; font-weight: bold;&quot;</span><span class="p">)</span>
+</span><span id="__span-3-116"><a id="__codelineno-3-116" name="__codelineno-3-116" href="#__codelineno-3-116"></a>        <span class="n">lbl</span><span class="o">.</span><span class="n">setAlignment</span><span class="p">(</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignCenter</span><span class="p">)</span>
+</span><span id="__span-3-117"><a id="__codelineno-3-117" name="__codelineno-3-117" href="#__codelineno-3-117"></a>        <span class="n">lay</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">lbl</span><span class="p">)</span>
+</span><span id="__span-3-118"><a id="__codelineno-3-118" name="__codelineno-3-118" href="#__codelineno-3-118"></a>        <span class="k">return</span> <span class="n">page</span>
+</span><span id="__span-3-119"><a id="__codelineno-3-119" name="__codelineno-3-119" href="#__codelineno-3-119"></a>
+</span><span id="__span-3-120"><a id="__codelineno-3-120" name="__codelineno-3-120" href="#__codelineno-3-120"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+</span><span id="__span-3-121"><a id="__codelineno-3-121" name="__codelineno-3-121" href="#__codelineno-3-121"></a>    <span class="n">app</span> <span class="o">=</span> <span class="n">QApplication</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span>
+</span><span id="__span-3-122"><a id="__codelineno-3-122" name="__codelineno-3-122" href="#__codelineno-3-122"></a>    <span class="n">use_theme</span><span class="p">(</span><span class="s2">&quot;默认&quot;</span><span class="p">)</span>
+</span><span id="__span-3-123"><a id="__codelineno-3-123" name="__codelineno-3-123" href="#__codelineno-3-123"></a>    <span class="n">window</span> <span class="o">=</span> <span class="n">ModernAppDemo</span><span class="p">()</span>
+</span><span id="__span-3-124"><a id="__codelineno-3-124" name="__codelineno-3-124" href="#__codelineno-3-124"></a>    <span class="n">window</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</span><span id="__span-3-125"><a id="__codelineno-3-125" name="__codelineno-3-125" href="#__codelineno-3-125"></a>    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">exec</span><span class="p">())</span>
 </span></code></pre></div>
 
 
