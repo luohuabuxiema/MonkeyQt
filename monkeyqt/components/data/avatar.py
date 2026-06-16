@@ -46,7 +46,7 @@ class MkAvatar(QLabel):
         if self._image_path and os.path.exists(self._image_path):
             pixmap = QPixmap(self._image_path)
             # Scale and crop to fill
-            scaled = pixmap.scaled(self.size(), Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
+            scaled = pixmap.scaled(self.rect().size(), Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
             
             # Center the pixmap
             x = (self.width() - scaled.width()) // 2

@@ -317,6 +317,16 @@ def _iter_widgets(root: QWidget | None):
         yield from app.allWidgets()
 
 
+def _has_themed_ancestor(widget: QWidget) -> bool:
+    current = widget.parentWidget()
+    while current is not None:
+        p_name = current.__class__.__name__
+        if p_name.startswith("Themed") or p_name in {"MkAvatarMenu", "MkHistoryNavigation", "ThemedAvatarMenu", "ThemedHistoryNavigation"}:
+            return True
+        current = current.parentWidget()
+    return False
+
+
 def _should_skip(widget: QWidget, *, include_disabled: bool = True) -> bool:
     name = widget.__class__.__name__
     object_name = widget.objectName()
@@ -344,6 +354,7 @@ def _should_skip(widget: QWidget, *, include_disabled: bool = True) -> bool:
     }
     return (
         (include_disabled and _is_theme_disabled(widget))
+        or _has_themed_ancestor(widget)
         or _is_multicombobox_internal(widget)
         or (
             _combobox_owner(widget) is not None
@@ -354,6 +365,7 @@ def _should_skip(widget: QWidget, *, include_disabled: bool = True) -> bool:
         or name == "MkThemeSelector"
         or name.startswith("Themed")
         or name in paint_only_widgets
+        or name in {"MkAvatarMenu", "MkHistoryNavigation", "ThemedAvatarMenu", "ThemedHistoryNavigation"}
     )
 
 

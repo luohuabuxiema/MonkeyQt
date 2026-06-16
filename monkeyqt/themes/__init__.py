@@ -47,6 +47,8 @@ from .components.data_table import ThemedDataTable
 from .components.image_compare import ThemedImageCompare
 from .components.image_split import ThemedImageSplit
 from .components.window import ThemedTitleBar, ThemedWindowShell
+from .components.history_nav import ThemedHistoryNavigation
+from .components.avatar_menu import ThemedAvatarMenu
 from .components.theme_selector import MkThemeSelector
 
 __all__ = [
@@ -88,5 +90,7 @@ __all__ = [
     "ThemedImageSplit",
     "ThemedTitleBar",
     "ThemedWindowShell",
+    "ThemedHistoryNavigation",
+    "ThemedAvatarMenu",
     "MkThemeSelector",
 ]

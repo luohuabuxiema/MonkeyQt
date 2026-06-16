@@ -733,13 +733,188 @@ class MkWindow(QMainWindow):
             pixmap = icon.pixmap(32, 32)
             self.titlebar.set_icon(pixmap)
 
+    # ── Titlebar Extras: Avatar Menu + History Navigation ──────────
+
+    def enable_titlebar_extras(
+        self,
+        avatar=True,
+        history_nav=True,
+        user_name="",
+        subtitle="",
+        avatar_image="",
+        avatar_size=32,
+        avatar_actions=None,
+        animation_duration=280,
+        stack=None,
+        nav_icon_only=False,
+    ):
+        """One-line API to add avatar menu and forward/back navigation to the title bar.
+
+        Args:
+            avatar: Whether to show the clickable avatar menu.
+            history_nav: Whether to show forward/back navigation buttons.
+            user_name: Display name shown in the avatar dropdown header.
+            subtitle: Subtitle shown below the user name in the dropdown.
+            avatar_image: Path to the avatar image file.
+            avatar_size: Avatar circle size in pixels.
+            avatar_actions: List of action dicts for the dropdown menu.
+            animation_duration: Page slide animation duration in ms.
+            stack: Explicit QStackedWidget to bind. If None, auto-detected.
+            nav_icon_only: Whether the forward/back buttons should be icon-only (no background/hover effects).
+        """
+        if not self.use_custom_title_bar or not self.titlebar:
+            return
+
+        from monkeyqt.themes.components.avatar_menu import ThemedAvatarMenu
+        from monkeyqt.themes.components.history_nav import ThemedHistoryNavigation
+        from monkeyqt.components.navigation.history import MkAnimatedStackedWidget
+
+        self.disable_titlebar_extras()
+
+        target_stack = stack
+        if target_stack is None and self.user_central_widget:
+            target_stack = self._find_stacked_widget(self.user_central_widget)
+
+        if target_stack is not None and not isinstance(target_stack, MkAnimatedStackedWidget):
+            target_stack = self._upgrade_to_animated_stack(target_stack, animation_duration)
+
+        self._extras_stack = target_stack
+
+        self.titlebar_history_nav = None
+        if history_nav and target_stack is not None:
+            pages = self._build_page_map(target_stack)
+            current_page = self._current_page_id(target_stack, pages)
+            self.titlebar_history_nav = ThemedHistoryNavigation(
+                stack=target_stack,
+                pages=pages,
+                initial_page=current_page,
+                animation_duration=animation_duration,
+                icon_only=nav_icon_only,
+                parent=self.titlebar.center_container,
+            )
+            self.titlebar.center_layout.insertWidget(0, self.titlebar_history_nav)
+
+        self.titlebar_avatar = None
+        if avatar:
+            default_actions = avatar_actions or [
+                {"id": "profile", "text": "个人主页", "icon": "user"},
+                {"id": "settings", "text": "设置", "icon": "gear"},
+            ]
+            self.titlebar_avatar = ThemedAvatarMenu(
+                text=user_name[:2] if user_name else "U",
+                image_path=avatar_image,
+                shape="circle",
+                size=avatar_size,
+                user_name=user_name,
+                subtitle=subtitle,
+                actions=default_actions,
+                parent=self.titlebar.center_container,
+            )
+            self.titlebar.center_layout.addStretch()
+            self.titlebar.center_layout.addWidget(self.titlebar_avatar)
+            self.titlebar.center_layout.addSpacing(8)
+
+        self._titlebar_extras_enabled = True
+
+    def disable_titlebar_extras(self):
+        """Remove avatar and history navigation from the title bar."""
+        if not getattr(self, "_titlebar_extras_enabled", False):
+            return
+
+        if getattr(self, "titlebar_history_nav", None) is not None:
+            self.titlebar.center_layout.removeWidget(self.titlebar_history_nav)
+            self.titlebar_history_nav.setParent(None)
+            self.titlebar_history_nav.deleteLater()
+            self.titlebar_history_nav = None
+
+        if getattr(self, "titlebar_avatar", None) is not None:
+            self.titlebar.center_layout.removeWidget(self.titlebar_avatar)
+            self.titlebar_avatar.setParent(None)
+            self.titlebar_avatar.deleteLater()
+            self.titlebar_avatar = None
+
+        for i in range(self.titlebar.center_layout.count() - 1, -1, -1):
+            item = self.titlebar.center_layout.itemAt(i)
+            if item and item.spacerItem():
+                self.titlebar.center_layout.removeItem(item)
+
+        self._titlebar_extras_enabled = False
+        self._extras_stack = None
+
+    @staticmethod
+    def _find_stacked_widget(widget):
+        from PySide6.QtWidgets import QStackedWidget
+        for child in widget.findChildren(QStackedWidget):
+            return child
+        return None
+
+    @staticmethod
+    def _upgrade_to_animated_stack(old_stack, animation_duration=280):
+        from monkeyqt.components.navigation.history import MkAnimatedStackedWidget
+
+        parent_layout = old_stack.parentWidget().layout() if old_stack.parentWidget() else None
+        if parent_layout is None:
+            return old_stack
+
+        index = -1
+        for i in range(parent_layout.count()):
+            item = parent_layout.itemAt(i)
+            if item and item.widget() is old_stack:
+                index = i
+                break
+
+        if index < 0:
+            return old_stack
+
+        new_stack = MkAnimatedStackedWidget(
+            parent=old_stack.parentWidget(),
+            animation_duration=animation_duration,
+        )
+
+        widgets = []
+        while old_stack.count() > 0:
+            w = old_stack.widget(0)
+            old_stack.removeWidget(w)
+            widgets.append(w)
+
+        for w in widgets:
+            new_stack.addWidget(w)
+        if widgets:
+            new_stack.setCurrentIndex(0)
+
+        new_stack.setObjectName(old_stack.objectName())
+        new_stack.setStyleSheet(old_stack.styleSheet())
+
+        parent_layout.removeWidget(old_stack)
+        parent_layout.insertWidget(index, new_stack, stretch=1)
+        old_stack.setParent(None)
+        old_stack.deleteLater()
+
+        return new_stack
+
+    @staticmethod
+    def _build_page_map(stack):
+        pages = {}
+        for i in range(stack.count()):
+            w = stack.widget(i)
+            name = w.objectName() or f"page_{i}"
+            pages[name] = w
+        return pages
+
+    @staticmethod
+    def _current_page_id(stack, pages):
+        current = stack.currentWidget()
+        for page_id, w in pages.items():
+            if w is current:
+                return page_id
+        return None
+
     def changeEvent(self, event: QEvent):
         super().changeEvent(event)
         if event.type() == QEvent.Type.WindowStateChange:
             if self.titlebar:
                 self.titlebar.update_buttons()
-            
-            # If maximized, remove margins and drop shadow
+
             if self.use_custom_title_bar:
                 if self.isMaximized():
                     self.shadow_layout.setContentsMargins(0, 0, 0, 0)
@@ -763,7 +938,7 @@ class MkWindow(QMainWindow):
         if not self.use_custom_title_bar or self.isMaximized():
             super().mousePressEvent(event)
             return
-            
+
         if event.button() == Qt.MouseButton.LeftButton:
             direction = self._get_resize_direction(event.position().toPoint())
             if direction != RESIZE_NONE:
@@ -772,21 +947,19 @@ class MkWindow(QMainWindow):
                 self._resize_start_geometry = self.geometry()
                 event.accept()
                 return
-                
+
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event: QMouseEvent):
         if not self.use_custom_title_bar or self.isMaximized():
             super().mouseMoveEvent(event)
             return
-            
-        # 1. Handle actual resizing drag
+
         if self._resizing_dir != RESIZE_NONE:
             delta = event.globalPosition().toPoint() - self._resize_start_pos
             geom = QRect(self._resize_start_geometry)
             min_size = self.minimumSizeHint()
-            
-            # Horizontal resize
+
             if self._resizing_dir & RESIZE_LEFT:
                 new_width = geom.width() - delta.x()
                 if new_width >= min_size.width():
@@ -795,8 +968,7 @@ class MkWindow(QMainWindow):
                 new_width = geom.width() + delta.x()
                 if new_width >= min_size.width():
                     geom.setRight(geom.right() + delta.x())
-                    
-            # Vertical resize
+
             if self._resizing_dir & RESIZE_TOP:
                 new_height = geom.height() - delta.y()
                 if new_height >= min_size.height():
@@ -805,15 +977,14 @@ class MkWindow(QMainWindow):
                 new_height = geom.height() + delta.y()
                 if new_height >= min_size.height():
                     geom.setBottom(geom.bottom() + delta.y())
-                    
+
             self.setGeometry(geom)
             event.accept()
             return
-            
-        # 2. Update hover cursor icon depending on position
+
         direction = self._get_resize_direction(event.position().toPoint())
         self._update_cursor(direction)
-        
+
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent):
@@ -822,7 +993,6 @@ class MkWindow(QMainWindow):
         super().mouseReleaseEvent(event)
 
     def leaveEvent(self, event):
-        # Reset cursor when mouse leaves the window to prevent stale resize cursors
         if self._resizing_dir == RESIZE_NONE:
             self.unsetCursor()
         super().leaveEvent(event)
@@ -832,18 +1002,17 @@ class MkWindow(QMainWindow):
         w = self.width()
         h = self.height()
         margin = self._resize_margin
-        
-        # Detect margins
-        if pos.x() < margin + 10:  # account for shadow margin
+
+        if pos.x() < margin + 10:
             direction |= RESIZE_LEFT
         elif pos.x() > w - margin - 10:
             direction |= RESIZE_RIGHT
-            
+
         if pos.y() < margin + 10:
             direction |= RESIZE_TOP
         elif pos.y() > h - margin - 10:
             direction |= RESIZE_BOTTOM
-            
+
         return direction
 
     def _update_cursor(self, direction: int):

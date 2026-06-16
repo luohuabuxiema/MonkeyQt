@@ -7,6 +7,8 @@ from .components.navigation.breadcrumb import MkBreadcrumb
 from .components.navigation.tabs import MkTabs
 from .components.navigation.pagination import MkPagination
 from .components.navigation.dropdown import MkDropdown
+from .components.navigation.history import MkAnimatedStackedWidget, MkHistoryNavigation
+from .components.navigation.avatar_menu import MkAvatarMenu
 
 # Form
 from .components.form.switch import MkSwitch
@@ -77,6 +79,8 @@ from .themes import (
     ThemedImageSplit,
     ThemedTitleBar,
     ThemedWindowShell,
+    ThemedHistoryNavigation,
+    ThemedAvatarMenu,
 )
 
 __version__ = "0.1.0"
@@ -90,6 +94,9 @@ __all__ = [
     "MkTabs",
     "MkPagination",
     "MkDropdown",
+    "MkAnimatedStackedWidget",
+    "MkHistoryNavigation",
+    "MkAvatarMenu",
     "MkSwitch",
     "MkSlider",
     "MkDatePicker",
@@ -151,4 +158,6 @@ __all__ = [
     "ThemedImageSplit",
     "ThemedTitleBar",
     "ThemedWindowShell",
+    "ThemedHistoryNavigation",
+    "ThemedAvatarMenu",
 ]
