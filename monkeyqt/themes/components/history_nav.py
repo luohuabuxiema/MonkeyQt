@@ -50,7 +50,6 @@ class ThemedHistoryNavigation(MkHistoryNavigation):
     def _make_button(self, tooltip: str) -> QPushButton:
         """Override to create theme-aware buttons."""
         button = QPushButton(self)
-        button.setToolTip(tooltip)
         button.setCursor(Qt.CursorShape.PointingHandCursor)
         button.setFixedSize(QSize(30, 30))
         # Styling is applied via set_theme_style, not inline QSS

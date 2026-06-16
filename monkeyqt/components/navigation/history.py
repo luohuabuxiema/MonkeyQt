@@ -149,7 +149,6 @@ class MkHistoryNavigation(QWidget):
 
     def _make_button(self, tooltip: str) -> QPushButton:
         button = QPushButton(self)
-        button.setToolTip(tooltip)
         button.setCursor(Qt.CursorShape.PointingHandCursor)
         button.setFixedSize(QSize(30, 30))
         button.setStyleSheet(
