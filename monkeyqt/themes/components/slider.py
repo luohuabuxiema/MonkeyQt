@@ -179,7 +179,9 @@ class ThemedSlider(QWidget):
     def _on_value_changed(self, value):
         display_text = self._formatter(value) if self._formatter else str(value)
         self.value_label.setText(display_text)
-        QToolTip.showText(QCursor.pos(), display_text, self.slider)
+        # 仅在用户手动操作（滑块被按下）时显示 value 气泡提示
+        if self.slider.isSliderDown():
+            QToolTip.showText(QCursor.pos(), display_text, self.slider)
         self.valueChanged.emit(value)
 
     def setRange(self, min_val, max_val):
