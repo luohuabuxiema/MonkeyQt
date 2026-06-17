@@ -2000,36 +2000,11 @@ def _apply_window_container(widget: QWidget, p: dict[str, str | int | bool]) -> 
     content_host = getattr(window, "_content_host", None)
     if content_host is not None:
         _save_widget(content_host)
-        
-        # Calculate dynamic border radius for content_host to prevent background leak
-        ch_radius = 8
-        is_max = False
-        sidebar_full = False
-        if window is not None:
-            if hasattr(window, "_border_radius"):
-                ch_radius = window._border_radius
-            if hasattr(window, "isMaximized"):
-                is_max = window.isMaximized()
-            if hasattr(window, "_sidebar_full_height"):
-                sidebar_full = window._sidebar_full_height
-                
-        if is_max:
-            ch_radius = 0
-            
-        tl_radius = 0 if sidebar_full else ch_radius
-        tr_radius = ch_radius
-        bl_radius = 0 if sidebar_full else ch_radius
-        br_radius = ch_radius
-
         content_host.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         content_host.setStyleSheet(f"""
             QWidget#MkWindowContentHost {{
                 background-color: {p['bg']};
                 border: none;
-                border-top-left-radius: {tl_radius}px;
-                border-top-right-radius: {tr_radius}px;
-                border-bottom-left-radius: {bl_radius}px;
-                border-bottom-right-radius: {br_radius}px;
             }}
         """)
 
@@ -2047,27 +2022,11 @@ def _apply_window_container(widget: QWidget, p: dict[str, str | int | bool]) -> 
     sidebar_host = getattr(window, "_sidebar_host", None)
     if sidebar_host is not None:
         _save_widget(sidebar_host)
-        
-        sb_radius = 8
-        is_max = False
-        if window is not None:
-            if hasattr(window, "_border_radius"):
-                sb_radius = window._border_radius
-            if hasattr(window, "isMaximized"):
-                is_max = window.isMaximized()
-                
-        if is_max:
-            sb_radius = 0
-            
         sidebar_host.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         sidebar_host.setStyleSheet(f"""
             QWidget#MkWindowSidebarHost {{
                 background-color: {p['sidebar_surface']};
                 border: none;
-                border-top-left-radius: {sb_radius}px;
-                border-bottom-left-radius: {sb_radius}px;
-                border-top-right-radius: 0px;
-                border-bottom-right-radius: 0px;
             }}
         """)
 
@@ -2136,25 +2095,6 @@ def _force_titlebar_theme(widget: QWidget, p: dict[str, str | int | bool]) -> No
     widget.setObjectName("MkTitleBar")
     widget.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
-    # Calculate rounded corners dynamically
-    window = widget.window()
-    radius = 8
-    is_max = False
-    sidebar_full = False
-    if window is not None:
-        if hasattr(window, "_border_radius"):
-            radius = window._border_radius
-        if hasattr(window, "isMaximized"):
-            is_max = window.isMaximized()
-        if hasattr(window, "_sidebar_full_height"):
-            sidebar_full = window._sidebar_full_height
-            
-    if is_max:
-        radius = 0
-        
-    tl_radius = 0 if sidebar_full else radius
-    tr_radius = radius
-
     if hasattr(widget, "_mk_theme_original_apply_theme_colors"):
         widget._mk_theme_original_apply_theme_colors()
     elif hasattr(widget, "apply_theme_colors"):
@@ -2165,8 +2105,6 @@ def _force_titlebar_theme(widget: QWidget, p: dict[str, str | int | bool]) -> No
             background-color: {surface};
             color: {text};
             border: none;
-            border-top-left-radius: {tl_radius}px;
-            border-top-right-radius: {tr_radius}px;
         }}
         QWidget#MkTitleBar QLabel {{
             color: {text};
@@ -2202,22 +2140,18 @@ def _force_titlebar_theme(widget: QWidget, p: dict[str, str | int | bool]) -> No
             if btn is None:
                 continue
             _save_widget(btn)
-            
-            # Apply border-top-right-radius to close button if Windows style is used
-            btn_tr_radius = tr_radius if (is_close and getattr(widget, "_button_style", "windows") == "windows") else 0
-            
             btn.setStyleSheet(f"""
                 QPushButton {{
                     background-color: transparent;
                     border: none;
                     border-radius: 0px;
-                    border-top-right-radius: {btn_tr_radius}px;
                     color: {text};
+                    margin: 0px;
+                    padding: 0px;
                 }}
                 QPushButton:hover {{
                     background-color: {'#E81123' if is_close else hover};
                     color: {'#FFFFFF' if is_close else text};
-                    border-top-right-radius: {btn_tr_radius}px;
                 }}
             """)
 
