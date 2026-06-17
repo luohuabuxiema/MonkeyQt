@@ -225,11 +225,31 @@ class MkTitleBar(QWidget):
         text = self._text_color if self._text_color else "#000000"
         border_css = f"border-bottom: {self._border_bottom};" if hasattr(self, '_border_bottom') and self._border_bottom else ""
         
+        # Calculate rounded corners
+        radius = 8
+        is_max = False
+        sidebar_full = False
+        if self.parent_window:
+            if hasattr(self.parent_window, "_border_radius"):
+                radius = self.parent_window._border_radius
+            if hasattr(self.parent_window, "isMaximized"):
+                is_max = self.parent_window.isMaximized()
+            if hasattr(self.parent_window, "_sidebar_full_height"):
+                sidebar_full = self.parent_window._sidebar_full_height
+        
+        if is_max:
+            radius = 0
+            
+        tl_radius = 0 if sidebar_full else radius
+        tr_radius = radius
+
         self.setObjectName("MkTitleBar")
         self.setStyleSheet(f"""
             QWidget#MkTitleBar {{
                 background-color: {bg};
                 color: {text};
+                border-top-left-radius: {tl_radius}px;
+                border-top-right-radius: {tr_radius}px;
                 {border_css}
             }}
             QLabel {{
@@ -295,6 +315,14 @@ class MkTitleBar(QWidget):
             self.btn_max.setIconSize(QSize(12, 12))
             self.btn_close.setIconSize(QSize(12, 12))
             
+            # Get parent window's radius for the close button
+            radius = 8
+            if self.parent_window:
+                if hasattr(self.parent_window, "_border_radius"):
+                    radius = self.parent_window._border_radius
+                if hasattr(self.parent_window, "isMaximized") and self.parent_window.isMaximized():
+                    radius = 0
+
             self.btn_min.setStyleSheet(f"""
                 QPushButton {{ background-color: transparent; border: none; border-radius: 0px; }}
                 QPushButton:hover {{ background-color: {hover_color}; }}
@@ -304,8 +332,19 @@ class MkTitleBar(QWidget):
                 QPushButton:hover {{ background-color: {hover_color}; }}
             """)
             self.btn_close.setStyleSheet(f"""
-                QPushButton {{ background-color: transparent; border: none; border-radius: 0px; }}
-                QPushButton:hover {{ background-color: #e81123; color: #ffffff; }}
+                QPushButton {{ 
+                    background-color: transparent; 
+                    border: none; 
+                    border-top-right-radius: {radius}px;
+                    border-bottom-right-radius: 0px;
+                    border-top-left-radius: 0px;
+                    border-bottom-left-radius: 0px;
+                }}
+                QPushButton:hover {{ 
+                    background-color: #e81123; 
+                    color: #ffffff; 
+                    border-top-right-radius: {radius}px;
+                }}
             """)
 
     def rebuild_layout(self):
@@ -611,6 +650,9 @@ class MkWindow(QMainWindow):
                 border-radius: {radius}px;
             }}
         """)
+        
+        if self.titlebar:
+            self.titlebar.apply_theme_colors()
 
     def setCentralWidget(self, widget: QWidget):
         if not self.use_custom_title_bar:

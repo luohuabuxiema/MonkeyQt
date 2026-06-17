@@ -2088,6 +2088,25 @@ def _force_titlebar_theme(widget: QWidget, p: dict[str, str | int | bool]) -> No
     widget.setObjectName("MkTitleBar")
     widget.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
+    # Calculate rounded corners dynamically
+    window = widget.window()
+    radius = 8
+    is_max = False
+    sidebar_full = False
+    if window is not None:
+        if hasattr(window, "_border_radius"):
+            radius = window._border_radius
+        if hasattr(window, "isMaximized"):
+            is_max = window.isMaximized()
+        if hasattr(window, "_sidebar_full_height"):
+            sidebar_full = window._sidebar_full_height
+            
+    if is_max:
+        radius = 0
+        
+    tl_radius = 0 if sidebar_full else radius
+    tr_radius = radius
+
     if hasattr(widget, "_mk_theme_original_apply_theme_colors"):
         widget._mk_theme_original_apply_theme_colors()
     elif hasattr(widget, "apply_theme_colors"):
@@ -2098,6 +2117,8 @@ def _force_titlebar_theme(widget: QWidget, p: dict[str, str | int | bool]) -> No
             background-color: {surface};
             color: {text};
             border: none;
+            border-top-left-radius: {tl_radius}px;
+            border-top-right-radius: {tr_radius}px;
         }}
         QWidget#MkTitleBar QLabel {{
             color: {text};
@@ -2133,16 +2154,22 @@ def _force_titlebar_theme(widget: QWidget, p: dict[str, str | int | bool]) -> No
             if btn is None:
                 continue
             _save_widget(btn)
+            
+            # Apply border-top-right-radius to close button if Windows style is used
+            btn_tr_radius = tr_radius if (is_close and getattr(widget, "_button_style", "windows") == "windows") else 0
+            
             btn.setStyleSheet(f"""
                 QPushButton {{
                     background-color: transparent;
                     border: none;
                     border-radius: 0px;
+                    border-top-right-radius: {btn_tr_radius}px;
                     color: {text};
                 }}
                 QPushButton:hover {{
                     background-color: {'#E81123' if is_close else hover};
                     color: {'#FFFFFF' if is_close else text};
+                    border-top-right-radius: {btn_tr_radius}px;
                 }}
             """)
 
