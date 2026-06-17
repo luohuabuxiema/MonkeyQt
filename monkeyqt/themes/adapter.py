@@ -1966,6 +1966,13 @@ def _apply_window_container(widget: QWidget, p: dict[str, str | int | bool]) -> 
     window = widget.window()
     native_corners = bool(getattr(window, "_mk_theme_uses_native_corners", False))
     radius = 0 if native_corners else min(int(p["radius_px"]), 8)
+    
+    # Respect custom border-radius set on the window
+    if window is not None and hasattr(window, "_border_radius"):
+        radius = window._border_radius
+        if native_corners or window.isMaximized():
+            radius = 0
+
     border = _control_border(p) if p["glass"] else str(p["border"])
     border_rule = "none" if native_corners else f"{p['border_width']} solid {border}"
     surface = _control_surface(p, floating=True) if p["glass"] else str(p["chrome_surface"] if p["dark"] else p["bg"])
@@ -1993,11 +2000,36 @@ def _apply_window_container(widget: QWidget, p: dict[str, str | int | bool]) -> 
     content_host = getattr(window, "_content_host", None)
     if content_host is not None:
         _save_widget(content_host)
+        
+        # Calculate dynamic border radius for content_host to prevent background leak
+        ch_radius = 8
+        is_max = False
+        sidebar_full = False
+        if window is not None:
+            if hasattr(window, "_border_radius"):
+                ch_radius = window._border_radius
+            if hasattr(window, "isMaximized"):
+                is_max = window.isMaximized()
+            if hasattr(window, "_sidebar_full_height"):
+                sidebar_full = window._sidebar_full_height
+                
+        if is_max:
+            ch_radius = 0
+            
+        tl_radius = 0 if sidebar_full else ch_radius
+        tr_radius = ch_radius
+        bl_radius = 0 if sidebar_full else ch_radius
+        br_radius = ch_radius
+
         content_host.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         content_host.setStyleSheet(f"""
             QWidget#MkWindowContentHost {{
                 background-color: {p['bg']};
                 border: none;
+                border-top-left-radius: {tl_radius}px;
+                border-top-right-radius: {tr_radius}px;
+                border-bottom-left-radius: {bl_radius}px;
+                border-bottom-right-radius: {br_radius}px;
             }}
         """)
 
@@ -2005,21 +2037,37 @@ def _apply_window_container(widget: QWidget, p: dict[str, str | int | bool]) -> 
     if desktop_shell is not None:
         _save_widget(desktop_shell)
         desktop_shell.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        desktop_shell.setStyleSheet(f"""
-            QWidget#MkWindowDesktopShell {{
-                background-color: {p['bg']};
+        desktop_shell.setStyleSheet("""
+            QWidget#MkWindowDesktopShell {
+                background: transparent;
                 border: none;
-            }}
+            }
         """)
 
     sidebar_host = getattr(window, "_sidebar_host", None)
     if sidebar_host is not None:
         _save_widget(sidebar_host)
+        
+        sb_radius = 8
+        is_max = False
+        if window is not None:
+            if hasattr(window, "_border_radius"):
+                sb_radius = window._border_radius
+            if hasattr(window, "isMaximized"):
+                is_max = window.isMaximized()
+                
+        if is_max:
+            sb_radius = 0
+            
         sidebar_host.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         sidebar_host.setStyleSheet(f"""
             QWidget#MkWindowSidebarHost {{
                 background-color: {p['sidebar_surface']};
                 border: none;
+                border-top-left-radius: {sb_radius}px;
+                border-bottom-left-radius: {sb_radius}px;
+                border-top-right-radius: 0px;
+                border-bottom-right-radius: 0px;
             }}
         """)
 
