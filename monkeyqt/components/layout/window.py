@@ -8,8 +8,8 @@ from PySide6.QtWidgets import (
     QPushButton, QLineEdit, QGraphicsDropShadowEffect, QFrame,
     QSizePolicy, QSpacerItem
 )
-from PySide6.QtCore import Qt, QPoint, Signal, QEvent, QRect, QSize
-from PySide6.QtGui import QFont, QCursor, QColor, QMouseEvent, QIcon
+from PySide6.QtCore import Qt, QPoint, Signal, QEvent, QRect, QSize, QRectF
+from PySide6.QtGui import QFont, QCursor, QColor, QMouseEvent, QIcon, QPainterPath, QRegion
 from monkeyqt.core.icons import MkPhosphorIcon
 
 class MkTitleBar(QWidget):
