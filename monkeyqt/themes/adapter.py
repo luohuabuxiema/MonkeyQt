@@ -3392,13 +3392,18 @@ def _apply_menu(widget: QWidget, p: dict[str, str | int | bool]) -> None:
         widget.header_collapse_btn.setIconSize(QSize(20, 20))
         
         widget.header_collapse_btn.setStyleSheet(f"""
-            QPushButton#SidebarHeaderCollapseButton {{
+            QPushButton {{
+                background: transparent;
                 background-color: transparent;
                 border: none;
                 border-radius: 8px;
+                padding: 0px;
+                margin: 0px;
             }}
-            QPushButton#SidebarHeaderCollapseButton:hover {{
+            QPushButton:hover {{
+                background: {p['surface_muted']};
                 background-color: {p['surface_muted']};
+                border: none;
             }}
         """)
 

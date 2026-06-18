@@ -319,12 +319,16 @@ class MkMenu(QWidget):
         self.header_collapse_btn.setIconSize(QSize(20, 20))
         self.header_collapse_btn.setStyleSheet("""
             QPushButton {
+                background: transparent;
                 background-color: transparent;
                 border: none;
                 border-radius: 8px;
+                padding: 0px;
+                margin: 0px;
             }
             QPushButton:hover {
                 background-color: #f5f7fa;
+                border: none;
             }
         """)
         self.header_collapse_btn.clicked.connect(self.toggle_collapse)
