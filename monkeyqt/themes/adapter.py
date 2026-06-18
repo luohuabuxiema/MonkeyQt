@@ -3388,8 +3388,7 @@ def _apply_menu(widget: QWidget, p: dict[str, str | int | bool]) -> None:
         widget.header_collapse_btn.setFixedSize(36, 36)
         
         color = p['sidebar_text']
-        hover_color = p['sidebar_accent']
-        widget.header_collapse_btn.setIcon(MkPhosphorIcon.get_icon("sidebar", color, hover_color, 20))
+        widget.header_collapse_btn.setIcon(MkPhosphorIcon.get_icon("sidebar", color, size=20))
         widget.header_collapse_btn.setIconSize(QSize(20, 20))
         
         widget.header_collapse_btn.setStyleSheet(f"""
