@@ -1966,13 +1966,6 @@ def _apply_window_container(widget: QWidget, p: dict[str, str | int | bool]) -> 
     window = widget.window()
     native_corners = bool(getattr(window, "_mk_theme_uses_native_corners", False))
     radius = 0 if native_corners else min(int(p["radius_px"]), 8)
-    
-    # Respect custom border-radius set on the window
-    if window is not None and hasattr(window, "_border_radius"):
-        radius = window._border_radius
-        if native_corners or window.isMaximized():
-            radius = 0
-
     border = _control_border(p) if p["glass"] else str(p["border"])
     border_rule = "none" if native_corners else f"{p['border_width']} solid {border}"
     surface = _control_surface(p, floating=True) if p["glass"] else str(p["chrome_surface"] if p["dark"] else p["bg"])
@@ -2012,11 +2005,11 @@ def _apply_window_container(widget: QWidget, p: dict[str, str | int | bool]) -> 
     if desktop_shell is not None:
         _save_widget(desktop_shell)
         desktop_shell.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        desktop_shell.setStyleSheet("""
-            QWidget#MkWindowDesktopShell {
-                background: transparent;
+        desktop_shell.setStyleSheet(f"""
+            QWidget#MkWindowDesktopShell {{
+                background-color: {p['bg']};
                 border: none;
-            }
+            }}
         """)
 
     sidebar_host = getattr(window, "_sidebar_host", None)
@@ -2146,8 +2139,6 @@ def _force_titlebar_theme(widget: QWidget, p: dict[str, str | int | bool]) -> No
                     border: none;
                     border-radius: 0px;
                     color: {text};
-                    margin: 0px;
-                    padding: 0px;
                 }}
                 QPushButton:hover {{
                     background-color: {'#E81123' if is_close else hover};
@@ -3293,7 +3284,7 @@ def _apply_menu(widget: QWidget, p: dict[str, str | int | bool]) -> None:
     widget.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
     widget.setStyleSheet(f"""
         MkMenu {{
-            background-color: {p['sidebar_surface']};
+            background-color: transparent;
             border: none;
         }}
     """)

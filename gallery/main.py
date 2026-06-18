@@ -1158,6 +1158,7 @@ class MainGallery(MkWindow):
         
         # --- 1. 初始化侧边栏 ---
         self.sidebar = MkMenu()
+        self.sidebar.set_border_right("none")
         
         # 添加带图标的菜单 (这里省略了真实的 QIcon，用文字代替演示层级)
         sub_basic = self.sidebar.add_submenu("🎯 基础组件")
