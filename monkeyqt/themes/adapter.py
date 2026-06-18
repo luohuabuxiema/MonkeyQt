@@ -344,6 +344,7 @@ def _should_skip(widget: QWidget, *, include_disabled: bool = True) -> bool:
         "MkWindowRootWidget",
         "SidebarHamburgerButton",
         "SidebarCollapseButton",
+        "SidebarHeaderCollapseButton",
         "SidebarTitleArea",
         "SidebarContentWidget",
         "SubMenuTitleButton",
