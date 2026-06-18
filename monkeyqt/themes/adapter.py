@@ -3378,6 +3378,30 @@ def _apply_menu(widget: QWidget, p: dict[str, str | int | bool]) -> None:
             }}
         """)
 
+    if hasattr(widget, "header_collapse_btn"):
+        from PySide6.QtCore import QSize
+        from monkeyqt.core.icons import MkPhosphorIcon
+        _save_widget(widget.header_collapse_btn)
+        widget.header_collapse_btn.setProperty("_mk_theme_fixed_width", 36)
+        widget.header_collapse_btn.setProperty("_mk_theme_fixed_height", 36)
+        widget.header_collapse_btn.setFixedSize(36, 36)
+        
+        color = p['sidebar_text']
+        hover_color = p['sidebar_accent']
+        widget.header_collapse_btn.setIcon(MkPhosphorIcon.get_icon("sidebar", color, hover_color, 20))
+        widget.header_collapse_btn.setIconSize(QSize(20, 20))
+        
+        widget.header_collapse_btn.setStyleSheet(f"""
+            QPushButton#SidebarHeaderCollapseButton {{
+                background-color: transparent;
+                border: none;
+                border-radius: 8px;
+            }}
+            QPushButton#SidebarHeaderCollapseButton:hover {{
+                background-color: {p['surface_muted']};
+            }}
+        """)
+
     for child in widget.findChildren(QWidget):
         child_name = child.__class__.__name__
         if child_name == "MkMenuItem":

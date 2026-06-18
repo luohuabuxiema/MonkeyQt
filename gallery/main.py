@@ -1157,7 +1157,7 @@ class MainGallery(MkWindow):
         main_layout.setSpacing(0)
         
         # --- 1. 初始化侧边栏 ---
-        self.sidebar = MkMenu()
+        self.sidebar = MkMenu(title="MonkeyQt", icon="play", collapse_mode="header")
         self.sidebar.set_border_right("none")
         
         # 添加带图标的菜单 (这里省略了真实的 QIcon，用文字代替演示层级)

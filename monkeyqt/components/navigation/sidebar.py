@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QScrollArea, QFrame, QSizePolicy
-from PySide6.QtCore import Qt, Signal, Property, QPropertyAnimation, QEasingCurve
+from PySide6.QtCore import Qt, Signal, Property, QPropertyAnimation, QEasingCurve, QSize
 from PySide6.QtGui import QIcon, QPainter, QColor
 from monkeyqt.core.icons import MkPhosphorIcon, PHOSPHOR_ICONS
 
@@ -309,6 +309,29 @@ class MkMenu(QWidget):
             }
         """)
         self.hamburger_btn.clicked.connect(self.toggle_collapse)
+        
+        # 头部折叠按钮
+        self.header_collapse_btn = QPushButton()
+        self.header_collapse_btn.setObjectName("SidebarHeaderCollapseButton")
+        self.header_collapse_btn.setFixedSize(36, 36)
+        self.header_collapse_btn.setCursor(Qt.PointingHandCursor)
+        self.header_collapse_btn.setIcon(MkPhosphorIcon.get_icon("sidebar", "#606266", size=20))
+        self.header_collapse_btn.setIconSize(QSize(20, 20))
+        self.header_collapse_btn.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                border: none;
+                border-radius: 8px;
+            }
+            QPushButton:hover {
+                background-color: #f5f7fa;
+            }
+        """)
+        self.header_collapse_btn.clicked.connect(self.toggle_collapse)
+        
+        if self._collapse_mode != "header":
+            self.header_collapse_btn.hide()
+            
         if self._collapse_mode == "hamburger":
             self.title_layout.addWidget(self.hamburger_btn)
             # 汉堡包模式下，如果仍有图标，放到汉堡包后面
@@ -321,6 +344,22 @@ class MkMenu(QWidget):
                 self.title_layout.addSpacing(8) # 图标与文字的间距
             else:
                 self.icon_label = QLabel() # placeholder
+                self.icon_label.hide()
+        elif self._collapse_mode == "header":
+            self.hamburger_btn.hide()
+            self.title_layout.setContentsMargins(20, 0, 16, 0)
+            self.icon_label = QLabel()
+            self.icon_label.setFixedWidth(24)
+            self.icon_label.setAlignment(Qt.AlignCenter)
+            self.icon_label.setStyleSheet("font-size: 18px;")
+            if self._icon:
+                if self._icon in PHOSPHOR_ICONS:
+                    self.icon_label.setPixmap(MkPhosphorIcon.get_pixmap(self._icon, "#303133", 20))
+                else:
+                    self.icon_label.setText(self._icon)
+                self.title_layout.addWidget(self.icon_label)
+                self.title_layout.addSpacing(12)
+            else:
                 self.icon_label.hide()
         else:
             self.hamburger_btn.hide()
@@ -350,6 +389,10 @@ class MkMenu(QWidget):
         self.title_layout.addWidget(self.title_label)
         
         self.title_layout.addStretch()
+        
+        if self._collapse_mode == "header":
+            self.title_layout.addWidget(self.header_collapse_btn)
+            
         self.inner_layout.addWidget(self.title_area)
         
         # --- 2. 核心滚动区域 ---
@@ -424,7 +467,7 @@ class MkMenu(QWidget):
             }
         """)
         self.collapse_btn.clicked.connect(self.toggle_collapse)
-        if self._collapse_mode == "hamburger":
+        if self._collapse_mode in ("hamburger", "header"):
             self.collapse_btn.hide()
 
     def resizeEvent(self, event):
@@ -502,6 +545,8 @@ class MkMenu(QWidget):
             self.icon_label.hide()
             if self._collapse_mode == "floating":
                 self.collapse_btn.setText("❯")
+            elif self._collapse_mode == "header":
+                self.title_layout.setContentsMargins(14, 0, 14, 0)
         else:
             self.title_label.show()
             if self._collapse_mode == "floating":
@@ -509,6 +554,10 @@ class MkMenu(QWidget):
                 if self._icon or self._collapse_mode == "floating":
                     self.icon_label.show()
                 self.collapse_btn.setText("❮")
+            elif self._collapse_mode == "header":
+                if self._icon:
+                    self.icon_label.show()
+                self.title_layout.setContentsMargins(20, 0, 16, 0)
             else:
                 if self._icon:
                     self.icon_label.show()
