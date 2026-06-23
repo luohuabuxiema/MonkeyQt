@@ -8,8 +8,8 @@ from PySide6.QtWidgets import (
     QPushButton, QLineEdit, QGraphicsDropShadowEffect, QFrame,
     QSizePolicy, QSpacerItem
 )
-from PySide6.QtCore import Qt, QPoint, Signal, QEvent, QRect, QSize, QRectF
-from PySide6.QtGui import QFont, QCursor, QColor, QMouseEvent, QIcon, QPainterPath, QRegion
+from PySide6.QtCore import Qt, QPoint, Signal, QEvent, QRect, QSize
+from PySide6.QtGui import QFont, QCursor, QColor, QMouseEvent, QIcon
 from monkeyqt.core.icons import MkPhosphorIcon
 
 class MkTitleBar(QWidget):
@@ -296,15 +296,15 @@ class MkTitleBar(QWidget):
             self.btn_close.setIconSize(QSize(12, 12))
             
             self.btn_min.setStyleSheet(f"""
-                QPushButton {{ background-color: transparent; border: none; border-radius: 0px; margin: 0px; padding: 0px; }}
+                QPushButton {{ background-color: transparent; border: none; border-radius: 0px; }}
                 QPushButton:hover {{ background-color: {hover_color}; }}
             """)
             self.btn_max.setStyleSheet(f"""
-                QPushButton {{ background-color: transparent; border: none; border-radius: 0px; margin: 0px; padding: 0px; }}
+                QPushButton {{ background-color: transparent; border: none; border-radius: 0px; }}
                 QPushButton:hover {{ background-color: {hover_color}; }}
             """)
             self.btn_close.setStyleSheet(f"""
-                QPushButton {{ background-color: transparent; border: none; border-radius: 0px; margin: 0px; padding: 0px; }}
+                QPushButton {{ background-color: transparent; border: none; border-radius: 0px; }}
                 QPushButton:hover {{ background-color: #e81123; color: #ffffff; }}
             """)
 
@@ -500,14 +500,6 @@ class MkWindow(QMainWindow):
         self._desktop_shell = QWidget(self.container_frame)
         self._desktop_shell.setObjectName("MkWindowDesktopShell")
         self._desktop_shell.setProperty("mkDesktopShell", True)
-        
-        # Add dynamic resize event override to update mask
-        orig_resize = self._desktop_shell.resizeEvent
-        def desktop_shell_resize(event):
-            orig_resize(event)
-            self._update_rounded_mask()
-        self._desktop_shell.resizeEvent = desktop_shell_resize
-
         self._desktop_shell_layout = QHBoxLayout(self._desktop_shell)
         self._desktop_shell_layout.setContentsMargins(0, 0, 0, 0)
         self._desktop_shell_layout.setSpacing(0)
@@ -619,25 +611,6 @@ class MkWindow(QMainWindow):
                 border-radius: {radius}px;
             }}
         """)
-        
-        if self.titlebar:
-            self.titlebar.apply_theme_colors()
-            
-        self._update_rounded_mask()
-
-    def _update_rounded_mask(self):
-        if not self.use_custom_title_bar or not self._desktop_shell:
-            return
-            
-        radius = 0 if self.isMaximized() else self._border_radius
-        if radius <= 0 or self._desktop_shell.width() <= 1 or self._desktop_shell.height() <= 1:
-            self._desktop_shell.clearMask()
-            return
-            
-        path = QPainterPath()
-        rect = QRectF(0.0, 0.0, float(self._desktop_shell.width()), float(self._desktop_shell.height()))
-        path.addRoundedRect(rect, float(radius), float(radius))
-        self._desktop_shell.setMask(QRegion(path.toFillPolygon().toPolygon()))
 
     def setCentralWidget(self, widget: QWidget):
         if not self.use_custom_title_bar:
@@ -657,6 +630,7 @@ class MkWindow(QMainWindow):
             widget.setMouseTracking(True)
             self._content_host_layout.addWidget(widget, stretch=1)
             self._apply_sidebar_layout()
+            self._auto_detect_and_name_right_widget()
 
     def _apply_sidebar_layout(self):
         if not self.use_custom_title_bar or not self.user_central_widget:
@@ -734,6 +708,32 @@ class MkWindow(QMainWindow):
                 return candidate, layout, index
 
         return None
+
+    def _auto_detect_and_name_right_widget(self):
+        if not self.user_central_widget:
+            return
+            
+        layout = self.user_central_widget.layout()
+        if not layout:
+            return
+            
+        sidebar = None
+        sidebar_info = self._find_sidebar_candidate(self.user_central_widget)
+        if sidebar_info:
+            sidebar = sidebar_info[0]
+            
+        for index in range(layout.count()):
+            item = layout.itemAt(index).widget()
+            if item and item != sidebar:
+                if not item.objectName():
+                    item.setObjectName("MainRightWidget")
+                    from monkeyqt.themes.adapter import apply_monkeyqt_theme
+                    from monkeyqt.themes.engine import ThemeEngine
+                    if ThemeEngine.current_theme() != ThemeEngine.DEFAULT_THEME_NAME:
+                        item.setProperty("_mk_auto_theme_name", None)
+                        apply_monkeyqt_theme(item)
+                        item.setProperty("_mk_auto_theme_name", ThemeEngine.current_theme())
+                break
 
     def eventFilter(self, watched, event):
         if (

@@ -29,7 +29,7 @@ class ThemeEngine(QObject):
         "name": DEFAULT_THEME_NAME,
         "type": "Built-in",
         "keywords": "MonkeyQt built-in default component styling",
-        "--bg": "#FFFFFF",
+        "--bg": "#F5F7FA",
         "--fg": "#1E293B",
         "--primary": "#409EFF",
         "--secondary": "#F8FAFC",
@@ -221,10 +221,12 @@ class ThemeEngine(QObject):
 
         # Style-specific corrections for PySide widgets.
         if cls._name_has(name, ["dark", "oled", "cyberpunk", "hud", "sci-fi", "retro-futurism", "chromatic"]):
-            fg = "#F8FAFC"
+            if not t.get("--fg"):
+                fg = "#F8FAFC"
             if bg.upper() in ("#FFFFFF", "#F5F5F5"):
                 bg = "#050816"
-            border = "#334155"
+            if not t.get("--border"):
+                border = "#334155"
         if cls._name_has(name, ["dark mode", "oled"]):
             bg = "#121212"
             fg = "#F5F5F5"
@@ -259,19 +261,32 @@ class ThemeEngine(QObject):
         radius = f"{parse_px(t.get('--radius', '6px'), 6, 0, 32)}px"
         border_width = f"{parse_px(t.get('--border-width', '1px'), 1, 1, 5)}px"
 
-        surface = "#FFFFFF"
-        if cls._looks_dark(bg):
-            surface = lighten(bg, 0.10)
-            text_muted = "#94A3B8"
-            surface_muted = lighten(bg, 0.16)
-            if cls._name_has(name, ["dark mode", "oled"]):
-                surface = "#242424"
-                text_muted = "#A6A6A6"
-                surface_muted = "#343434"
-        else:
-            surface = "#FFFFFF" if bg.upper() != "#FFFFFF" else "#F8FAFC"
-            text_muted = "#64748B"
-            surface_muted = darken(surface, 0.035)
+        surface = t.get("--surface", "")
+        if not is_color(surface):
+            if cls._looks_dark(bg):
+                surface = lighten(bg, 0.10)
+                if cls._name_has(name, ["dark mode", "oled"]):
+                    surface = "#242424"
+            else:
+                surface = "#FFFFFF" if bg.upper() != "#FFFFFF" else "#F8FAFC"
+
+        text_muted = t.get("--text-muted", "")
+        if not is_color(text_muted):
+            if cls._looks_dark(bg):
+                text_muted = "#94A3B8"
+                if cls._name_has(name, ["dark mode", "oled"]):
+                    text_muted = "#A6A6A6"
+            else:
+                text_muted = "#64748B"
+
+        surface_muted = t.get("--surface-muted", "")
+        if not is_color(surface_muted):
+            if cls._looks_dark(bg):
+                surface_muted = lighten(bg, 0.16)
+                if cls._name_has(name, ["dark mode", "oled"]):
+                    surface_muted = "#343434"
+            else:
+                surface_muted = darken(surface, 0.035)
 
         t.update({
             "--bg": qss_color(bg, "#FFFFFF"),

@@ -322,7 +322,7 @@ class TestApp(MkWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    use_theme("黏土拟态")
+    use_theme("HUD 科幻界面")
     window = TestApp()
     window.show()
     sys.exit(app.exec())

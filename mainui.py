@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QPixmap, QImage, QIcon, QFont
-from monkeyqt import MkMenu, MkWindow, MkMessage, use_theme, MkSwitch, MkSlider, MkButton, MkAvatar
+from monkeyqt import MkMenu, MkWindow, MkMessage, use_theme, MkSwitch, MkSlider, MkButton, MkAvatar, ThemeEngine
 from monkeyqt.core.icons import MkPhosphorIcon
 from core.yolo_predictor import YoloPredictor, YoloThread
 from core.camera_scanner import CameraScanner
@@ -79,7 +79,6 @@ class QuickStartApp(MkWindow):
         self.right_layout = QVBoxLayout(self.right_widget)
         self.right_layout.setContentsMargins(20, 20, 20, 20) # 给右侧内容留出舒服的边距
         self.right_layout.setSpacing(20)
-        self.right_widget.setStyleSheet("background-color: #f5f7fa;")
 
         # --- 3.1 底部放置主体内容区 (QStackedWidget) ---
         self.content_area = QStackedWidget()
@@ -537,7 +536,7 @@ class QuickStartApp(MkWindow):
 
 if __name__ == "__main__": 
     app = QApplication(sys.argv) 
-    use_theme("粗野主义")
+    use_theme("HUD 科幻界面")
     window = QuickStartApp() 
     window.show() 
     sys.exit(app.exec()) 
