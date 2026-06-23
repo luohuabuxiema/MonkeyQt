@@ -22,61 +22,17 @@ class MkImagePanel(QWidget):
 
     def get_image_rect(self):
         """
-        计算图片以 contain 模式渲染时的实际区域（独立视口缩放）。
-        返回 QRect，表示图片在面板中的渲染位置和尺寸。
+        计算图片在当前面板局部坐标系下的绘制区域。
+        根据父组件的全局 contain 矩形，减去当前面板在父组件中的 x 坐标偏移，
+        从而实现左右面板图片在拉伸与分屏时的完美对齐（静止不偏移）。
         """
-        W = self.width()
-        H = self.height()
-        if self._pixmap.isNull() or W <= 0 or H <= 0:
-            return QRect(0, 0, W, H)
-        
-        w = self._pixmap.width()
-        h = self._pixmap.height()
-        r_pixmap = w / h
-        
-        # 获取 parent 中的 W_total 和 split_ratio
-        W_total = W
-        split_ratio = 0.5
-        if isinstance(self.parent(), QWidget):
-            W_total = self.parent().width()
-            if hasattr(self.parent(), "splitRatio"):
-                split_ratio = self.parent().splitRatio
-                
-        # 计算整个组件中单个图像 contain 时的理想宽度
-        r_total = W_total / H
-        if r_total > r_pixmap:
-            ideal_w = int(H * r_pixmap)
-        else:
-            ideal_w = W_total
+        parent = self.parent()
+        if not isinstance(parent, QWidget) or not hasattr(parent, "get_image_rect"):
+            return QRect(0, 0, self.width(), self.height())
             
-        # 根据面板左右对齐，计算实际绘制宽度。
-        # 50% 分屏时左右面板常因取整相差 1-2px；若各自 contain，
-        # 右侧会算出稍高的图片。这里用父组件提供的统一宽度对齐两侧高度。
-        balanced_w = None
-        if isinstance(self.parent(), QWidget) and hasattr(self.parent(), "get_balanced_panel_width"):
-            balanced_w = self.parent().get_balanced_panel_width()
-        max_w = min(W, int(H * r_pixmap), balanced_w) if balanced_w else min(W, int(H * r_pixmap))
-        if self._align_right:
-            # 右面板：当 split_ratio > 0.5 时收缩至 0
-            if split_ratio > 0.5:
-                scale = (1.0 - split_ratio) / 0.5
-                draw_w = int(max_w * scale)
-            else:
-                draw_w = max_w
-            draw_x = 0
-        else:
-            # 左面板：当 split_ratio < 0.5 时收缩至 0
-            if split_ratio < 0.5:
-                scale = split_ratio / 0.5
-                draw_w = int(max_w * scale)
-            else:
-                draw_w = max_w
-            draw_x = W - draw_w
-            
-        draw_h = int(draw_w / r_pixmap) if draw_w > 0 else 0
-        draw_y = (H - draw_h) // 2
-        
-        return QRect(draw_x, draw_y, draw_w, draw_h)
+        parent_rect = parent.get_image_rect()
+        # self.x() 即为当前面板在父组件中的 x 坐标偏移量
+        return QRect(parent_rect.x() - self.x(), parent_rect.y(), parent_rect.width(), parent_rect.height())
 
     def paintEvent(self, event):
         W = self.width()
@@ -104,11 +60,16 @@ class MkImagePanel(QWidget):
             rect_w = text_w + 20
             rect_h = text_h + 10
             
-            # 标签悬浮在图片边缘
+            # 计算图片右边界（在局部坐标系下）
+            img_right = rect.x() + rect.width()
+            
+            # 标签悬浮在图片边缘，做边界钳制保证其永远可见且不超出当前面板
             if self._align_right:
-                label_x = rect.x() + rect.width() - rect_w - 15
+                label_x = min(self.width() - rect_w - 15, img_right - rect_w - 15)
+                label_x = max(15, label_x)
             else:
-                label_x = rect.x() + 15
+                label_x = max(15, rect.x() + 15)
+                label_x = min(self.width() - rect_w - 15, label_x)
                 
             label_y = rect.y() + 15
             
@@ -242,7 +203,10 @@ class MkSplitterHandle(QWidget):
             capsule_radius = 0
         else:
             # For other themes, use themed border and surface color
-            line_color = QColor(border_color)
+            # Use semi-transparent primary theme color for the slider line to ensure high visibility on any image
+            line_clr = QColor(primary_color)
+            line_clr.setAlpha(150)
+            line_color = line_clr
             line_width = 1.5
             capsule_bg = QColor(surface_color)
             # Add subtle opacity for modern themes
@@ -394,14 +358,14 @@ class MkImageSplit(QWidget):
         self.update_layout()
         self.update()
 
-    def get_ideal_image_width(self):
+    def get_image_rect(self):
         """
-        计算在当前组件尺寸 (W, H) 下，单个图片以 contain 模式渲染时的理想宽度。
+        计算图片在整个分屏组件中的 contain 模式渲染区域（全局唯一的对齐基准）。
         """
         W = self.width()
         H = self.height()
         if W <= 0 or H <= 0:
-            return W
+            return QRect(0, 0, W, H)
             
         pixmap = None
         if not self.left_panel._pixmap.isNull():
@@ -410,19 +374,29 @@ class MkImageSplit(QWidget):
             pixmap = self.right_panel._pixmap
             
         if pixmap is None or pixmap.isNull():
-            return W
+            return QRect(0, 0, W, H)
             
         w = pixmap.width()
         h = pixmap.height()
-        if h <= 0:
-            return W
-            
         r_pixmap = w / h
         r_total = W / H
+        
         if r_total > r_pixmap:
-            return int(H * r_pixmap)
+            draw_h = H
+            draw_w = int(H * r_pixmap)
         else:
-            return W
+            draw_w = W
+            draw_h = int(W / r_pixmap)
+            
+        draw_x = (W - draw_w) // 2
+        draw_y = (H - draw_h) // 2
+        return QRect(draw_x, draw_y, draw_w, draw_h)
+
+    def get_ideal_image_width(self):
+        """
+        计算在当前组件尺寸 (W, H) 下，单个图片以 contain 模式渲染时的理想宽度。
+        """
+        return self.get_image_rect().width()
 
     def get_balanced_panel_width(self):
         """Return a shared width when the split line is visually centered."""
@@ -459,22 +433,13 @@ class MkImageSplit(QWidget):
         # 右面板几何位置
         self.right_panel.setGeometry(split_x, 0, W - split_x, H)
         
-        # 计算图片实际渲染区域的联合边界，让手柄对齐图片内容
+        # 计算图片实际渲染区域 Rar的联合边界，让手柄对齐图片内容
         top = 0
         bottom = H
-        if not self.left_panel._pixmap.isNull() and not self.right_panel._pixmap.isNull():
-            rect_l = self.left_panel.get_image_rect()
-            rect_r = self.right_panel.get_image_rect()
-            top = min(rect_l.y(), rect_r.y())
-            bottom = max(rect_l.y() + rect_l.height(), rect_r.y() + rect_r.height())
-        elif not self.left_panel._pixmap.isNull():
-            rect = self.left_panel.get_image_rect()
-            top = rect.y()
-            bottom = rect.y() + rect.height()
-        elif not self.right_panel._pixmap.isNull():
-            rect = self.right_panel.get_image_rect()
-            top = rect.y()
-            bottom = rect.y() + rect.height()
+        if not self.left_panel._pixmap.isNull() or not self.right_panel._pixmap.isNull():
+            parent_rect = self.get_image_rect()
+            top = parent_rect.y()
+            bottom = parent_rect.y() + parent_rect.height()
             
         self.handle.set_image_bounds(top, bottom)
         
