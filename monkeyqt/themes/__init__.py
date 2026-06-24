@@ -50,6 +50,7 @@ from .components.window import ThemedTitleBar, ThemedWindowShell
 from .components.history_nav import ThemedHistoryNavigation
 from .components.avatar_menu import ThemedAvatarMenu
 from .components.theme_selector import MkThemeSelector
+from .components.console import ThemedConsole
 
 __all__ = [
     "ThemeEngine",
@@ -93,4 +94,5 @@ __all__ = [
     "ThemedHistoryNavigation",
     "ThemedAvatarMenu",
     "MkThemeSelector",
+    "ThemedConsole",
 ]

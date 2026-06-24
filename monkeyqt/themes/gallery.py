@@ -44,6 +44,7 @@ from .components.data_table import ThemedDataTable
 from .components.image_compare import ThemedImageCompare
 from .components.image_split import ThemedImageSplit
 from .components.window import ThemedWindowShell
+from .components.console import ThemedConsole
 
 
 THEME_CN_NAMES = {
@@ -601,6 +602,12 @@ class ThemeGallery(QMainWindow):
             self.tabs_demo.add_tab(tab_id, title, label)
         tabs_section.addWidget(self.tabs_demo)
 
+        # ── Console ──
+        console_section = self._make_section("控制台日志 (Console)")
+        self.console_demo = ThemedConsole()
+        self.console_demo.setFixedHeight(220)
+        console_section.addWidget(self.console_demo)
+
         # 底部留白
         self.preview_layout.addStretch()
 
@@ -677,7 +684,8 @@ class ThemeGallery(QMainWindow):
                    self.message_success, self.message_warning,
                    self.upload_demo,
                    self.breadcrumb_demo, self.pagination_demo, self.table_demo, self.data_table_demo,
-                   self.image_compare_demo, self.image_split_demo, self.window_shell_demo, self.tabs_demo]:
+                   self.image_compare_demo, self.image_split_demo, self.window_shell_demo, self.tabs_demo,
+                   self.console_demo]:
             if hasattr(w, 'set_theme_style'):
                 w.set_theme_style(name)
             elif hasattr(w, '_update_style'):
@@ -687,6 +695,14 @@ class ThemeGallery(QMainWindow):
         # 开关也需刷新
         self._safe_widget_update(self.switch_on)
         self._safe_widget_update(self.switch_off)
+
+        # 写入测试日志
+        self.console_demo.clear()
+        self.console_demo.info(f"Theme switched to: {display_name}")
+        self.console_demo.success("Initialized engine subsystems successfully.")
+        self.console_demo.warn("IO latency detected above average threshold.")
+        self.console_demo.error("Failed to connect to secondary replication node.")
+        self.console_demo.debug("Pipeline verbose diagnostics initialized.")
 
     def _safe_widget_update(self, widget):
         """Refresh normal widgets and item-view widgets without tripping PySide overloads."""

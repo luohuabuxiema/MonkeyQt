@@ -13,6 +13,7 @@ from monkeyqt import (
     MkInput, MkCaptchaWidget, MkAuthScreen, MkMessage,
     MkAvatar, MkTable, MkDataTable, MkImageCompare, MkImageSplit,
     MkTitleBar, MkWindow, MkUpload, MkComboBox, MkMultiComboBox,
+    MkConsole, ThemedConsole,
     ThemeEngine, MkThemeSelector, apply_monkeyqt_theme
 )
 
@@ -744,6 +745,61 @@ class ImageSplitGallery(QWidget):
         tip_label.setStyleSheet("color: #909399; font-size: 12px; font-style: italic;")
         layout.addWidget(tip_label)
 
+class ConsoleGallery(QWidget):
+    """控制台日志组件展示页 (MkConsole / ThemedConsole)"""
+    def __init__(self):
+        super().__init__()
+        layout = QVBoxLayout(self)
+        layout.setSpacing(20)
+        
+        title_font = QFont("Microsoft YaHei", 12, QFont.Bold)
+        
+        # 1. 标题与说明
+        label_title = QLabel("控制台日志 (Console)")
+        label_title.setFont(title_font)
+        layout.addWidget(label_title)
+        
+        desc = QLabel(
+            "一个美观且功能丰富的控制台日志输出组件。支持 68 种主题自适应、自动滚动、"
+            "一键清除、带计数指示面板、支持水平与垂直滚动，具有方便的各级别日志打印 API。"
+        )
+        desc.setStyleSheet("color: #64748b; font-size: 13px; line-height: 18px;")
+        layout.addWidget(desc)
+        
+        # 2. 实例化 ThemedConsole
+        self.console = ThemedConsole("演示控制台 / Demo Console")
+        layout.addWidget(self.console, stretch=1)
+        
+        # 3. 交互控制按钮
+        control_layout = QHBoxLayout()
+        control_layout.setSpacing(10)
+        
+        btn_info = MkButton("打印 Info", type="default")
+        btn_info.clicked.connect(lambda: self.console.info("这是一条普通系统信息。"))
+        control_layout.addWidget(btn_info)
+        
+        btn_success = MkButton("打印 Success", type="success")
+        btn_success.clicked.connect(lambda: self.console.success("恭喜，任务处理圆满成功！"))
+        control_layout.addWidget(btn_success)
+        
+        btn_warn = MkButton("打印 Warning", type="warning")
+        btn_warn.clicked.connect(lambda: self.console.warn("警告：检测到显存使用率超过 90%！"))
+        control_layout.addWidget(btn_warn)
+        
+        btn_error = MkButton("打印 Error", type="danger")
+        btn_error.clicked.connect(lambda: self.console.error("错误：模型文件加载失败，IO 读取异常。"))
+        control_layout.addWidget(btn_error)
+        
+        btn_debug = MkButton("打印 Debug", type="info")
+        btn_debug.clicked.connect(lambda: self.console.debug("调试信息: layer_index=12, tensor_shape=[1, 3, 640, 640]"))
+        control_layout.addWidget(btn_debug)
+        
+        layout.addLayout(control_layout)
+        
+        # Seed with initial logs
+        self.console.info("欢迎使用 MonkeyQt 控制台组件。")
+        self.console.success("系统所有核心组件加载完毕。")
+
 class WindowGallery(QWidget):
     """自定义窗口与标题栏展示页"""
     def __init__(self):
@@ -1180,6 +1236,7 @@ class MainGallery(MkWindow):
         self.sidebar.add_submenu_item(sub_data, "datatable", "DataTable 数据表格")
         self.sidebar.add_submenu_item(sub_data, "image_compare", "图像对比 Slider")
         self.sidebar.add_submenu_item(sub_data, "image_split", "图像分屏 Split")
+        self.sidebar.add_submenu_item(sub_data, "console", "控制台日志 Console")
         
         sub_feedback = self.sidebar.add_submenu("💬 反馈组件")
         self.sidebar.add_submenu_item(sub_feedback, "feedback", "信息提示与进度")
@@ -1206,6 +1263,7 @@ class MainGallery(MkWindow):
         self.page_datatable = DataTableGallery()
         self.page_image_compare = ImageCompareGallery()
         self.page_image_split = ImageSplitGallery()
+        self.page_console = ConsoleGallery()
         self.page_window = WindowGallery()
         self.page_upload = UploadGallery()
         self.page_empty = QWidget()
@@ -1221,6 +1279,7 @@ class MainGallery(MkWindow):
         self.content_area.addWidget(self.page_datatable)
         self.content_area.addWidget(self.page_image_compare)
         self.content_area.addWidget(self.page_image_split)
+        self.content_area.addWidget(self.page_console)
         self.content_area.addWidget(self.page_window)
         self.content_area.addWidget(self.page_upload)
         self.content_area.addWidget(self.page_empty)
@@ -1351,6 +1410,8 @@ class MainGallery(MkWindow):
             self.content_area.setCurrentWidget(self.page_image_compare)
         elif item_id == "image_split":
             self.content_area.setCurrentWidget(self.page_image_split)
+        elif item_id == "console":
+            self.content_area.setCurrentWidget(self.page_console)
         elif item_id == "window":
             self.content_area.setCurrentWidget(self.page_window)
         elif item_id == "upload":

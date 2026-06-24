@@ -170,15 +170,7 @@ class ThemedCard(QFrame):
             painter.drawRect(inset)
 
         elif t.is_glow():
-            inset = rect.adjusted(5, 5, -5, -5)
-            glow_color = QColor(primary)
-            # 外发光
-            for i in range(3, 0, -1):
-                gc = QColor(glow_color)
-                gc.setAlphaF(0.06 * i)
-                painter.setPen(Qt.PenStyle.NoPen)
-                painter.setBrush(QBrush(gc))
-                painter.drawRoundedRect(inset.adjusted(-i*3, -i*3, i*3, i*3), radius, radius)
+            inset = rect.adjusted(2, 2, -2, -2)
             # 主体
             card_bg = QColor(20, 20, 30) if t.is_dark() else QColor(bg)
             painter.setBrush(QBrush(card_bg))

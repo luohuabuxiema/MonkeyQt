@@ -251,7 +251,7 @@ _SUPPORTED_THEME_CLASSES = {
     "MkSubMenu", "MkTopbar", "MkTopbarItem", "MkTabs", "MkTabButton",
     "MkPagination", "MkBreadcrumbItem", "MkTable", "MkDataTable", "MkUpload",
     "MkCaptchaWidget", "MkAuthScreen", "MkMessage", "MkAvatar", "MkTitleBar",
-    "MkWindow", "YoloDashboardWidget",
+    "MkWindow", "YoloDashboardWidget", "MkConsole",
     
     # Native PySide6 widgets
     "QLabel", "QPushButton", "QCommandLinkButton", "QToolButton", "QLineEdit",
@@ -415,6 +415,7 @@ def _is_theme_supported(widget: QWidget) -> bool:
             "MkTitleBar",
             "MkWindow",
             "YoloDashboardWidget",
+            "MkConsole",
             "QLabel",
             "QPushButton",
             "QCommandLinkButton",
@@ -788,6 +789,9 @@ def _apply_widget(widget: QWidget, p: dict[str, str | int | bool]) -> None:
         _apply_auth_screen(widget, p)
     elif name in ("MkCaptchaWidget", "MkMessage", "MkAvatar"):
         _apply_panel(widget, p)
+    elif name == "MkConsole":
+        if hasattr(widget, "_update_style"):
+            widget._update_style()
     elif name == "MkWindow":
         _apply_window(widget, p)
     elif name == "MkTitleBar":

@@ -216,13 +216,7 @@ class ThemedAlert(QWidget):
             painter.drawRect(inset.left(), inset.top(), 6, inset.height())
 
         elif t.is_glow() or t.is_dark():
-            inset = rect.adjusted(3, 3, -3, -3)
-            # 发光边框
-            glow = QColor(accent)
-            glow.setAlphaF(0.2)
-            painter.setPen(Qt.PenStyle.NoPen)
-            painter.setBrush(QBrush(glow))
-            painter.drawRoundedRect(inset.adjusted(-2, -2, 2, 2), radius, radius)
+            inset = rect.adjusted(1, 1, -1, -1)
             # 暗底
             painter.setBrush(QBrush(QColor(15, 15, 25)))
             painter.setPen(QPen(accent, 1))

@@ -31,3 +31,4 @@ from .image_compare import ThemedImageCompare
 from .image_split import ThemedImageSplit
 from .window import ThemedTitleBar, ThemedWindowShell
 from .theme_selector import MkThemeSelector
+from .console import ThemedConsole

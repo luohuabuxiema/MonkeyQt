@@ -28,6 +28,7 @@ from .components.data.table import MkTable
 from .components.data.data_table import MkDataTable
 from .components.data.image_compare import MkImageCompare
 from .components.data.image_split import MkImageSplit
+from .components.data.console import MkConsole
 
 # Feedback
 from .components.feedback.alert import MkAlert
@@ -81,6 +82,7 @@ from .themes import (
     ThemedWindowShell,
     ThemedHistoryNavigation,
     ThemedAvatarMenu,
+    ThemedConsole,
 )
 
 __version__ = "0.1.1"
@@ -113,6 +115,7 @@ __all__ = [
     "MkDataTable",
     "MkImageCompare",
     "MkImageSplit",
+    "MkConsole",
     "MkAlert",
     "MkProgressBar",
     "MkProgressRing",
@@ -160,4 +163,5 @@ __all__ = [
     "ThemedWindowShell",
     "ThemedHistoryNavigation",
     "ThemedAvatarMenu",
+    "ThemedConsole",
 ]

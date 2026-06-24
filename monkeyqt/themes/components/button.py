@@ -219,16 +219,7 @@ class ThemedButton(QPushButton):
 
         # ──── Cyberpunk / Glow 绘制 ────
         elif t.is_glow():
-            inset = rect.adjusted(3, 3, -3, -3)
-            glow_color = QColor(primary)
-            glow_color.setAlphaF(0.4)
-            # 外发光
-            for i in range(3, 0, -1):
-                gc = QColor(glow_color)
-                gc.setAlphaF(0.1 * i)
-                painter.setPen(Qt.PenStyle.NoPen)
-                painter.setBrush(QBrush(gc))
-                painter.drawRoundedRect(inset.adjusted(-i*2, -i*2, i*2, i*2), radius, radius)
+            inset = rect.adjusted(1, 1, -1, -1)
             # 主体
             painter.setBrush(QBrush(QColor(primary) if self._btn_type == "primary" else QColor(20, 20, 30)))
             painter.setPen(QPen(QColor(primary), 1))
