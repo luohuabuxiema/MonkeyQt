@@ -10,31 +10,31 @@
       
       
       
-        <link rel="canonical" href="https://luohuabuxiema.github.io/MonkeyQt/guide/quickstart/">
+        <link rel="canonical" href="https://luohuabuxiema.github.io/MonkeyQt/components/data/console/">
       
       
-        <link rel="prev" href="../install/">
+        <link rel="prev" href="../image/">
       
       
-        <link rel="next" href="../theme/">
+        <link rel="next" href="../../feedback/alert/">
       
       
         
       
       
-      <link rel="icon" href="../../assets/images/favicon.png">
+      <link rel="icon" href="../../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
-        <title>快速开始 - MonkeyQt 文档</title>
+        <title>Console 控制台日志 - MonkeyQt 文档</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -53,7 +53,7 @@
       
     
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#_1" class="md-skip">
+        <a href="#console" class="md-skip">
           跳转至
         </a>
       
@@ -94,7 +94,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="页眉">
-    <a href="../.." title="MonkeyQt 文档" class="md-header__button md-logo" aria-label="MonkeyQt 文档" data-md-component="logo">
+    <a href="../../.." title="MonkeyQt 文档" class="md-header__button md-logo" aria-label="MonkeyQt 文档" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -114,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              快速开始
+              Console 控制台日志
             
           </span>
         </div>
@@ -232,7 +232,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="导航栏" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="MonkeyQt 文档" class="md-nav__button md-logo" aria-label="MonkeyQt 文档" data-md-component="logo">
+    <a href="../../.." title="MonkeyQt 文档" class="md-nav__button md-logo" aria-label="MonkeyQt 文档" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -262,7 +262,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../.." class="md-nav__link">
+      <a href="../../.." class="md-nav__link">
         
   
   
@@ -286,10 +286,8 @@
       
   
   
-    
   
   
-  
     
     
       
@@ -308,11 +306,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
         
           
           <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
@@ -333,7 +331,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -351,7 +349,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../install/" class="md-nav__link">
+      <a href="../../../guide/install/" class="md-nav__link">
         
   
   
@@ -376,37 +374,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    快速开始
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../../guide/quickstart/" class="md-nav__link">
         
   
   
@@ -422,81 +393,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="目录">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      目录
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        前提条件
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        创建第一个应用
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_4" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        运行效果
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_5" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        核心导入方式
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_6" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        下一步
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -509,7 +405,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../theme/" class="md-nav__link">
+      <a href="../../../guide/theme/" class="md-nav__link">
         
   
   
@@ -541,8 +437,10 @@
       
   
   
+    
   
   
+  
     
     
       
@@ -567,11 +465,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
           <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
@@ -592,7 +490,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -665,7 +563,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../components/basic/button/" class="md-nav__link">
+      <a href="../../basic/button/" class="md-nav__link">
         
   
   
@@ -693,7 +591,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../components/basic/checkbox/" class="md-nav__link">
+      <a href="../../basic/checkbox/" class="md-nav__link">
         
   
   
@@ -794,7 +692,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../components/form/input/" class="md-nav__link">
+      <a href="../../form/input/" class="md-nav__link">
         
   
   
@@ -822,7 +720,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../components/form/switch/" class="md-nav__link">
+      <a href="../../form/switch/" class="md-nav__link">
         
   
   
@@ -850,7 +748,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../components/form/slider/" class="md-nav__link">
+      <a href="../../form/slider/" class="md-nav__link">
         
   
   
@@ -878,7 +776,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../components/form/combobox/" class="md-nav__link">
+      <a href="../../form/combobox/" class="md-nav__link">
         
   
   
@@ -906,7 +804,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../components/form/multicombobox/" class="md-nav__link">
+      <a href="../../form/multicombobox/" class="md-nav__link">
         
   
   
@@ -934,7 +832,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../components/form/datepicker/" class="md-nav__link">
+      <a href="../../form/datepicker/" class="md-nav__link">
         
   
   
@@ -962,7 +860,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../components/form/upload/" class="md-nav__link">
+      <a href="../../form/upload/" class="md-nav__link">
         
   
   
@@ -995,8 +893,10 @@
                 
   
   
+    
   
   
+  
     
     
       
@@ -1016,11 +916,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_3" checked>
         
           
           <label class="md-nav__link" for="__nav_3_3" id="__nav_3_3_label" tabindex="0">
@@ -1041,7 +941,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1059,7 +959,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../components/data/avatar/" class="md-nav__link">
+      <a href="../avatar/" class="md-nav__link">
         
   
   
@@ -1087,7 +987,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../components/data/table/" class="md-nav__link">
+      <a href="../table/" class="md-nav__link">
         
   
   
@@ -1115,7 +1015,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../components/data/datatable/" class="md-nav__link">
+      <a href="../datatable/" class="md-nav__link">
         
   
   
@@ -1143,7 +1043,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../components/data/image/" class="md-nav__link">
+      <a href="../image/" class="md-nav__link">
         
   
   
@@ -1168,10 +1068,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../components/data/console/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Console 控制台日志
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1187,6 +1114,137 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        基础用法
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        功能配置
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="功能配置">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        行数限制（防止内存泄露）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        自动滚动与时间戳
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        一键清除
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="API">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        构造函数
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        方法
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        继承与主题适配
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1262,7 +1320,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../components/feedback/alert/" class="md-nav__link">
+      <a href="../../feedback/alert/" class="md-nav__link">
         
   
   
@@ -1290,7 +1348,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../components/feedback/progress/" class="md-nav__link">
+      <a href="../../feedback/progress/" class="md-nav__link">
         
   
   
@@ -1389,7 +1447,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../components/navigation/menu/" class="md-nav__link">
+      <a href="../../navigation/menu/" class="md-nav__link">
         
   
   
@@ -1417,7 +1475,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../components/navigation/topbar/" class="md-nav__link">
+      <a href="../../navigation/topbar/" class="md-nav__link">
         
   
   
@@ -1445,7 +1503,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../components/navigation/breadcrumb/" class="md-nav__link">
+      <a href="../../navigation/breadcrumb/" class="md-nav__link">
         
   
   
@@ -1473,7 +1531,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../components/navigation/tabs/" class="md-nav__link">
+      <a href="../../navigation/tabs/" class="md-nav__link">
         
   
   
@@ -1501,7 +1559,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../components/navigation/pagination/" class="md-nav__link">
+      <a href="../../navigation/pagination/" class="md-nav__link">
         
   
   
@@ -1529,7 +1587,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../components/navigation/dropdown/" class="md-nav__link">
+      <a href="../../navigation/dropdown/" class="md-nav__link">
         
   
   
@@ -1618,7 +1676,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../components/layout/window/" class="md-nav__link">
+      <a href="../../layout/window/" class="md-nav__link">
         
   
   
@@ -1661,7 +1719,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../changelog/" class="md-nav__link">
+      <a href="../../../changelog/" class="md-nav__link">
         
   
   
@@ -1708,57 +1766,113 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        基础用法
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#_2" class="md-nav__link">
     <span class="md-ellipsis">
       
-        前提条件
+        功能配置
       
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
+    <nav class="md-nav" aria-label="功能配置">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#_3" class="md-nav__link">
     <span class="md-ellipsis">
       
-        创建第一个应用
+        行数限制（防止内存泄露）
       
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#_4" class="md-nav__link">
     <span class="md-ellipsis">
       
-        运行效果
+        自动滚动与时间戳
       
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#_5" class="md-nav__link">
     <span class="md-ellipsis">
       
-        核心导入方式
+        一键清除
       
     </span>
   </a>
   
 </li>
+        
+      </ul>
+    </nav>
+  
+</li>
       
         <li class="md-nav__item">
-  <a href="#_6" class="md-nav__link">
+  <a href="#api" class="md-nav__link">
     <span class="md-ellipsis">
       
-        下一步
+        API
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="API">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        构造函数
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        方法
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        继承与主题适配
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1782,89 +1896,135 @@
   
 
 
-<h1 id="_1">快速开始<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
-<p>本教程将引导你在 <strong>5 分钟</strong> 内创建第一个使用 monkeyqt 的桌面应用。</p>
-<h2 id="_2">前提条件<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>确保你已经完成了 <a href="../install/">安装</a> 步骤。</p>
-<h2 id="_3">创建第一个应用<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
-<p>新建一个 <code>main.py</code> 文件，复制以下代码：</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">PySide6.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QApplication</span><span class="p">,</span> <span class="n">QWidget</span><span class="p">,</span> <span class="n">QVBoxLayout</span><span class="p">,</span> <span class="n">QHBoxLayout</span><span class="p">,</span> <span class="n">QLabel</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">PySide6.QtCore</span><span class="w"> </span><span class="kn">import</span> <span class="n">Qt</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="kn">from</span><span class="w"> </span><span class="nn">monkeyqt</span><span class="w"> </span><span class="kn">import</span> <span class="n">MkButton</span><span class="p">,</span> <span class="n">MkAlert</span><span class="p">,</span> <span class="n">MkSwitch</span><span class="p">,</span> <span class="n">MkSlider</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="k">class</span><span class="w"> </span><span class="nc">QuickStartApp</span><span class="p">(</span><span class="n">QWidget</span><span class="p">):</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="s2">&quot;monkeyqt 快速开始示例&quot;</span><span class="p">)</span>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="mi">400</span><span class="p">,</span> <span class="mi">300</span><span class="p">)</span>
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>        <span class="n">layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>        <span class="n">layout</span><span class="o">.</span><span class="n">setSpacing</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>
-</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>        <span class="c1"># 1. 警告提示 (Alert)</span>
-</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>        <span class="n">alert</span> <span class="o">=</span> <span class="n">MkAlert</span><span class="p">(</span>
-</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>            <span class="n">title</span><span class="o">=</span><span class="s2">&quot;安装成功&quot;</span><span class="p">,</span>
-</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>            <span class="n">description</span><span class="o">=</span><span class="s2">&quot;恭喜你，你已经成功将 monkeyqt 作为第三方包导入并运行了。&quot;</span><span class="p">,</span>
-</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>            <span class="n">mk_type</span><span class="o">=</span><span class="s2">&quot;success&quot;</span><span class="p">,</span>
-</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>            <span class="n">show_icon</span><span class="o">=</span><span class="kc">True</span>
-</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>        <span class="p">)</span>
-</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">alert</span><span class="p">)</span>
-</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>
-</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>        <span class="c1"># 2. 按钮组件 (Button)</span>
-</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>        <span class="n">btn_layout</span> <span class="o">=</span> <span class="n">QHBoxLayout</span><span class="p">()</span>
-</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>        <span class="n">btn1</span> <span class="o">=</span> <span class="n">MkButton</span><span class="p">(</span><span class="s2">&quot;主要按钮&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;primary&quot;</span><span class="p">)</span>
-</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>        <span class="n">btn2</span> <span class="o">=</span> <span class="n">MkButton</span><span class="p">(</span><span class="s2">&quot;成功按钮&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;success&quot;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="s2">&quot;large&quot;</span><span class="p">)</span>
-</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>        <span class="n">btn_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">btn1</span><span class="p">)</span>
-</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>        <span class="n">btn_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">btn2</span><span class="p">)</span>
-</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>        <span class="n">btn_layout</span><span class="o">.</span><span class="n">addStretch</span><span class="p">()</span>
-</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>        <span class="n">layout</span><span class="o">.</span><span class="n">addLayout</span><span class="p">(</span><span class="n">btn_layout</span><span class="p">)</span>
-</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>
-</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a>        <span class="c1"># 3. 开关与滑块 (Form)</span>
-</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a>        <span class="n">form_layout</span> <span class="o">=</span> <span class="n">QHBoxLayout</span><span class="p">()</span>
-</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a>        <span class="n">form_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;深色模式:&quot;</span><span class="p">))</span>
-</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a>        <span class="n">form_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">MkSwitch</span><span class="p">(</span><span class="n">checked</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
-</span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a>        <span class="n">form_layout</span><span class="o">.</span><span class="n">addSpacing</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
-</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a>        <span class="n">form_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;音量:&quot;</span><span class="p">))</span>
-</span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a>
-</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a>        <span class="n">slider</span> <span class="o">=</span> <span class="n">MkSlider</span><span class="p">(</span><span class="n">Qt</span><span class="o">.</span><span class="n">Horizontal</span><span class="p">)</span>
-</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42" href="#__codelineno-0-42"></a>        <span class="n">slider</span><span class="o">.</span><span class="n">setRange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
-</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43" href="#__codelineno-0-43"></a>        <span class="n">slider</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span>
-</span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44" href="#__codelineno-0-44"></a>        <span class="n">form_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">slider</span><span class="p">)</span>
-</span><span id="__span-0-45"><a id="__codelineno-0-45" name="__codelineno-0-45" href="#__codelineno-0-45"></a>
-</span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46" href="#__codelineno-0-46"></a>        <span class="n">layout</span><span class="o">.</span><span class="n">addLayout</span><span class="p">(</span><span class="n">form_layout</span><span class="p">)</span>
-</span><span id="__span-0-47"><a id="__codelineno-0-47" name="__codelineno-0-47" href="#__codelineno-0-47"></a>
-</span><span id="__span-0-48"><a id="__codelineno-0-48" name="__codelineno-0-48" href="#__codelineno-0-48"></a>        <span class="n">layout</span><span class="o">.</span><span class="n">addStretch</span><span class="p">()</span>
-</span><span id="__span-0-49"><a id="__codelineno-0-49" name="__codelineno-0-49" href="#__codelineno-0-49"></a>
-</span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50" href="#__codelineno-0-50"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
-</span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51" href="#__codelineno-0-51"></a>    <span class="n">app</span> <span class="o">=</span> <span class="n">QApplication</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span>
-</span><span id="__span-0-52"><a id="__codelineno-0-52" name="__codelineno-0-52" href="#__codelineno-0-52"></a>    <span class="n">window</span> <span class="o">=</span> <span class="n">QuickStartApp</span><span class="p">()</span>
-</span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53" href="#__codelineno-0-53"></a>    <span class="n">window</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-</span><span id="__span-0-54"><a id="__codelineno-0-54" name="__codelineno-0-54" href="#__codelineno-0-54"></a>    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">exec</span><span class="p">())</span>
+<h1 id="console">Console 控制台日志<a class="headerlink" href="#console" title="Permanent link">&para;</a></h1>
+<p>用于输出系统运行时的控制台日志。支持日志多级高亮、行数限制、自动滚动、一键清除，并自动适配 67 种主题样式。</p>
+<h2 id="_1">基础用法<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">monkeyqt</span><span class="w"> </span><span class="kn">import</span> <span class="n">MkConsole</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># 创建控制台组件，可指定标题</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">console</span> <span class="o">=</span> <span class="n">MkConsole</span><span class="p">(</span><span class="s2">&quot;系统运行日志 / System Logs&quot;</span><span class="p">)</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="c1"># 打印不同级别的日志</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">console</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;系统初始化中...&quot;</span><span class="p">)</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">console</span><span class="o">.</span><span class="n">success</span><span class="p">(</span><span class="s2">&quot;核心引擎加载成功！&quot;</span><span class="p">)</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="n">console</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;内存占用较高，请注意。&quot;</span><span class="p">)</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">console</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;网络连接失败，请检查配置。&quot;</span><span class="p">)</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="n">console</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;调试信息: port=8080, retry_count=3&quot;</span><span class="p">)</span>
 </span></code></pre></div>
-<h2 id="_4">运行效果<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
-<p>运行上述脚本：
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python<span class="w"> </span>main.py
-</span></code></pre></div></p>
-<p>你会看到一个包含以下组件的窗口：</p>
-<ul>
-<li>🟢 <strong>成功提示框</strong>，显示安装成功信息。</li>
-<li>🔵 <strong>按钮</strong>（主要按钮 + 成功按钮）。</li>
-<li>🔘 <strong>开关组件</strong> 和一个带数值显示的 <strong>滑块</strong>。</li>
-</ul>
-<h2 id="_5">核心导入方式<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
-<p>monkeyqt 所有组件都可以从顶层包直接导入，无需关心内部目录结构：
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># 💡 推荐：从顶层包直接导入</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">monkeyqt</span><span class="w"> </span><span class="kn">import</span> <span class="n">MkButton</span><span class="p">,</span> <span class="n">MkAlert</span><span class="p">,</span> <span class="n">MkMenu</span><span class="p">,</span> <span class="n">MkWindow</span>
+<h2 id="_2">功能配置<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<h3 id="_3">行数限制（防止内存泄露）<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
+<p>默认最大保留 1000 行日志，超过的部分会自动裁剪：</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># 设置最多保留 500 行日志</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">console</span><span class="o">.</span><span class="n">set_max_lines</span><span class="p">(</span><span class="mi">500</span><span class="p">)</span>
+</span></code></pre></div>
+<h3 id="_4">自动滚动与时间戳<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<p>可以动态控制是否在输出新日志时自动滚动到底部，以及是否在日志前显示当前时间戳：</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># 启用/禁用自动滚动</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">console</span><span class="o">.</span><span class="n">set_autoscroll</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># ⚠️ 不推荐：从内部路径导入</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="kn">from</span><span class="w"> </span><span class="nn">monkeyqt.components.basic.button</span><span class="w"> </span><span class="kn">import</span> <span class="n">MkButton</span>
-</span></code></pre></div></p>
-<h2 id="_6">下一步<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># 显示/隐藏时间戳</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">console</span><span class="o">.</span><span class="n">set_show_timestamp</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+</span></code></pre></div>
+<h3 id="_5">一键清除<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<p>提供清除按钮，也可以通过代码一键清空日志和统计计数器：</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># 清空所有日志</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">console</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+</span></code></pre></div>
+<hr />
+<h2 id="api">API<a class="headerlink" href="#api" title="Permanent link">&para;</a></h2>
+<h3 id="_6">构造函数<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">MkConsole</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;控制台日志 / Console Logs&quot;</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">参数</th>
+<th style="text-align: left;">类型</th>
+<th style="text-align: left;">默认值</th>
+<th style="text-align: left;">说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>title</code></td>
+<td style="text-align: left;"><code>str</code></td>
+<td style="text-align: left;"><code>"控制台日志 / Console Logs"</code></td>
+<td style="text-align: left;">控制台顶部的标题文本</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>parent</code></td>
+<td style="text-align: left;"><code>QWidget</code></td>
+<td style="text-align: left;"><code>None</code></td>
+<td style="text-align: left;">父组件</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_7">方法<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">方法</th>
+<th style="text-align: left;">参数类型</th>
+<th style="text-align: left;">说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>log(text, level="info", timestamp=True)</code></td>
+<td style="text-align: left;"><code>text: str</code>, <code>level: str</code>, <code>timestamp: bool</code></td>
+<td style="text-align: left;">核心日志输出接口。<code>level</code> 可选 <code>"info"</code>, <code>"success"</code>, <code>"warning"</code>, <code>"error"</code>, <code>"debug"</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>info(text)</code></td>
+<td style="text-align: left;"><code>text: str</code></td>
+<td style="text-align: left;">快速输出 <code>INFO</code> 级别日志（主色调高亮）</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>success(text)</code></td>
+<td style="text-align: left;"><code>text: str</code></td>
+<td style="text-align: left;">快速输出 <code>SUCCESS</code> 级别日志（绿色高亮）</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>warn(text)</code></td>
+<td style="text-align: left;"><code>text: str</code></td>
+<td style="text-align: left;">快速输出 <code>WARNING</code> 级别日志（黄色高亮）</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>error(text)</code></td>
+<td style="text-align: left;"><code>text: str</code></td>
+<td style="text-align: left;">快速输出 <code>ERROR</code> 级别日志（红色高亮）</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>debug(text)</code></td>
+<td style="text-align: left;"><code>text: str</code></td>
+<td style="text-align: left;">快速输出 <code>DEBUG</code> 级别日志（灰色高亮）</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>clear()</code></td>
+<td style="text-align: left;">无</td>
+<td style="text-align: left;">清空控制台的所有文本，并将各类级别日志计数器归零</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>set_max_lines(limit)</code></td>
+<td style="text-align: left;"><code>limit: int</code></td>
+<td style="text-align: left;">设置最大保留行数限制，防止日志过多造成内存泄露</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>set_autoscroll(enabled)</code></td>
+<td style="text-align: left;"><code>enabled: bool</code></td>
+<td style="text-align: left;">设置新日志追加时，是否自动将滚动条移动到最下方</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>set_show_timestamp(show)</code></td>
+<td style="text-align: left;"><code>show: bool</code></td>
+<td style="text-align: left;">设置是否在每条日志的最前面添加 <code>[HH:MM:SS]</code> 时间戳</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_8">继承与主题适配<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
 <ul>
-<li>浏览 <a href="../../components/basic/button/">组件文档</a> 了解每个组件的详细 API</li>
-<li>查看 <a href="../../changelog/">更新日志</a> 了解最新变化</li>
+<li><code>MkConsole</code> 继承自 <code>QWidget</code>。</li>
+<li><strong><code>ThemedConsole</code></strong> 继承自 <code>MkConsole</code>，会自动适配全局的 <code>ThemeEngine</code> 风格切换。</li>
 </ul>
 
 
@@ -1939,10 +2099,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.top", "navigation.indexes", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate", "content.tabs.link"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.top", "navigation.indexes", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate", "content.tabs.link"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>
