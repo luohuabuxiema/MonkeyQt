@@ -50,6 +50,7 @@ from monkeyqt import (
 
 
 THEME_CN_NAMES = {
+    'Elegant Light': '雅致亮色 (Elegant Light)',
     'Minimalism & Swiss Style': '极简瑞士风格',
     'Neumorphism': '新拟物化 (Neumorphism)',
     'Glassmorphism': '玻璃拟态 (Glassmorphism)',

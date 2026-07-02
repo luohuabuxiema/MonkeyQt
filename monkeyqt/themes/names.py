@@ -4,6 +4,7 @@
 DEFAULT_THEME_CN_NAME = "雅致亮色"
 
 THEME_CN_NAMES = {
+    "Elegant Light": "雅致亮色",
     "Minimalism & Swiss Style": "极简瑞士风格",
     "Neumorphism": "新拟物化",
     "Glassmorphism": "玻璃拟态",
@@ -76,6 +77,6 @@ THEME_CN_NAMES = {
 
 def theme_display_name(name: str) -> str:
     """Return the Chinese display name while keeping the English key for lookup."""
-    if name in ("", "__monkeyqt_default__", "MonkeyQt Default", "Elegant Light"):
+    if name in ("", "__monkeyqt_default__", "MonkeyQt Default"):
         return DEFAULT_THEME_CN_NAME
     return THEME_CN_NAMES.get(name, name)
