@@ -759,7 +759,7 @@ class MkWindow(QMainWindow):
                     item.setObjectName("MainRightWidget")
                     from monkeyqt.themes.adapter import apply_monkeyqt_theme
                     from monkeyqt.themes.engine import ThemeEngine
-                    if ThemeEngine.current_theme() != ThemeEngine.DEFAULT_THEME_NAME:
+                    if ThemeEngine.current_theme():
                         item.setProperty("_mk_auto_theme_name", None)
                         apply_monkeyqt_theme(item)
                         item.setProperty("_mk_auto_theme_name", ThemeEngine.current_theme())

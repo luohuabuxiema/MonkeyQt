@@ -59,7 +59,7 @@ class MkMessage(QWidget):
         try:
             from monkeyqt.themes.engine import ThemeEngine
             t = ThemeEngine
-            is_themed = t.current_theme() != t.DEFAULT_THEME_NAME
+            is_themed = bool(t.current_theme())
         except ImportError:
             is_themed = False
             

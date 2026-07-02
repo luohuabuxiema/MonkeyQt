@@ -334,7 +334,7 @@ class MkMultiComboBox(QFrame):
         
         try:
             from monkeyqt.themes.engine import ThemeEngine
-            is_themed = ThemeEngine.current_theme() != ThemeEngine.DEFAULT_THEME_NAME
+            is_themed = bool(ThemeEngine.current_theme())
         except ImportError:
             is_themed = False
             

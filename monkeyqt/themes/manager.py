@@ -155,7 +155,7 @@ class _ThemeAutoApplier(QObject):
     def eventFilter(self, obj, event):
         if not self.enabled:
             return False
-        if ThemeEngine.current_theme() == ThemeEngine.DEFAULT_THEME_NAME:
+        if not ThemeEngine.current_theme():
             return False
 
         event_type = event.type()

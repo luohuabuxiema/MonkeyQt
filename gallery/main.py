@@ -650,7 +650,7 @@ class AuthGallery(QWidget):
         self.auth_screen.forgotPasswordClicked.connect(self._on_forgot_password_clicked)
         
         self.preview_layout.addWidget(self.auth_screen)
-        if ThemeEngine.current_theme() != ThemeEngine.DEFAULT_THEME_NAME:
+        if ThemeEngine.current_theme():
             apply_monkeyqt_theme(self.window())
  
     def _on_login_submitted(self, username, password, captcha_code, remember_me=False):
@@ -1312,6 +1312,9 @@ class MainGallery(MkWindow):
 
     def _apply_gallery_theme_shell(self, theme_name: str):
         """主题选择同时刷新演示外壳和当前 MonkeyQt 原组件样式。"""
+        apply_monkeyqt_theme(self)
+
+
         tokens = ThemeEngine.current_tokens()
         bg = tokens.get("--bg", "#FFFFFF")
         surface = tokens.get("--glass-surface", tokens.get("--surface", "#FFFFFF")) if ThemeEngine.is_glass() else tokens.get("--surface", "#FFFFFF")

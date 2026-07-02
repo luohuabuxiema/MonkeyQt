@@ -25,24 +25,7 @@ class ThemeEngine(QObject):
     _instance = None
     DEFAULT_THEME_NAME = "Elegant Light"
     DEFAULT_THEME_KEY = "Elegant Light"
-    _default_tokens = {
-        "name": DEFAULT_THEME_NAME,
-        "type": "General",
-        "keywords": "Premium, elegant, clean, modern, high contrast, blue accent, light mode",
-        "--bg": "#F8FAFC",
-        "--fg": "#0F172A",
-        "--primary": "#3B82F6",
-        "--secondary": "#FFFFFF",
-        "--accent": "#10B981",
-        "--border": "#E2E8F0",
-        "--radius": "8px",
-        "--shadow": "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-        "--border-width": "1px",
-        "--blur": "",
-        "--glow": "",
-        "--titlebar-bg": "#FFFFFF",
-        "--sidebar-bg": "#F1F5F9",
-    }
+    _default_tokens = THEME_TOKENS["Elegant Light"]
     _current_name: str = ""
     _current_tokens: dict = {}
     _overrides: dict = {}
@@ -91,13 +74,14 @@ class ThemeEngine(QObject):
 
     @classmethod
     def clear_theme(cls) -> bool:
-        """恢复 MonkeyQt 内置默认样式，不向 QApplication 注入 67 风格 QSS。"""
+        """恢复 MonkeyQt 内置默认样式，应用默认的 QSS。"""
         cls._current_name = cls.DEFAULT_THEME_NAME
         cls._current_tokens = cls._normalize_tokens(cls._default_tokens)
 
         app = QApplication.instance()
         if app:
-            app.setStyleSheet("")
+            qss = cls._build_global_qss()
+            app.setStyleSheet(qss)
             for widget in app.allWidgets():
                 try:
                     widget.style().unpolish(widget)
@@ -184,10 +168,16 @@ class ThemeEngine(QObject):
     def _ensure_current(cls):
         """Lazy initialize the active token set before components query it."""
         if not cls._current_name:
-            cls._current_name = THEME_NAMES[0] if THEME_NAMES else cls.DEFAULT_THEME_NAME
+            cls._current_name = cls.DEFAULT_THEME_NAME
         if cls._current_name and not cls._current_tokens:
             source = cls._default_tokens if cls._current_name == cls.DEFAULT_THEME_NAME else THEME_TOKENS[cls._current_name]
             cls._current_tokens = cls._normalize_tokens(source)
+
+            # Auto-apply global QSS if application stylesheet is empty
+            app = QApplication.instance()
+            if app and not app.styleSheet():
+                qss = cls._build_global_qss()
+                app.setStyleSheet(qss)
 
     @classmethod
     def _normalize_tokens(cls, tokens: dict) -> dict:

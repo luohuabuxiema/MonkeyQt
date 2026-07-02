@@ -278,14 +278,7 @@ def _theme_class_name(widget: QWidget) -> str:
 def apply_monkeyqt_theme(root: QWidget | None = None) -> None:
     """Apply or restore token styling for the existing MonkeyQt components below root."""
     widgets = list(_iter_widgets(root))
-    if ThemeEngine.current_theme() == ThemeEngine.DEFAULT_THEME_NAME:
-        _restore_date_picker_theme()
-        for widget in widgets:
-            if _should_skip(widget):
-                continue
-            if _is_theme_supported(widget) or widget.property(_STYLE_PROP) is not None:
-                _restore_widget(widget)
-        return
+
 
     palette = _palette()
     _apply_date_picker_theme(palette)
@@ -1936,8 +1929,7 @@ def _apply_window(widget: QWidget, p: dict[str, str | int | bool]) -> None:
 
         def _theme_update_style(self):
             result = self._mk_theme_original_update_style()
-            if ThemeEngine.current_theme() != ThemeEngine.DEFAULT_THEME_NAME:
-                _apply_window(self, _palette())
+            _apply_window(self, _palette())
             return result
 
         widget.update_style = types.MethodType(_theme_update_style, widget)
@@ -2062,8 +2054,6 @@ def _apply_titlebar(widget: QWidget, p: dict[str, str | int | bool]) -> None:
         widget._mk_theme_original_apply_theme_colors = widget.apply_theme_colors
 
         def _theme_apply_theme_colors(self):
-            if ThemeEngine.current_theme() == ThemeEngine.DEFAULT_THEME_NAME:
-                return self._mk_theme_original_apply_theme_colors()
             _apply_titlebar(self, _palette())
             return None
 
@@ -2073,9 +2063,6 @@ def _apply_titlebar(widget: QWidget, p: dict[str, str | int | bool]) -> None:
         widget._mk_theme_original_paint_event = widget.paintEvent
 
         def _theme_paint_event(self, event):
-            if ThemeEngine.current_theme() == ThemeEngine.DEFAULT_THEME_NAME:
-                return self._mk_theme_original_paint_event(event)
-
             palette = _palette()
             surface = _titlebar_surface(self, palette)
 
@@ -2495,9 +2482,8 @@ def _apply_combobox_view(widget: QWidget, p: dict[str, str | int | bool]) -> Non
 
 def _refresh_combobox_popup(widget: QWidget) -> None:
     try:
-        if ThemeEngine.current_theme() != ThemeEngine.DEFAULT_THEME_NAME:
-            _apply_combobox_view(widget, _palette())
-            widget.update()
+        _apply_combobox_view(widget, _palette())
+        widget.update()
     except RuntimeError:
         pass
 
@@ -2908,8 +2894,7 @@ def _apply_auth_control_panel(widget: QWidget, p: dict[str, str | int | bool]) -
 
 def _reapply_table(widget: QWidget) -> None:
     try:
-        if ThemeEngine.current_theme() != ThemeEngine.DEFAULT_THEME_NAME:
-            _apply_table(widget, _palette())
+        _apply_table(widget, _palette())
     except RuntimeError:
         pass
 
@@ -2941,8 +2926,7 @@ def _apply_table(widget: QWidget, p: dict[str, str | int | bool]) -> None:
 
 def _reapply_datatable(widget: QWidget) -> None:
     try:
-        if ThemeEngine.current_theme() != ThemeEngine.DEFAULT_THEME_NAME:
-            _apply_datatable(widget, _palette())
+        _apply_datatable(widget, _palette())
     except RuntimeError:
         pass
 
@@ -2953,9 +2937,8 @@ def _apply_datatable(widget: QWidget, p: dict[str, str | int | bool]) -> None:
 
         def _theme_refresh_table(self):
             result = self._mk_theme_original_refresh_table()
-            if ThemeEngine.current_theme() != ThemeEngine.DEFAULT_THEME_NAME:
-                _reapply_datatable(self)
-                QTimer.singleShot(0, lambda w=self: _reapply_datatable(w))
+            _reapply_datatable(self)
+            QTimer.singleShot(0, lambda w=self: _reapply_datatable(w))
             return result
 
         widget.refresh_table = types.MethodType(_theme_refresh_table, widget)
@@ -3035,9 +3018,8 @@ def _apply_pagination(widget: QWidget, p: dict[str, str | int | bool]) -> None:
 
         def _themed_update_ui(self, *args, **kwargs):
             result = self._mk_theme_original_pagination_update_ui(*args, **kwargs)
-            if ThemeEngine.current_theme() != ThemeEngine.DEFAULT_THEME_NAME:
-                _apply_pagination(self, _palette())
-                QTimer.singleShot(0, lambda w=self: _apply_pagination(w, _palette()))
+            _apply_pagination(self, _palette())
+            QTimer.singleShot(0, lambda w=self: _apply_pagination(w, _palette()))
             return result
 
         widget._update_ui = types.MethodType(_themed_update_ui, widget)
@@ -3167,9 +3149,8 @@ def _apply_auth_screen(widget: QWidget, p: dict[str, str | int | bool]) -> None:
 
             def _themed_auth_method(self, *args, _method_name=method_name, **kwargs):
                 result = getattr(self, f"_mk_theme_original_auth_{_method_name}")(*args, **kwargs)
-                if ThemeEngine.current_theme() != ThemeEngine.DEFAULT_THEME_NAME:
-                    _reapply_auth_screen(self)
-                    QTimer.singleShot(0, lambda w=self: _reapply_auth_screen(w))
+                _reapply_auth_screen(self)
+                QTimer.singleShot(0, lambda w=self: _reapply_auth_screen(w))
                 return result
 
             setattr(widget, method_name, types.MethodType(_themed_auth_method, widget))
@@ -3237,8 +3218,7 @@ def _apply_auth_screen(widget: QWidget, p: dict[str, str | int | bool]) -> None:
 
 def _reapply_auth_screen(widget: QWidget) -> None:
     try:
-        if ThemeEngine.current_theme() != ThemeEngine.DEFAULT_THEME_NAME:
-            _apply_auth_screen(widget, _palette())
+        _apply_auth_screen(widget, _palette())
     except RuntimeError:
         pass
 
@@ -3525,11 +3505,6 @@ def _apply_menu_item(widget: QWidget, p: dict[str, str | int | bool]) -> None:
         }
 
     def _themed_update_label_styles(self):
-        if ThemeEngine.current_theme() == ThemeEngine.DEFAULT_THEME_NAME:
-            if hasattr(self, "_mk_theme_original_methods"):
-                return self._mk_theme_original_methods["_update_label_styles"]()
-            return
-
         palette = _palette()
         primary_color = str(palette["sidebar_accent"])
         muted_color = str(palette["sidebar_muted"])
@@ -3544,11 +3519,6 @@ def _apply_menu_item(widget: QWidget, p: dict[str, str | int | bool]) -> None:
             self._update_icon_color(muted_color)
 
     def _themed_enter_event(self, event):
-        if ThemeEngine.current_theme() == ThemeEngine.DEFAULT_THEME_NAME:
-            if hasattr(self, "_mk_theme_original_methods"):
-                return self._mk_theme_original_methods["enterEvent"](event)
-            return
-
         from PySide6.QtWidgets import QPushButton
         QPushButton.enterEvent(self, event)
 
@@ -3560,11 +3530,6 @@ def _apply_menu_item(widget: QWidget, p: dict[str, str | int | bool]) -> None:
             self._update_icon_color(primary_color)
 
     def _themed_leave_event(self, event):
-        if ThemeEngine.current_theme() == ThemeEngine.DEFAULT_THEME_NAME:
-            if hasattr(self, "_mk_theme_original_methods"):
-                return self._mk_theme_original_methods["leaveEvent"](event)
-            return
-
         from PySide6.QtWidgets import QPushButton
         QPushButton.leaveEvent(self, event)
         self._update_label_styles()
