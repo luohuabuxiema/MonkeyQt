@@ -13,15 +13,11 @@ class MkThemeSelector(QComboBox):
 
     themeSelected = Signal(str)
 
-    def __init__(self, parent=None, include_default=True):
+    def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("mkThemeSelector")
         self.setMinimumHeight(30)
         self.setFixedWidth(245)
-
-        if include_default:
-            self.addItem(DEFAULT_THEME_CN_NAME, ThemeEngine.DEFAULT_THEME_KEY)
-            self.setItemData(self.count() - 1, "MonkeyQt Default", Qt.ItemDataRole.ToolTipRole)
 
         for name in ThemeEngine.list_themes():
             self.addItem(theme_display_name(name), name)
@@ -33,18 +29,14 @@ class MkThemeSelector(QComboBox):
 
     def _on_index_changed(self, index: int):
         value = self.itemData(index)
-        if value == ThemeEngine.DEFAULT_THEME_KEY:
-            ThemeEngine.clear_theme()
-            self.themeSelected.emit(ThemeEngine.DEFAULT_THEME_NAME)
-        elif value:
+        if value:
             ThemeEngine.set_theme(value)
             self.themeSelected.emit(value)
         self._apply_selector_style()
 
     def _sync_from_engine(self, theme_name: str):
-        target = ThemeEngine.DEFAULT_THEME_KEY if theme_name == ThemeEngine.DEFAULT_THEME_NAME else theme_name
         for i in range(self.count()):
-            if self.itemData(i) == target:
+            if self.itemData(i) == theme_name:
                 self.blockSignals(True)
                 self.setCurrentIndex(i)
                 self.blockSignals(False)

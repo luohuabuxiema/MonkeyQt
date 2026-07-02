@@ -225,12 +225,22 @@ class MkTitleBar(QWidget):
         text = self._text_color if self._text_color else "#000000"
         border_css = f"border-bottom: {self._border_bottom};" if hasattr(self, '_border_bottom') and self._border_bottom else ""
         
+        # Calculate parent window's top-left and top-right corner radius to prevent visual overflow
+        window_radius = 8
+        if self.parent_window and hasattr(self.parent_window, "_border_radius"):
+            is_max = False
+            if self.parent_window.window():
+                is_max = self.parent_window.window().isMaximized()
+            window_radius = 0 if is_max else getattr(self.parent_window, "_border_radius", 8)
+
         self.setObjectName("MkTitleBar")
         self.setStyleSheet(f"""
             QWidget#MkTitleBar {{
                 background-color: {bg};
                 color: {text};
                 {border_css}
+                border-top-left-radius: {window_radius}px;
+                border-top-right-radius: {window_radius}px;
             }}
             QLabel {{
                 color: {text};
@@ -295,6 +305,14 @@ class MkTitleBar(QWidget):
             self.btn_max.setIconSize(QSize(12, 12))
             self.btn_close.setIconSize(QSize(12, 12))
             
+            # Calculate parent window's top-right corner radius to prevent visual overflow
+            window_radius = 8
+            if self.parent_window and hasattr(self.parent_window, "_border_radius"):
+                is_max = False
+                if self.parent_window.window():
+                    is_max = self.parent_window.window().isMaximized()
+                window_radius = 0 if is_max else getattr(self.parent_window, "_border_radius", 8)
+            
             self.btn_min.setStyleSheet(f"""
                 QPushButton {{ background-color: transparent; border: none; border-radius: 0px; }}
                 QPushButton:hover {{ background-color: {hover_color}; }}
@@ -304,8 +322,18 @@ class MkTitleBar(QWidget):
                 QPushButton:hover {{ background-color: {hover_color}; }}
             """)
             self.btn_close.setStyleSheet(f"""
-                QPushButton {{ background-color: transparent; border: none; border-radius: 0px; }}
-                QPushButton:hover {{ background-color: #e81123; color: #ffffff; }}
+                QPushButton {{ 
+                    background-color: transparent; 
+                    border: none; 
+                    border-radius: 0px; 
+                    border-top-right-radius: {window_radius}px;
+                }}
+                QPushButton:hover {{ 
+                    background-color: #e81123; 
+                    color: #ffffff; 
+                    border-radius: 0px; 
+                    border-top-right-radius: {window_radius}px;
+                }}
             """)
 
     def rebuild_layout(self):

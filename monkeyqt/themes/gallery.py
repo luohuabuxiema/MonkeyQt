@@ -16,38 +16,41 @@ from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QFont, QColor, QPalette, QIcon
 
 from .engine import ThemeEngine
-from .components.button import ThemedButton
-from .components.input import ThemedInput
-from .components.switch import ThemedSwitch
-from .components.card import ThemedCard
-from .components.progress import ThemedProgressBar
-from .components.alert import ThemedAlert
-from .components.combobox import ThemedComboBox
-from .components.slider import ThemedSlider
-from .components.tabs import ThemedTabs
-from .components.checkbox import ThemedCheckBox
-from .components.progress_ring import ThemedProgressRing
-from .components.avatar import ThemedAvatar
-from .components.pagination import ThemedPagination
-from .components.breadcrumb import ThemedBreadcrumb
-from .components.dropdown import ThemedDropdown
-from .components.table import ThemedTable
-from .components.form import ThemedForm
-from .components.date_picker import ThemedDatePicker
-from .components.multicombobox import ThemedMultiComboBox
-from .components.upload import ThemedUpload
-from .components.topbar import ThemedTopbar
-from .components.menu import ThemedMenu
-from .components.message import ThemedMessage
-from .components.captcha import ThemedCaptchaWidget
-from .components.data_table import ThemedDataTable
-from .components.image_compare import ThemedImageCompare
-from .components.image_split import ThemedImageSplit
-from .components.window import ThemedWindowShell
-from .components.console import ThemedConsole
+from monkeyqt import (
+    MkButton as ThemedButton,
+    MkInput as ThemedInput,
+    MkSwitch as ThemedSwitch,
+    MkCard as ThemedCard,
+    MkProgressBar as ThemedProgressBar,
+    MkAlert as ThemedAlert,
+    MkComboBox as ThemedComboBox,
+    MkSlider as ThemedSlider,
+    MkTabs as ThemedTabs,
+    MkCheckBox as ThemedCheckBox,
+    MkProgressRing as ThemedProgressRing,
+    MkAvatar as ThemedAvatar,
+    MkPagination as ThemedPagination,
+    MkBreadcrumb as ThemedBreadcrumb,
+    MkDropdown as ThemedDropdown,
+    MkTable as ThemedTable,
+    MkForm as ThemedForm,
+    MkDatePicker as ThemedDatePicker,
+    MkMultiComboBox as ThemedMultiComboBox,
+    MkUpload as ThemedUpload,
+    MkTopbar as ThemedTopbar,
+    MkMenu as ThemedMenu,
+    MkMessage as ThemedMessage,
+    MkCaptchaWidget as ThemedCaptchaWidget,
+    MkDataTable as ThemedDataTable,
+    MkImageCompare as ThemedImageCompare,
+    MkImageSplit as ThemedImageSplit,
+    MkWindowShell as ThemedWindowShell,
+    MkConsole as ThemedConsole,
+)
 
 
 THEME_CN_NAMES = {
+    'Elegant Light': '雅致亮色 (Elegant Light)',
     'Minimalism & Swiss Style': '极简瑞士风格',
     'Neumorphism': '新拟物化 (Neumorphism)',
     'Glassmorphism': '玻璃拟态 (Glassmorphism)',

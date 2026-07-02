@@ -45,35 +45,67 @@ class MkMessage(QWidget):
         card_layout.setContentsMargins(15, 0, 15, 0)
         card_layout.setSpacing(10)
         
-        # Style based on message type
-        styles = {
-            "success": {
-                "bg": "#f0f9eb", "border": "#e1f3d8", "text": "#67c23a", "icon": "check"
-            },
-            "error": {
-                "bg": "#fef0f0", "border": "#fde2e2", "text": "#f56c6c", "icon": "x"
-            },
-            "warning": {
-                "bg": "#fdf6ec", "border": "#faecd8", "text": "#e6a23c", "icon": "eye" # eye as placeholder
-            },
-            "info": {
-                "bg": "#f4f4f5", "border": "#e9e9eb", "text": "#909399", "icon": "eye"
-            }
+        # Standard semantic colors
+        semantics = {
+            "success": {"color": "#22C55E", "bg_light": "#F0FDF4", "border_light": "#DCFCE7", "icon": "check", "text": "#15803d"},
+            "error":   {"color": "#EF4444", "bg_light": "#FEF2F2", "border_light": "#FEE2E2", "icon": "x", "text": "#b91c1c"},
+            "warning": {"color": "#F59E0B", "bg_light": "#FFFBEB", "border_light": "#FEF3C7", "icon": "warning", "text": "#b45309"},
+            "info":    {"color": "#3B82F6", "bg_light": "#EFF6FF", "border_light": "#DBEAFE", "icon": "info", "text": "#1d4ed8"},
         }
         
-        theme = styles.get(self.msg_type, styles["info"])
+        theme = semantics.get(self.msg_type, semantics["info"])
+        accent = theme["color"]
         
+        try:
+            from monkeyqt.themes.engine import ThemeEngine
+            t = ThemeEngine
+            is_themed = t.current_theme() != t.DEFAULT_THEME_NAME
+        except ImportError:
+            is_themed = False
+            
+        if is_themed:
+            bg_color = t.get("--surface", "#FFFFFF")
+            text_color = t.get("--fg", "#1E293B")
+            border_color = t.get("--border", "#E2E8F0")
+            radius = t.get("--radius", "6px")
+            border_width = t.get("--border-width", "1px")
+            
+            if t.is_brutal() or t.is_pixel():
+                bg_color = "#FFFFFF"
+                text_color = "#000000"
+                border_color = "#000000"
+                border_width = "2px"
+                radius = "0px"
+            elif t.is_glass():
+                bg_color = t.get("--glass-surface", "rgba(255, 255, 255, 0.3)")
+                text_color = t.get("--glass-text", text_color)
+                border_color = t.get("--glass-border", "rgba(255, 255, 255, 0.4)")
+            elif t.is_glow() or t.is_dark():
+                bg_color = "#151519" if t.is_dark() else t.get("--surface", "#1B2525")
+                text_color = accent
+                border_color = accent
+            elif t.is_neumorphic():
+                bg_color = t.get("--bg", "#F5F5F5")
+                border_color = t.get("--border", "#E2E8F0")
+                text_color = accent
+        else:
+            bg_color = theme["bg_light"]
+            border_color = theme["border_light"]
+            text_color = theme["text"]
+            radius = "6px"
+            border_width = "1px"
+            
         self.card.setStyleSheet(f"""
             QFrame#MessageCard {{
-                background-color: {theme["bg"]};
-                border: 1px solid {theme["border"]};
-                border-radius: 6px;
+                background-color: {bg_color};
+                border: {border_width} solid {border_color};
+                border-radius: {radius};
             }}
             QLabel {{
-                color: {theme["text"]};
-                font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+                color: {text_color};
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
                 font-size: 13px;
-                font-weight: 500;
+                font-weight: 600;
                 background: transparent;
             }}
         """)
@@ -81,7 +113,7 @@ class MkMessage(QWidget):
         # Phosphor status icon
         icon_label = QLabel(self.card)
         icon_label.setFixedSize(16, 16)
-        icon_label.setPixmap(MkPhosphorIcon.get_pixmap(theme["icon"], theme["text"], 16))
+        icon_label.setPixmap(MkPhosphorIcon.get_pixmap(theme["icon"], text_color, 16))
         card_layout.addWidget(icon_label)
         
         # Message text label
@@ -89,12 +121,13 @@ class MkMessage(QWidget):
         card_layout.addWidget(text_label, stretch=1)
         
         # Center card shadow
-        shadow = QGraphicsDropShadowEffect(self)
-        shadow.setBlurRadius(15)
-        shadow.setColor(QColor(0, 0, 0, 30))
-        shadow.setOffset(0, 4)
-        self.card.setGraphicsEffect(shadow)
-        
+        if not is_themed or not t.is_brutal():
+            shadow = QGraphicsDropShadowEffect(self)
+            shadow.setBlurRadius(15)
+            shadow.setColor(QColor(0, 0, 0, 30))
+            shadow.setOffset(0, 4)
+            self.card.setGraphicsEffect(shadow)
+            
         main_layout.addWidget(self.card)
 
     def _animate_entry(self):

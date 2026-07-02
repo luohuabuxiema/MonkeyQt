@@ -13,11 +13,23 @@ class MkAlert(QWidget):
     """
     closed = Signal()
 
-    def __init__(self, title="", description="", mk_type="info", closable=False, show_icon=False, parent=None):
+    def __init__(self, title="", description="", mk_type="info", closable=False, show_icon=False, parent=None, message=None, alert_type=None):
         super().__init__(parent)
-        self._title = title
+        
+        # Resolve type and title to support alert_type and message arguments
+        resolved_type = "info"
+        if alert_type is not None:
+            resolved_type = alert_type
+        else:
+            resolved_type = mk_type
+            
+        resolved_title = title
+        if message is not None:
+            resolved_title = message
+
+        self._title = resolved_title
         self._description = description
-        self._mk_type = mk_type
+        self._mk_type = resolved_type
         self._closable = closable
         self._show_icon = show_icon
 
@@ -185,3 +197,19 @@ class MkAlert(QWidget):
         self._show_icon = value
         self.icon_label.setVisible(value)
         self._update_icon()
+
+    @Property(str)
+    def message(self):
+        return self.title
+
+    @message.setter
+    def message(self, value):
+        self.title = value
+
+    @Property(str)
+    def alert_type(self):
+        return self.mk_type
+
+    @alert_type.setter
+    def alert_type(self, value):
+        self.mk_type = value

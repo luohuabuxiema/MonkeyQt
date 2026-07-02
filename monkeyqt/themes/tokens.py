@@ -7,6 +7,30 @@ MonkeyQt Theme Tokens — 自动生成，请勿手动编辑
 
 
 THEME_TOKENS: dict[str, dict] = {
+    'Elegant Light': {
+        'name': 'Elegant Light',
+        'type': 'General',
+        'keywords': 'Premium, elegant, clean, modern, high contrast, blue accent, light mode',
+        'effects': 'Smooth hover transitions, clear shadow layers',
+        'best_for': 'SaaS platforms, dashboards, developer tools, professional application suites',
+        'performance': '⚡ Excellent',
+        'accessibility': '✓ WCAG AAA',
+        'light_mode': '✓ Full',
+        'dark_mode': '✕ None',
+        '--bg': '#F8FAFC',
+        '--fg': '#0F172A',
+        '--primary': '#3B82F6',
+        '--secondary': '#FFFFFF',
+        '--accent': '#10B981',
+        '--border': '#E2E8F0',
+        '--radius': '8px',
+        '--shadow': '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+        '--border-width': '1px',
+        '--blur': '',
+        '--glow': '',
+        '--titlebar-bg': '#FFFFFF',
+        '--sidebar-bg': '#F1F5F9',
+    },
     'Minimalism & Swiss Style': {
         'name': 'Minimalism & Swiss Style',
         'type': 'General',

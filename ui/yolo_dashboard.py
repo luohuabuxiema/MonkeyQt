@@ -40,18 +40,6 @@ class YoloDashboardWidget(QWidget):
         self.ctrl_panel = QFrame()
         self.ctrl_panel.setObjectName("ctrl_panel")
         self.ctrl_panel.setFixedWidth(320)
-        self.ctrl_panel.setStyleSheet("""
-            QFrame#ctrl_panel {
-                background-color: #ffffff;
-                border: 1px solid #e2e8f0;
-                border-radius: 8px;
-            }
-            QLabel {
-                border: none;
-                background: transparent;
-                font-family: "Microsoft YaHei", sans-serif;
-            }
-        """)
         ctrl_layout = QVBoxLayout(self.ctrl_panel)
         ctrl_layout.setContentsMargins(15, 20, 15, 20)
         ctrl_layout.setSpacing(15)
@@ -183,17 +171,8 @@ class YoloDashboardWidget(QWidget):
         )
         self.input_stack.addWidget(self.upload_video)
         
-        # Page 2: Camera Selector
         self.cam_panel = QWidget()
         self.cam_panel.setObjectName("cam_panel")
-        self.cam_panel.setStyleSheet("""
-            QWidget#cam_panel {
-                background-color: #f8fafc;
-                border: 1px dashed #cbd5e1;
-                border-radius: 8px;
-            }
-        """)
-        
         cam_layout = QVBoxLayout(self.cam_panel)
         cam_layout.setContentsMargins(15, 15, 15, 15)
         cam_layout.setSpacing(12)
@@ -252,20 +231,8 @@ class YoloDashboardWidget(QWidget):
         select_group_layout.addLayout(cam_row)
         cam_layout.addWidget(select_group)
         
-        # 4. Device Specs Card
         self.specs_card = QFrame()
         self.specs_card.setObjectName("specs_card")
-        self.specs_card.setStyleSheet("""
-            QFrame {
-                background-color: #ffffff;
-                border: 1px solid #e2e8f0;
-                border-radius: 6px;
-            }
-            QLabel {
-                border: none;
-                background: transparent;
-            }
-        """)
         specs_layout = QVBoxLayout(self.specs_card)
         specs_layout.setContentsMargins(10, 10, 10, 10)
         specs_layout.setSpacing(6)
@@ -314,17 +281,6 @@ class YoloDashboardWidget(QWidget):
         self.lbl_status = QLabel("状态: 准备就绪")
         self.lbl_status.setObjectName("dashboard_status")
         self.lbl_status.setWordWrap(True)
-        self.lbl_status.setStyleSheet("""
-            QLabel {
-                font-family: Consolas;
-                font-size: 11px;
-                color: #64748b;
-                background-color: #f8fafc;
-                border: 1px solid #e2e8f0;
-                border-radius: 4px;
-                padding: 8px;
-            }
-        """)
         ctrl_layout.addWidget(self.lbl_status)
         
         # --- 左侧图像对比分屏展示区 (Width: Stretch) ---
@@ -332,16 +288,8 @@ class YoloDashboardWidget(QWidget):
         self.split_view.set_labels("输入源画面", "检测结果")
         self.split_view.setMinimumSize(400, 300)
         
-        # Display area container for better styling
         self.display_frame = QFrame()
         self.display_frame.setObjectName("display_frame")
-        self.display_frame.setStyleSheet("""
-            QFrame {
-                background-color: #f8fafc;
-                border: 1px solid #e2e8f0;
-                border-radius: 8px;
-            }
-        """)
         display_layout = QVBoxLayout(self.display_frame)
         display_layout.setContentsMargins(10, 10, 10, 10)
         display_layout.addWidget(self.split_view)

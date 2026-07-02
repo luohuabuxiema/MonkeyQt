@@ -714,6 +714,13 @@ def _palette() -> dict[str, str | int | bool]:
 
 
 def _apply_widget(widget: QWidget, p: dict[str, str | int | bool]) -> None:
+    if hasattr(widget, "set_theme_style"):
+        try:
+            widget.set_theme_style()
+        except Exception:
+            pass
+        return
+
     name = _theme_class_name(widget)
 
     if _apply_datatable_descendant(widget, p):
@@ -2042,6 +2049,7 @@ def _titlebar_surface(widget: QWidget, p: dict[str, str | int | bool]) -> str:
 
 
 def _apply_titlebar(widget: QWidget, p: dict[str, str | int | bool]) -> None:
+    _save_widget(widget)
     if not hasattr(widget, "_mk_theme_original_titlebar_state"):
         widget._mk_theme_original_titlebar_state = {
             "bg": getattr(widget, "_bg_color", None),
@@ -2161,6 +2169,13 @@ def _restore_titlebar(widget: QWidget) -> None:
     widget._hover_color = state["hover"]
     widget._border_bottom = state["border"]
     delattr(widget, "_mk_theme_original_titlebar_state")
+    
+    # Restore min, max, close button stylesheets to default
+    for btn_name in ("btn_min", "btn_max", "btn_close"):
+        btn = getattr(widget, btn_name, None)
+        if btn is not None:
+            _restore_widget(btn)
+            
     if hasattr(widget, "apply_theme_colors"):
         widget.apply_theme_colors()
 
@@ -2419,11 +2434,11 @@ def _combobox_qss(p: dict[str, str | int | bool]) -> str:
             color: {p['text']};
         }}
         QComboBox QAbstractItemView::item:selected {{
-            background-color: transparent;
+            background-color: {_soft_selection_surface(p)};
             color: {selected_text};
         }}
         QComboBox QAbstractItemView::item:selected:hover {{
-            background-color: {hover_surface};
+            background-color: {_soft_selection_surface(p)};
             color: {selected_text};
         }}
     """
@@ -3049,29 +3064,57 @@ def _apply_upload(widget: QWidget, p: dict[str, str | int | bool]) -> None:
 
         widget.set_drag_state = types.MethodType(_theme_set_drag_state, widget)
 
-    widget.setStyleSheet("MkUpload { background: transparent; border: none; }")
+    del_hover = "#3A2024" if p["dark"] else "#FEECEC"
+    del_pressed = "#4A2026" if p["dark"] else "#FDDDDD"
+    del_radius = 0 if p["flat"] else 4
+
+    widget.setStyleSheet(f"""
+        MkUpload {{
+            background: transparent;
+            border: none;
+        }}
+        QFrame#FileCard {{
+            background-color: {p['panel']};
+            border: {p['border_rule']};
+            border-radius: {p['radius']};
+        }}
+        QFrame#FileCard:hover {{
+            background-color: {p['surface_muted']};
+            border-color: {p['primary']};
+        }}
+        QLabel {{
+            color: {p['text']};
+            background: transparent;
+            border: none;
+        }}
+        QFrame#FileCard QPushButton {{
+            background-color: transparent;
+            border: none;
+            border-radius: {del_radius}px;
+            padding: 0px;
+            margin: 0px;
+            min-width: 0px;
+            min-height: 0px;
+            outline: none;
+        }}
+        QFrame#FileCard QPushButton:hover {{
+            background-color: {del_hover};
+            border: none;
+        }}
+        QFrame#FileCard QPushButton:pressed {{
+            background-color: {del_pressed};
+            border: none;
+        }}
+        QFrame#FileCard QPushButton:focus {{
+            border: none;
+            outline: none;
+        }}
+    """)
     _apply_upload_state(widget, p, False)
 
     if hasattr(widget, "file_list_widget"):
         _save_widget(widget.file_list_widget)
         widget.file_list_widget.setStyleSheet("background: transparent; border: none;")
-    for card in widget.findChildren(QWidget, "FileCard"):
-        _save_widget(card)
-        card.setStyleSheet(f"""
-            QFrame#FileCard {{
-                background-color: {p['panel']};
-                border: {p['border_rule']};
-                border-radius: {p['radius']};
-            }}
-            QFrame#FileCard:hover {{
-                background-color: {p['surface_muted']};
-                border-color: {p['primary']};
-            }}
-        """)
-        for button in card.findChildren(QPushButton):
-            if _is_upload_remove_button(button):
-                _save_widget(button)
-                button.setStyleSheet(_upload_remove_button_qss(p))
 
 
 def _apply_upload_state(widget: QWidget, p: dict[str, str | int | bool], active: bool) -> None:

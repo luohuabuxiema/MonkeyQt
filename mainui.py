@@ -536,7 +536,7 @@ class QuickStartApp(MkWindow):
 
 if __name__ == "__main__": 
     app = QApplication(sys.argv) 
-    use_theme("HUD 科幻界面")
+    # use_theme("黏土拟态")
     window = QuickStartApp() 
     window.show() 
     sys.exit(app.exec()) 

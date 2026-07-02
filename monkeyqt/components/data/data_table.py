@@ -219,10 +219,38 @@ class MkDataTable(QWidget):
     selectionChanged = Signal(list)       # list of selected row dicts
 
     def __init__(self, columns: list = None, data: list = None, page_size: int = 10, selection_enabled: bool = True, parent=None):
+        from PySide6.QtWidgets import QWidget
+        # Resolve positional parameters or parent
+        if isinstance(page_size, QWidget):
+            parent = page_size
+            page_size = 10
+        elif isinstance(selection_enabled, QWidget):
+            parent = selection_enabled
+            selection_enabled = True
+
         super().__init__(parent)
         
-        self.columns_config = columns or []
-        self._all_data = data or []
+        # 自动转换列配置为 dict 列表（如果传入的是字符串列表）
+        if columns and len(columns) > 0 and isinstance(columns[0], str):
+            columns_config = [{"label": col, "key": col} for col in columns]
+        else:
+            columns_config = columns or []
+
+        # 自动转换行列表为 dict 列表（如果传入的是列表嵌套列表）
+        if data and len(data) > 0 and isinstance(data[0], list):
+            adapted_data = []
+            for row in data:
+                row_dict = {}
+                for idx, col in enumerate(columns_config):
+                    key = col["key"]
+                    if idx < len(row):
+                        row_dict[key] = row[idx]
+                adapted_data.append(row_dict)
+            self._all_data = adapted_data
+        else:
+            self._all_data = data or []
+            
+        self.columns_config = columns_config
         self.page_size = page_size
         self.selection_enabled = selection_enabled
         
@@ -323,6 +351,17 @@ class MkDataTable(QWidget):
 
     def set_data(self, data: list):
         """Sets new dataset and refreshes table from page 1."""
+        if data and len(data) > 0 and isinstance(data[0], list):
+            adapted_data = []
+            for row in data:
+                row_dict = {}
+                for idx, col in enumerate(self.columns_config):
+                    key = col["key"]
+                    if idx < len(row):
+                        row_dict[key] = row[idx]
+                adapted_data.append(row_dict)
+            data = adapted_data
+
         self._all_data = data or []
         self._selected_keys.clear()
         self.pagination.set_total(len(self._all_data))

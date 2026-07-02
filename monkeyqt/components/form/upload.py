@@ -81,6 +81,35 @@ class MkUpload(QWidget):
         self.main_layout.addWidget(self.file_list_widget)
         
         # Apply initial styles
+        self.setStyleSheet("""
+            QFrame#MkDropArea {
+                border: 2px dashed #cbd5e1;
+                border-radius: 8px;
+                background-color: #f8fafc;
+            }
+            QFrame#MkDropArea[dragActive="true"] {
+                border-color: #3b82f6;
+                background-color: #eff6ff;
+            }
+            QFrame#MkDropArea:hover {
+                border-color: #3b82f6;
+                background-color: #eff6ff;
+            }
+            QLabel {
+                color: #334155;
+                background: transparent;
+                border: none;
+            }
+            QFrame#FileCard {
+                background-color: #f8fafc;
+                border: 1px solid #e2e8f0;
+                border-radius: 6px;
+            }
+            QFrame#FileCard:hover {
+                background-color: #f1f5f9;
+                border-color: #cbd5e1;
+            }
+        """)
         self.set_drag_state(False)
         self.update_icons()
         
@@ -90,35 +119,12 @@ class MkUpload(QWidget):
         self.icon_label.setPixmap(upload_pix)
 
     def set_drag_state(self, active: bool):
-        # Styles reflecting standard modern element-plus/shadcn file uploader colors
-        if active:
-            # Active Drag Enter style: bright blue border and soft highlight background
-            self.drop_area.setStyleSheet("""
-                QFrame#MkDropArea {
-                    border: 2px dashed #3b82f6;
-                    border-radius: 8px;
-                    background-color: #eff6ff;
-                }
-            """)
-            self.main_text_label.setStyleSheet("color: #2563eb;")
-            self.tip_label.setStyleSheet("color: #60a5fa;")
-            self.icon_label.setPixmap(MkPhosphorIcon.get_pixmap("upload-simple", "#3b82f6", 48))
-        else:
-            # Normal style: soft gray dashed border and pale background, highlighting on hover
-            self.drop_area.setStyleSheet("""
-                QFrame#MkDropArea {
-                    border: 2px dashed #cbd5e1;
-                    border-radius: 8px;
-                    background-color: #f8fafc;
-                }
-                QFrame#MkDropArea:hover {
-                    border-color: #3b82f6;
-                    background-color: #eff6ff;
-                }
-            """)
-            self.main_text_label.setStyleSheet("color: #334155;")
-            self.tip_label.setStyleSheet("color: #64748b;")
-            self.icon_label.setPixmap(MkPhosphorIcon.get_pixmap("upload-simple", "#64748b", 48))
+        self.drop_area.setProperty("dragActive", active)
+        self.drop_area.style().unpolish(self.drop_area)
+        self.drop_area.style().polish(self.drop_area)
+        
+        color = "#3b82f6" if active else "#64748b"
+        self.icon_label.setPixmap(MkPhosphorIcon.get_pixmap("upload-simple", color, 48))
 
     def eventFilter(self, obj, event: QEvent) -> bool:
         if obj == self.drop_area:
@@ -235,17 +241,6 @@ class MkUpload(QWidget):
             # Create a card frame for each file
             card = QFrame()
             card.setObjectName("FileCard")
-            card.setStyleSheet("""
-                QFrame#FileCard {
-                    background-color: #f8fafc;
-                    border: 1px solid #e2e8f0;
-                    border-radius: 6px;
-                }
-                QFrame#FileCard:hover {
-                    background-color: #f1f5f9;
-                    border-color: #cbd5e1;
-                }
-            """)
             card_layout = QHBoxLayout(card)
             card_layout.setContentsMargins(10, 8, 10, 8)
             card_layout.setSpacing(10)

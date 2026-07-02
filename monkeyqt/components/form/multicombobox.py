@@ -147,12 +147,18 @@ class MkMultiComboBox(QFrame):
     """
     selectionChanged = Signal(list)
     
-    def __init__(self, parent=None):
+    def __init__(self, placeholder="默认检测所有类别", parent=None):
+        from PySide6.QtWidgets import QWidget
+        if isinstance(placeholder, QWidget):
+            parent = placeholder
+            placeholder = "默认检测所有类别"
+            
         super().__init__(parent)
         self.setObjectName("combo_frame")
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
         
+        self._placeholder = placeholder
         self._last_close_time = 0
         self.setProperty("focused", "false")
         
@@ -211,7 +217,7 @@ class MkMultiComboBox(QFrame):
                 border: none;
             }
         """)
-        self.text_label.setText("默认检测所有类别")
+        self.text_label.setText(placeholder)
         
         self.scroll_area.setWidget(self.text_label)
         self._sync_text_label_geometry()
@@ -353,7 +359,7 @@ class MkMultiComboBox(QFrame):
             """)
             self.text_label.adjustSize()
         else:
-            self.text_label.setText("默认检测所有类别")
+            self.text_label.setText(self._placeholder)
             self.text_label.setStyleSheet(f"""
                 QLabel#text_label {{
                     color: {color_placeholder};

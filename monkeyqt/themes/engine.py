@@ -166,9 +166,12 @@ class ThemeEngine(QObject):
     @classmethod
     def list_theme_options(cls, include_default: bool = True) -> list:
         """返回主题选择器可用项，可包含 MonkeyQt 默认样式。"""
+        lst = THEME_NAMES.copy()
+        if cls.DEFAULT_THEME_NAME in lst:
+            lst.remove(cls.DEFAULT_THEME_NAME)
         if include_default:
-            return [cls.DEFAULT_THEME_NAME] + THEME_NAMES.copy()
-        return THEME_NAMES.copy()
+            return [cls.DEFAULT_THEME_NAME] + lst
+        return lst
 
     @classmethod
     def themes_by_type(cls, style_type: str) -> list:
@@ -179,7 +182,7 @@ class ThemeEngine(QObject):
     def _ensure_current(cls):
         """Lazy initialize the active token set before components query it."""
         if not cls._current_name:
-            cls._current_name = cls.DEFAULT_THEME_NAME
+            cls._current_name = THEME_NAMES[0] if THEME_NAMES else cls.DEFAULT_THEME_NAME
         if cls._current_name and not cls._current_tokens:
             source = cls._default_tokens if cls._current_name == cls.DEFAULT_THEME_NAME else THEME_TOKENS[cls._current_name]
             cls._current_tokens = cls._normalize_tokens(source)
@@ -669,9 +672,9 @@ class ThemeEngine(QObject):
             QToolTip {{
                 background-color: {card_bg};
                 color: {fg};
-                border: {border_w} solid {panel_border};
-                border-radius: 0px;
-                padding: 5px 8px;
+                border: 1px solid {panel_border};
+                border-radius: {0 if cls.is_brutal() or cls.is_pixel() else 4}px;
+                padding: 4px 8px;
             }}
 
             QScrollBar:vertical {{

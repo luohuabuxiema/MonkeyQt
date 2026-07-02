@@ -1,21 +1,18 @@
 # -*- coding: utf-8 -*-
-"""
-ThemedCard — 支持 67 种 UI 风格的卡片容器组件
-"""
-
-from PySide6.QtWidgets import QFrame, QVBoxLayout, QLabel, QGraphicsBlurEffect
 from PySide6.QtCore import Qt, Property
-from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QPainterPath, QFont, QLinearGradient
-from ..engine import ThemeEngine
-from ..style_utils import draw_liquid_glass, parse_px, qcolor
+from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QFont
+from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout
+
+from monkeyqt.themes.engine import ThemeEngine
+from monkeyqt.themes.style_utils import draw_liquid_glass, parse_px, qcolor
 
 
-class ThemedCard(QFrame):
+class MkCard(QFrame):
     """
-    风格化卡片容器。
-
+    MkCard 组件 - 风格化卡片容器，完美自适应 68 种内置主题风格。
+    
     用法:
-        card = ThemedCard(title="Settings", parent=self)
+        card = MkCard(title="Settings", parent=self)
         card_layout = card.content_layout  # 在此添加子组件
     """
 
@@ -90,12 +87,12 @@ class ThemedCard(QFrame):
         card_bg = bg if not t.is_dark() else t._lighten_hex(bg, 0.06)
 
         self.setStyleSheet(f"""
-            ThemedCard {{
+            MkCard {{
                 background-color: {card_bg};
                 border: {border_w} solid {border};
                 border-radius: {radius};
             }}
-            ThemedCard:hover {{
+            MkCard:hover {{
                 border-color: {t._lighten_hex(t.get('--primary', '#409EFF'), 0.3)};
             }}
         """)

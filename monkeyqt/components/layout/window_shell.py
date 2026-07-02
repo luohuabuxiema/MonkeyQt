@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
-"""ThemedWindowShell — themed titlebar and content shell preview."""
-
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
-from ..engine import ThemeEngine
+from monkeyqt.themes.engine import ThemeEngine
 
 
-class ThemedTitleBar(QFrame):
-    """A non-frameless themed titlebar surface."""
-
+class MkTitleBarShell(QFrame):
+    """
+    MkTitleBarShell - 非无边框的内置标题栏外壳，用于在布局中模拟窗口边框。
+    """
     closeClicked = Signal()
     minimizeClicked = Signal()
     maximizeClicked = Signal()
@@ -72,16 +71,17 @@ class ThemedTitleBar(QFrame):
         """)
 
 
-class ThemedWindowShell(QFrame):
-    """A themed window-like shell for previews and embedded panels."""
-
+class MkWindowShell(QFrame):
+    """
+    MkWindowShell - 嵌入式模拟窗口外壳容器，完美支持 68 种主题切换。
+    """
     def __init__(self, title="MonkeyQt Window", parent=None):
         super().__init__(parent)
         self.setObjectName("themedWindowShell")
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
-        self.titlebar = ThemedTitleBar(title)
+        self.titlebar = MkTitleBarShell(title)
         self.content = QWidget()
         self.content.setObjectName("themedWindowContent")
         self.content_layout = QVBoxLayout(self.content)

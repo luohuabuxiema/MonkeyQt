@@ -8,7 +8,6 @@ import datetime
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTextEdit, QSizePolicy
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QTextCursor, QIcon
-from monkeyqt.components.basic.button import MkButton
 from monkeyqt.core.icons import MkPhosphorIcon
 
 
@@ -34,6 +33,8 @@ class MkConsole(QWidget):
         }
 
         self._init_ui(title)
+        from monkeyqt.themes.engine import ThemeEngine
+        ThemeEngine.instance().themeChanged.connect(self.apply_theme_colors)
         self.apply_theme_colors()
 
     def _init_ui(self, title):
@@ -78,6 +79,7 @@ class MkConsole(QWidget):
         self.header_layout.addStretch()
 
         # 清除按钮
+        from monkeyqt.components.basic.button import MkButton
         self.btn_clear = MkButton("清除", type="default", size="small")
         self.btn_clear.clicked.connect(self.clear)
         self.header_layout.addWidget(self.btn_clear)
@@ -271,4 +273,8 @@ class MkConsole(QWidget):
 
     def _update_style(self):
         """提供给全局适配器的主动重绘槽"""
+        self.apply_theme_colors()
+
+    def set_theme_style(self, style_name: str = None):
+        """标准主题组件的样式重绘槽"""
         self.apply_theme_colors()

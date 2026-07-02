@@ -1,7 +1,7 @@
 # Avatar 头像与头像菜单
 
 `Avatar` 组件用于展示用户头像，支持图片和文字模式，支持圆形和方形。
-此外，MonkeyQt 提供了 `MkAvatarMenu` 和 `ThemedAvatarMenu`，支持点击头像弹出下拉动作菜单，配合 `MkWindow` 可快速搭建现代化桌面的个人中心入口。
+此外，MonkeyQt 提供了 `MkAvatarMenu`，支持点击头像弹出下拉动作菜单，配合 `MkWindow` 可快速搭建现代化桌面的个人中心入口。
 
 ---
 
@@ -37,16 +37,16 @@ avatar_circle.size = 64
 
 ---
 
-## 2. MkAvatarMenu & ThemedAvatarMenu 头像菜单
+## 2. MkAvatarMenu 头像菜单
 
-`ThemedAvatarMenu` 继承自 `MkAvatarMenu`，为标题栏量身定做，具备**68种主题自适应渲染**、**下拉弹窗微圆角边缘裁剪**以及**边缘溢出自动校正对齐**等特性。
+`MkAvatarMenu` 为标题栏量身定做，具备**68种主题自适应渲染**、**下拉弹窗微圆角边缘裁剪**以及**边缘溢出自动校正对齐**等特性。
 
 ### 基础用法
 
 ```python
-from monkeyqt import ThemedAvatarMenu
+from monkeyqt import MkAvatarMenu
 
-avatar_menu = ThemedAvatarMenu(
+avatar_menu = MkAvatarMenu(
     text="落花",
     image_path="user_avatar.png",
     shape="circle",
@@ -345,7 +345,7 @@ avatar_menu.actionTriggered.connect(self._on_avatar_action)
 | `shape` | `str` | 获取/设置形状，可选值为 `"circle"`（圆形）或 `"square"`（微圆角矩形） |
 | `size` | `int` | 获取/设置头像显示尺寸（宽高像素） |
 
-### ThemedAvatarMenu (头像下拉菜单)
+### MkAvatarMenu (头像下拉菜单)
 
 | 属性/方法/信号 | 类型 | 说明 |
 | :--- | :--- | :--- |

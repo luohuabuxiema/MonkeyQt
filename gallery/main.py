@@ -13,7 +13,7 @@ from monkeyqt import (
     MkInput, MkCaptchaWidget, MkAuthScreen, MkMessage,
     MkAvatar, MkTable, MkDataTable, MkImageCompare, MkImageSplit,
     MkTitleBar, MkWindow, MkUpload, MkComboBox, MkMultiComboBox,
-    MkConsole, ThemedConsole,
+    MkConsole,
     ThemeEngine, MkThemeSelector, apply_monkeyqt_theme
 )
 
@@ -766,8 +766,8 @@ class ConsoleGallery(QWidget):
         desc.setStyleSheet("color: #64748b; font-size: 13px; line-height: 18px;")
         layout.addWidget(desc)
         
-        # 2. 实例化 ThemedConsole
-        self.console = ThemedConsole("演示控制台 / Demo Console")
+        # 2. 实例化 MkConsole
+        self.console = MkConsole("演示控制台 / Demo Console")
         layout.addWidget(self.console, stretch=1)
         
         # 3. 交互控制按钮
