@@ -208,10 +208,10 @@ class MkTitleBar(QWidget):
             self.center_layout.addStretch()
             
         else:  # "default"
-            self._bg_color = "#ffffff"
-            self._text_color = "#0f172a"
-            self._hover_color = "#f1f5f9"
-            self._height = 40
+            self._bg_color = "#f3f4f6" if not self._is_dark_theme() else "#1f2937"
+            self._text_color = "#374151" if not self._is_dark_theme() else "#f9fafb"
+            self._hover_color = "#e5e7eb" if not self._is_dark_theme() else "#374151"
+            self._height = 38
             self._button_style = "windows"
             self.title_label.setFont(QFont("Microsoft YaHei", 9))
             
@@ -627,10 +627,10 @@ class MkWindow(QMainWindow):
         bg_color = self.titlebar._bg_color if self.titlebar._bg_color else "#ffffff"
         
         # Container style with rounded corners and border
-        border_color = "#e4e4e7" if self._preset == "shadcn" else "#3f3f3f" if self._preset == "ida" else "#313244" if self._preset == "antigravity" else "#e2e8f0"
+        border_color = "#e4e4e7" if self._preset == "shadcn" else "#3f3f3f" if self._preset == "ida" else "#313244" if self._preset == "antigravity" else "#d1d5db"
         
-        # Dark/Light presets backgrounds
-        window_bg = "#ffffff" if self._preset == "shadcn" else "#f8fafc"
+        # Dark presets backgrounds
+        window_bg = "#ffffff"
         if self._preset in ["ida", "sunlogin", "soda", "antigravity"]:
             window_bg = "#1e1e2e" if self._preset == "antigravity" else "#1e1f22" if self._preset == "sunlogin" else "#121212" if self._preset == "soda" else "#1a1a1a"
             

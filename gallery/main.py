@@ -1312,6 +1312,33 @@ class MainGallery(MkWindow):
 
     def _apply_gallery_theme_shell(self, theme_name: str):
         """主题选择同时刷新演示外壳和当前 MonkeyQt 原组件样式。"""
+        if theme_name == ThemeEngine.DEFAULT_THEME_NAME:
+            apply_monkeyqt_theme(self)
+            self.titlebar._bg_color = "#ffffff"
+            self.titlebar._text_color = "#0f172a"
+            self.titlebar._hover_color = "#f1f5f9"
+            self.titlebar._border_bottom = "none"
+            self.titlebar.apply_theme_colors()
+            self.update_style()
+            if self.container_frame:
+                radius = 0 if self.isMaximized() else self._border_radius
+                self.container_frame.setStyleSheet(f"""
+                    QFrame#MkWindowContainer {{
+                        background-color: #f8fafc;
+                        border: 1px solid #e2e8f0;
+                        border-radius: {radius}px;
+                    }}
+                """)
+            if hasattr(self, "content_area"):
+                self.content_area.setStyleSheet("")
+            if hasattr(self, "central_widget"):
+                self.central_widget.setStyleSheet("")
+            self.theme_label.setStyleSheet(
+                "QLabel#GalleryThemeLabel { background: transparent; color: #0f172a; "
+                "font-size: 12px; font-weight: 700; }"
+            )
+            return
+
         tokens = ThemeEngine.current_tokens()
         bg = tokens.get("--bg", "#FFFFFF")
         surface = tokens.get("--glass-surface", tokens.get("--surface", "#FFFFFF")) if ThemeEngine.is_glass() else tokens.get("--surface", "#FFFFFF")

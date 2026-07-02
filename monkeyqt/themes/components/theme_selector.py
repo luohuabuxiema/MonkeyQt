@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
-"""MkThemeSelector - compact switcher for MonkeyQt default + 67 UI styles."""
+"""MkThemeSelector - compact switcher for 68 UI styles."""
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QComboBox
 
 from ..engine import ThemeEngine
-from ..names import DEFAULT_THEME_CN_NAME, theme_display_name
+from ..names import theme_display_name
 
 
 class MkThemeSelector(QComboBox):
-    """A small combobox that switches between built-in MonkeyQt styling and 67 themes."""
+    """A small combobox that switches between 68 themes."""
 
     themeSelected = Signal(str)
 
