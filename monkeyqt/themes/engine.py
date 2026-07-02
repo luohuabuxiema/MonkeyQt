@@ -23,23 +23,25 @@ class ThemeEngine(QObject):
     themeChanged = Signal(str)
 
     _instance = None
-    DEFAULT_THEME_NAME = "MonkeyQt Default"
-    DEFAULT_THEME_KEY = "__monkeyqt_default__"
+    DEFAULT_THEME_NAME = "Elegant Light"
+    DEFAULT_THEME_KEY = "Elegant Light"
     _default_tokens = {
         "name": DEFAULT_THEME_NAME,
-        "type": "Built-in",
-        "keywords": "MonkeyQt built-in default component styling",
-        "--bg": "#F5F7FA",
-        "--fg": "#1E293B",
-        "--primary": "#409EFF",
-        "--secondary": "#F8FAFC",
-        "--accent": "#67C23A",
+        "type": "General",
+        "keywords": "Premium, elegant, clean, modern, high contrast, blue accent, light mode",
+        "--bg": "#F8FAFC",
+        "--fg": "#0F172A",
+        "--primary": "#3B82F6",
+        "--secondary": "#FFFFFF",
+        "--accent": "#10B981",
         "--border": "#E2E8F0",
-        "--radius": "6px",
-        "--shadow": "",
+        "--radius": "8px",
+        "--shadow": "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
         "--border-width": "1px",
         "--blur": "",
         "--glow": "",
+        "--titlebar-bg": "#FFFFFF",
+        "--sidebar-bg": "#F1F5F9",
     }
     _current_name: str = ""
     _current_tokens: dict = {}

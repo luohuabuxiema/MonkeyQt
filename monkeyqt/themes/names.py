@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Display names for the MonkeyQt theme selector."""
 
-DEFAULT_THEME_CN_NAME = "MonkeyQt 默认样式"
+DEFAULT_THEME_CN_NAME = "雅致亮色"
 
 THEME_CN_NAMES = {
     "Elegant Light": "雅致亮色",
