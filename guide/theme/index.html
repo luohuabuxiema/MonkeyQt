@@ -595,10 +595,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#67" class="md-nav__link">
+  <a href="#68" class="md-nav__link">
     <span class="md-ellipsis">
       
-        常用主题列表 (67 种内置设计风格)
+        常用主题列表 (68 种内置设计风格)
       
     </span>
   </a>
@@ -1920,10 +1920,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#67" class="md-nav__link">
+  <a href="#68" class="md-nav__link">
     <span class="md-ellipsis">
       
-        常用主题列表 (67 种内置设计风格)
+        常用主题列表 (68 种内置设计风格)
       
     </span>
   </a>
@@ -1951,14 +1951,14 @@
 
 
 <h1 id="theme-styles">主题样式 (Theme Styles)<a class="headerlink" href="#theme-styles" title="Permanent link">&para;</a></h1>
-<p>MonkeyQt 内置了极其强大、丰富的<strong>主题样式</strong>。它包含 <strong>67 种不同的 UI 设计风格</strong>（包括极简瑞士风、新拟物化、玻璃拟态、粗野主义、赛博朋克、HUD 科幻、墨水屏风格等），并提供了全局一键切换和自动样式应用功能。</p>
+<p>MonkeyQt 内置了极其强大、丰富的<strong>主题样式</strong>。它包含 <strong>68 种不同的 UI 设计风格</strong>（包括极简亮色、极简瑞士风、新拟物化、玻璃拟态、粗野主义、赛博朋克、HUD 科幻、墨水屏风格等），并提供了全局一键切换和自动样式应用功能。</p>
 <hr />
 <h2 id="_1">核心概念<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <p>MonkeyQt 的主题样式通过以下几个核心组件协同工作：</p>
 <ol>
-<li><strong><code>ThemeEngine</code>（风格引擎）</strong>：全局唯一的单例，负责管理当前活跃主题的 Design Tokens（颜色、圆角、边框、模糊度等）和构建应用级的全局样式表 (QSS)。</li>
+<li><strong><code>ThemeEngine</code>（风格引擎）</strong>：全局唯一的单例，负责管理当前活跃主题 learnings / Design Tokens（颜色、圆角、边框、模糊度等）和构建应用级的全局样式表 (QSS)。</li>
 <li><strong>自动应用机制 (<code>_ThemeAutoApplier</code>)</strong>：当开启自动模式时，系统会实时检测新实例化的组件并自动为其涂装当前主题的对应样式，开发者无需手动进行二次配置。</li>
-<li><strong><code>Themed</code> 系列组件</strong>：主题引擎专为各组件定制了主题适配逻辑，以在不同主题下达到最佳的视觉渲染效果。</li>
+<li><strong><code>Mk</code> 系列组件</strong>：主题引擎与所有 <code>Mk</code> 核心组件天然整合，并内置主题自适应渲染与抗锯齿细节，以在不同主题下达到最佳的视觉效果。</li>
 </ol>
 <hr />
 <h2 id="_2">基础用法<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
@@ -2535,7 +2535,7 @@ document.addEventListener("DOMContentLoaded", function() {
 </style>
 
 <hr />
-<h2 id="67">常用主题列表 (67 种内置设计风格)<a class="headerlink" href="#67" title="Permanent link">&para;</a></h2>
+<h2 id="68">常用主题列表 (68 种内置设计风格)<a class="headerlink" href="#68" title="Permanent link">&para;</a></h2>
 <p>以下是部分极具代表性的内置主题英文标识名与其中文显示名称：</p>
 <table>
 <thead>
@@ -2546,6 +2546,11 @@ document.addEventListener("DOMContentLoaded", function() {
 </tr>
 </thead>
 <tbody>
+<tr>
+<td style="text-align: left;"><code>"Elegant Light"</code></td>
+<td style="text-align: left;">雅致亮色</td>
+<td style="text-align: left;">极简亮色/高对比设计，标题栏与侧边栏分明</td>
+</tr>
 <tr>
 <td style="text-align: left;"><code>"Minimalism &amp; Swiss Style"</code></td>
 <td style="text-align: left;">极简瑞士风格</td>
@@ -2663,7 +2668,7 @@ document.addEventListener("DOMContentLoaded", function() {
 </tr>
 </tbody>
 </table>
-<p><em>可以在代码中使用 <code>ThemeEngine.list_themes()</code> 检索出全部 67+ 款可用主题的英文标识键名。</em></p>
+<p><em>可以在代码中使用 <code>ThemeEngine.list_themes()</code> 检索出全部 68+ 款可用主题的英文标识键名。</em></p>
 
 
 
