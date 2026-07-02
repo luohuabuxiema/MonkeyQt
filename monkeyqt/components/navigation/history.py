@@ -112,6 +112,7 @@ class MkHistoryNavigation(QWidget):
         pages: dict[str, int | QWidget],
         initial_page: str | None = None,
         animation_duration: int = 280,
+        icon_only: bool = True,
         parent=None,
     ):
         super().__init__(parent)

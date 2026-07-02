@@ -10,6 +10,8 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QPoint, Signal, QEvent, QRect, QSize
 from PySide6.QtGui import QFont, QCursor, QColor, QMouseEvent, QIcon
+
+from monkeyqt.components.navigation import MkAnimatedStackedWidget, MkHistoryNavigation, MkAvatarMenu
 from monkeyqt.core.icons import MkPhosphorIcon
 
 class MkTitleBar(QWidget):
@@ -820,9 +822,7 @@ class MkWindow(QMainWindow):
         if not self.use_custom_title_bar or not self.titlebar:
             return
 
-        from monkeyqt.themes.components.avatar_menu import ThemedAvatarMenu
-        from monkeyqt.themes.components.history_nav import ThemedHistoryNavigation
-        from monkeyqt.components.navigation.history import MkAnimatedStackedWidget
+
 
         self.disable_titlebar_extras()
 
@@ -839,7 +839,7 @@ class MkWindow(QMainWindow):
         if history_nav and target_stack is not None:
             pages = self._build_page_map(target_stack)
             current_page = self._current_page_id(target_stack, pages)
-            self.titlebar_history_nav = ThemedHistoryNavigation(
+            self.titlebar_history_nav = MkHistoryNavigation(
                 stack=target_stack,
                 pages=pages,
                 initial_page=current_page,
@@ -855,7 +855,7 @@ class MkWindow(QMainWindow):
                 {"id": "profile", "text": "个人主页", "icon": "user"},
                 {"id": "settings", "text": "设置", "icon": "gear"},
             ]
-            self.titlebar_avatar = ThemedAvatarMenu(
+            self.titlebar_avatar = MkAvatarMenu(
                 text=user_name[:2] if user_name else "U",
                 image_path=avatar_image,
                 shape="circle",
