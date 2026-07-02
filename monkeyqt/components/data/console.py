@@ -41,7 +41,7 @@ class MkConsole(QWidget):
         # 主布局：上下结构
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
-        self.main_layout.setSpacing(6)
+        self.main_layout.setSpacing(0)
 
         # ── 1. 头部区域 ──
         self.header_widget = QWidget()
@@ -88,6 +88,7 @@ class MkConsole(QWidget):
 
         # ── 2. 日志文本区域 ──
         self.text_edit = QTextEdit()
+        self.text_edit.setProperty("mk_theme_disabled", True)
         self.text_edit.setReadOnly(True)
         self.text_edit.setUndoRedoEnabled(False)
         self.text_edit.setFont(QFont("Consolas", 9))
