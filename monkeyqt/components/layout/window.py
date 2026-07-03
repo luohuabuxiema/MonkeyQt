@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (
     QPushButton, QLineEdit, QGraphicsDropShadowEffect, QFrame,
     QSizePolicy, QSpacerItem
 )
-from PySide6.QtCore import Qt, QPoint, Signal, QEvent, QRect, QSize
+from PySide6.QtCore import Qt, QPoint, Signal, QEvent, QRect, QSize, QTimer
 from PySide6.QtGui import QFont, QCursor, QColor, QMouseEvent, QIcon
 
 from monkeyqt.components.navigation import MkAnimatedStackedWidget, MkHistoryNavigation, MkAvatarMenu
@@ -969,7 +969,16 @@ class MkWindow(QMainWindow):
     def changeEvent(self, event: QEvent):
         super().changeEvent(event)
         if event.type() == QEvent.Type.WindowStateChange:
+            QTimer.singleShot(0, self._handle_window_state_change)
+
+    def _handle_window_state_change(self):
+        try:
             if self.titlebar:
+                self.titlebar.apply_theme_colors()
+                style = self.titlebar.style()
+                style.unpolish(self.titlebar)
+                style.polish(self.titlebar)
+                self.titlebar.update()
                 self.titlebar.update_buttons()
 
             if self.use_custom_title_bar:
@@ -982,6 +991,8 @@ class MkWindow(QMainWindow):
                     if self.container_frame.graphicsEffect():
                         self.container_frame.graphicsEffect().setEnabled(True)
                 self.update_style()
+        except RuntimeError:
+            pass
 
     def closeEvent(self, event):
         if self._close_behavior == "hide":
