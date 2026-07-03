@@ -21,6 +21,8 @@ class MkTable(QTableWidget):
         self.horizontalHeader().setStretchLastSection(True)
         self.horizontalHeader().setDefaultAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.horizontalHeader().setMinimumSectionSize(90)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.setMinimumHeight(180)
         
         ThemeEngine.instance().themeChanged.connect(self.set_theme_style)
@@ -29,14 +31,36 @@ class MkTable(QTableWidget):
     def set_headers(self, headers):
         self.setColumnCount(len(headers))
         self.setHorizontalHeaderLabels(headers)
+        for col_idx, header in enumerate(headers):
+            item = self.horizontalHeaderItem(col_idx)
+            if item:
+                item.setToolTip(header)
 
     def set_data(self, data):
         self.setRowCount(len(data))
         for row_idx, row_data in enumerate(data):
             for col_idx, value in enumerate(row_data):
-                item = QTableWidgetItem(str(value))
+                val_str = str(value)
+                item = QTableWidgetItem(val_str)
                 item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+                item.setToolTip(val_str)
                 self.setItem(row_idx, col_idx, item)
+
+    def auto_fit_columns(self):
+        """
+        根据当前单元格内容的长度，自动调整所有列宽，并允许用户后续手动拖拽调整。
+        """
+        for col_idx in range(self.columnCount()):
+            self.horizontalHeader().setSectionResizeMode(col_idx, QHeaderView.ResizeMode.ResizeToContents)
+        
+        # 强制更新布局计算，以便 columnWidth 获得实际数值
+        self.horizontalHeader().updateGeometries()
+        
+        # 换回 Interactive 模式，以便用户能够手动拖拉调整
+        for col_idx in range(self.columnCount()):
+            width = self.columnWidth(col_idx)
+            self.horizontalHeader().setSectionResizeMode(col_idx, QHeaderView.ResizeMode.Interactive)
+            self.setColumnWidth(col_idx, max(width, 90))
 
     def set_theme_style(self, style_name: str = None):
         t = ThemeEngine
