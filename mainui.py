@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QPixmap, QImage, QIcon, QFont
-from monkeyqt import MkMenu, MkWindow, MkMessage, use_theme, MkSwitch, MkSlider, MkButton, MkAvatar, ThemeEngine
+from monkeyqt import MkMenu, MkWindow, MkMessage, use_theme
 from monkeyqt.core.icons import MkPhosphorIcon
 from core.yolo_predictor import YoloPredictor, YoloThread
 from core.camera_scanner import CameraScanner

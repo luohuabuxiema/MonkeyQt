@@ -6,6 +6,17 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QSlider, QSizePolicy, QToolTi
 from monkeyqt.themes.engine import ThemeEngine
 from monkeyqt.themes.style_utils import darken, lighten, parse_px, readable_text
 
+class MkBaseSlider(QSlider):
+    """
+    内部自定义 QSlider，重写 wheelEvent 以防止鼠标滚轮误触。
+    只有当滑块获得焦点（被点击过）时，滚轮才会改变数值；否则忽略该事件以使父容器可以正常滚动。
+    """
+    def wheelEvent(self, event):
+        if self.hasFocus():
+            super().wheelEvent(event)
+        else:
+            event.ignore()
+
 class MkSlider(QWidget):
     """
     MkSlider 组件 - 完美实现滑动条在所有内置 68 种主题风格中的 3D 浮雕与毛玻璃特效，
@@ -31,7 +42,7 @@ class MkSlider(QWidget):
         else:
             self.value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self.slider = QSlider(orientation)
+        self.slider = MkBaseSlider(orientation)
         self.slider.setCursor(Qt.CursorShape.PointingHandCursor)
         self.slider.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.slider.setAttribute(Qt.WidgetAttribute.WA_Hover)

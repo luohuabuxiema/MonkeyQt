@@ -177,12 +177,17 @@ class MkComboBox(QComboBox):
             painter.setPen(QPen(QColor("#000000"), 2))
             painter.drawRect(inset)
         elif t.is_glow():
-            glow = qcolor(primary, "#409EFF", 0.18)
             painter.setPen(Qt.PenStyle.NoPen)
-            painter.setBrush(QBrush(glow))
-            painter.drawRoundedRect(inset.adjusted(-3, -3, 3, 3), radius + 3, radius + 3)
-            painter.setBrush(QBrush(QColor(16, 18, 28)))
-            painter.setPen(QPen(qcolor(primary), 1))
+            if self._hovered or self.hasFocus():
+                glow = qcolor(primary, "#409EFF", 0.18)
+                painter.setBrush(QBrush(glow))
+                painter.drawRoundedRect(inset.adjusted(-3, -3, 3, 3), radius + 3, radius + 3)
+            
+            surface_color = t.get("--surface", "#1B2525")
+            painter.setBrush(QBrush(qcolor(surface_color)))
+            
+            border_color = primary if (self._hovered or self.hasFocus()) else t.get("--border", "#2C3E3E")
+            painter.setPen(QPen(qcolor(border_color), 1))
             painter.drawRoundedRect(inset, radius, radius)
         elif t.is_pixel():
             painter.setPen(QPen(QColor("#000000"), 2))

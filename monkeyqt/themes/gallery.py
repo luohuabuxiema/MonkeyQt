@@ -17,35 +17,12 @@ from PySide6.QtGui import QFont, QColor, QPalette, QIcon
 
 from .engine import ThemeEngine
 from monkeyqt import (
-    MkButton as ThemedButton,
-    MkInput as ThemedInput,
-    MkSwitch as ThemedSwitch,
-    MkCard as ThemedCard,
-    MkProgressBar as ThemedProgressBar,
-    MkAlert as ThemedAlert,
-    MkComboBox as ThemedComboBox,
-    MkSlider as ThemedSlider,
-    MkTabs as ThemedTabs,
-    MkCheckBox as ThemedCheckBox,
-    MkProgressRing as ThemedProgressRing,
-    MkAvatar as ThemedAvatar,
-    MkPagination as ThemedPagination,
-    MkBreadcrumb as ThemedBreadcrumb,
-    MkDropdown as ThemedDropdown,
-    MkTable as ThemedTable,
-    MkForm as ThemedForm,
-    MkDatePicker as ThemedDatePicker,
-    MkMultiComboBox as ThemedMultiComboBox,
-    MkUpload as ThemedUpload,
-    MkTopbar as ThemedTopbar,
-    MkMenu as ThemedMenu,
-    MkMessage as ThemedMessage,
-    MkCaptchaWidget as ThemedCaptchaWidget,
-    MkDataTable as ThemedDataTable,
-    MkImageCompare as ThemedImageCompare,
-    MkImageSplit as ThemedImageSplit,
-    MkWindowShell as ThemedWindowShell,
-    MkConsole as ThemedConsole,
+    MkButton, MkInput, MkSwitch, MkCard, MkProgressBar, MkAlert,
+    MkComboBox, MkSlider, MkTabs, MkCheckBox, MkProgressRing,
+    MkAvatar, MkPagination, MkBreadcrumb, MkDropdown, MkTable,
+    MkForm, MkDatePicker, MkMultiComboBox, MkUpload, MkTopbar,
+    MkMenu, MkMessage, MkCaptchaWidget, MkDataTable, MkImageCompare,
+    MkImageSplit, MkWindowShell, MkConsole
 )
 
 
@@ -315,14 +292,14 @@ class ThemeGallery(QMainWindow):
 
         # ── Navigation Shell ──
         nav_section = self._make_section("导航容器 (Topbar / Menu)")
-        self.topbar_demo = ThemedTopbar("MonkeyQt")
+        self.topbar_demo = MkTopbar("MonkeyQt")
         self.topbar_demo.add_item("dashboard", "仪表盘")
         self.topbar_demo.add_item("components", "组件")
         self.topbar_demo.add_item("themes", "主题")
         self.topbar_demo.set_active("components")
         nav_section.addWidget(self.topbar_demo)
 
-        self.menu_demo = ThemedMenu("侧边导航")
+        self.menu_demo = MkMenu("侧边导航")
         self.menu_demo.add_item("home", "首页", "⌂")
         self.menu_demo.add_item("detect", "检测面板", "◎")
         self.menu_demo.add_item("settings", "系统设置", "⚙")
@@ -334,12 +311,12 @@ class ThemeGallery(QMainWindow):
         btn_section = self._make_section("按钮 (Buttons)")
         btn_grid = QHBoxLayout()
         btn_grid.setSpacing(12)
-        self.btn_primary = ThemedButton("主要按钮", btn_type="primary")
-        self.btn_secondary = ThemedButton("次要按钮", btn_type="secondary")
-        self.btn_default = ThemedButton("默认按钮", btn_type="default")
-        self.btn_danger = ThemedButton("危险按钮", btn_type="danger")
-        self.btn_success = ThemedButton("成功按钮", btn_type="success")
-        self.btn_disabled = ThemedButton("禁用按钮", btn_type="primary")
+        self.btn_primary = MkButton("主要按钮", btn_type="primary")
+        self.btn_secondary = MkButton("次要按钮", btn_type="secondary")
+        self.btn_default = MkButton("默认按钮", btn_type="default")
+        self.btn_danger = MkButton("危险按钮", btn_type="danger")
+        self.btn_success = MkButton("成功按钮", btn_type="success")
+        self.btn_disabled = MkButton("禁用按钮", btn_type="primary")
         self.btn_disabled.setEnabled(False)
         for b in [self.btn_primary, self.btn_secondary, self.btn_default,
                    self.btn_danger, self.btn_success, self.btn_disabled]:
@@ -351,10 +328,10 @@ class ThemeGallery(QMainWindow):
         check_section = self._make_section("复选框 (CheckBox)")
         check_row = QHBoxLayout()
         check_row.setSpacing(18)
-        self.check_enabled = ThemedCheckBox("启用主题同步")
+        self.check_enabled = MkCheckBox("启用主题同步")
         self.check_enabled.setChecked(True)
-        self.check_glass = ThemedCheckBox("玻璃材质")
-        self.check_disabled = ThemedCheckBox("禁用项")
+        self.check_glass = MkCheckBox("玻璃材质")
+        self.check_disabled = MkCheckBox("禁用项")
         self.check_disabled.setEnabled(False)
         for c in [self.check_enabled, self.check_glass, self.check_disabled]:
             check_row.addWidget(c)
@@ -365,8 +342,8 @@ class ThemeGallery(QMainWindow):
         input_section = self._make_section("输入框 (Input)")
         input_row = QHBoxLayout()
         input_row.setSpacing(12)
-        self.input_normal = ThemedInput(placeholder="请输入内容...")
-        self.input_focused = ThemedInput(placeholder="搜索...")
+        self.input_normal = MkInput(placeholder="请输入内容...")
+        self.input_focused = MkInput(placeholder="搜索...")
         input_row.addWidget(self.input_normal)
         input_row.addWidget(self.input_focused)
         input_section.addLayout(input_row)
@@ -375,9 +352,9 @@ class ThemeGallery(QMainWindow):
         combo_section = self._make_section("下拉选择 (ComboBox)")
         combo_row = QHBoxLayout()
         combo_row.setSpacing(12)
-        self.combo_style = ThemedComboBox()
+        self.combo_style = MkComboBox()
         self.combo_style.addItems(["标准选项", "高级配置", "实时预览", "批量操作"])
-        self.combo_status = ThemedComboBox()
+        self.combo_status = MkComboBox()
         self.combo_status.addItems(["启用", "暂停", "草稿", "归档"])
         combo_row.addWidget(self.combo_style)
         combo_row.addWidget(self.combo_status)
@@ -386,14 +363,14 @@ class ThemeGallery(QMainWindow):
 
         # ── Date / Multi Select / Form ──
         form_section = self._make_section("表单组合 (Form / DatePicker / MultiComboBox)")
-        self.form_demo = ThemedForm("检测参数", "组合式表单容器，用于承载多种 themed 输入控件。")
-        self.date_picker_demo = ThemedDatePicker()
-        self.multi_combo_demo = ThemedMultiComboBox("选择检测类别")
+        self.form_demo = MkForm("检测参数", "组合式表单容器，用于承载多种 themed 输入控件。")
+        self.date_picker_demo = MkDatePicker()
+        self.multi_combo_demo = MkMultiComboBox("选择检测类别")
         self.multi_combo_demo.addItems(["person", "car", "bus", "dog", "cat"])
         self.multi_combo_demo.setCheckedData(["person", "car"])
         self.form_demo.add_row("日期", self.date_picker_demo)
         self.form_demo.add_row("类别", self.multi_combo_demo)
-        self.captcha_demo = ThemedCaptchaWidget()
+        self.captcha_demo = MkCaptchaWidget()
         self.form_demo.add_row("验证码", self.captcha_demo)
         form_section.addWidget(self.form_demo)
 
@@ -401,12 +378,12 @@ class ThemeGallery(QMainWindow):
         dropdown_section = self._make_section("下拉菜单 (Dropdown)")
         dropdown_row = QHBoxLayout()
         dropdown_row.setSpacing(12)
-        self.dropdown_action = ThemedDropdown("操作菜单")
+        self.dropdown_action = MkDropdown("操作菜单")
         self.dropdown_action.add_item("编辑", "edit")
         self.dropdown_action.add_item("复制", "copy")
         self.dropdown_action.add_separator()
         self.dropdown_action.add_item("删除", "delete")
-        self.dropdown_more = ThemedDropdown("更多")
+        self.dropdown_more = MkDropdown("更多")
         self.dropdown_more.add_item("导出 CSV", "export")
         self.dropdown_more.add_item("刷新数据", "refresh")
         dropdown_row.addWidget(self.dropdown_action)
@@ -416,11 +393,11 @@ class ThemeGallery(QMainWindow):
 
         # ── Slider ──
         slider_section = self._make_section("滑块 (Slider)")
-        self.slider_conf = ThemedSlider(Qt.Orientation.Horizontal)
+        self.slider_conf = MkSlider(Qt.Orientation.Horizontal)
         self.slider_conf.setRange(0, 100)
         self.slider_conf.setValue(72)
         self.slider_conf.set_formatter(lambda val: f"{val}%")
-        self.slider_iou = ThemedSlider(Qt.Orientation.Horizontal)
+        self.slider_iou = MkSlider(Qt.Orientation.Horizontal)
         self.slider_iou.setRange(0, 100)
         self.slider_iou.setValue(45)
         self.slider_iou.set_formatter(lambda val: f"{val / 100:.2f}")
@@ -431,8 +408,8 @@ class ThemeGallery(QMainWindow):
         switch_section = self._make_section("开关 (Switch)")
         switch_row = QHBoxLayout()
         switch_row.setSpacing(20)
-        self.switch_on = ThemedSwitch(checked=True)
-        self.switch_off = ThemedSwitch(checked=False)
+        self.switch_on = MkSwitch(checked=True)
+        self.switch_off = MkSwitch(checked=False)
         lbl_on = QLabel("开启")
         lbl_off = QLabel("关闭")
         for lbl in [lbl_on, lbl_off]:
@@ -448,14 +425,14 @@ class ThemeGallery(QMainWindow):
         card_section = self._make_section("卡片 (Card)")
         card_row = QHBoxLayout()
         card_row.setSpacing(16)
-        self.card_1 = ThemedCard(title="系统设置")
+        self.card_1 = MkCard(title="系统设置")
         card_inner = QLabel("此处显示卡片内部内容。\n这是一个带主题样式的卡片容器。")
         card_inner.setWordWrap(True)
         card_inner.setStyleSheet("background: transparent; font-size: 12px; font-family: 'Microsoft YaHei';")
         self.card_1.content_layout.addWidget(card_inner)
         self.card_1.setFixedSize(300, 150)
 
-        self.card_2 = ThemedCard(title="数据分析")
+        self.card_2 = MkCard(title="数据分析")
         card_inner2 = QLabel("仪表盘指标面板，\n采用对应风格的视觉样式。")
         card_inner2.setWordWrap(True)
         card_inner2.setStyleSheet("background: transparent; font-size: 12px; font-family: 'Microsoft YaHei';")
@@ -471,9 +448,9 @@ class ThemeGallery(QMainWindow):
         avatar_section = self._make_section("头像 (Avatar)")
         avatar_row = QHBoxLayout()
         avatar_row.setSpacing(12)
-        self.avatar_a = ThemedAvatar("MQ", shape="circle", size=48)
-        self.avatar_b = ThemedAvatar("AI", shape="square", size=48)
-        self.avatar_c = ThemedAvatar("YO", shape="circle", size=56)
+        self.avatar_a = MkAvatar("MQ", shape="circle", size=48)
+        self.avatar_b = MkAvatar("AI", shape="square", size=48)
+        self.avatar_c = MkAvatar("YO", shape="circle", size=56)
         avatar_row.addWidget(self.avatar_a)
         avatar_row.addWidget(self.avatar_b)
         avatar_row.addWidget(self.avatar_c)
@@ -482,9 +459,9 @@ class ThemeGallery(QMainWindow):
 
         # ── Progress Bar ──
         prog_section = self._make_section("进度条 (Progress Bar)")
-        self.prog_25 = ThemedProgressBar(percentage=25)
-        self.prog_65 = ThemedProgressBar(percentage=65)
-        self.prog_100 = ThemedProgressBar(percentage=100)
+        self.prog_25 = MkProgressBar(percentage=25)
+        self.prog_65 = MkProgressBar(percentage=65)
+        self.prog_100 = MkProgressBar(percentage=100)
         prog_section.addWidget(self.prog_25)
         prog_section.addWidget(self.prog_65)
         prog_section.addWidget(self.prog_100)
@@ -493,9 +470,9 @@ class ThemeGallery(QMainWindow):
         ring_section = self._make_section("进度环 (Progress Ring)")
         ring_row = QHBoxLayout()
         ring_row.setSpacing(18)
-        self.ring_normal = ThemedProgressRing(percentage=72, status="normal", width=96)
-        self.ring_success = ThemedProgressRing(percentage=100, status="success", width=96)
-        self.ring_warning = ThemedProgressRing(percentage=38, status="warning", width=96)
+        self.ring_normal = MkProgressRing(percentage=72, status="normal", width=96)
+        self.ring_success = MkProgressRing(percentage=100, status="success", width=96)
+        self.ring_warning = MkProgressRing(percentage=38, status="warning", width=96)
         for ring in [self.ring_normal, self.ring_success, self.ring_warning]:
             ring_row.addWidget(ring)
         ring_row.addStretch()
@@ -503,10 +480,10 @@ class ThemeGallery(QMainWindow):
 
         # ── Alert ──
         alert_section = self._make_section("提示框 (Alert)")
-        self.alert_info = ThemedAlert("这是一条系统提示信息。", alert_type="info")
-        self.alert_success = ThemedAlert("操作已成功完成！", alert_type="success")
-        self.alert_warning = ThemedAlert("在继续操作前，请先仔细检查。", alert_type="warning")
-        self.alert_error = ThemedAlert("处理过程中发生了一个错误。", alert_type="error")
+        self.alert_info = MkAlert("这是一条系统提示信息。", alert_type="info")
+        self.alert_success = MkAlert("操作已成功完成！", alert_type="success")
+        self.alert_warning = MkAlert("在继续操作前，请先仔细检查。", alert_type="warning")
+        self.alert_error = MkAlert("处理过程中发生了一个错误。", alert_type="error")
         alert_section.addWidget(self.alert_info)
         alert_section.addWidget(self.alert_success)
         alert_section.addWidget(self.alert_warning)
@@ -516,20 +493,20 @@ class ThemeGallery(QMainWindow):
         message_section = self._make_section("消息提示 (Message)")
         message_row = QHBoxLayout()
         message_row.setSpacing(10)
-        self.message_success = ThemedMessage("保存成功，主题已同步。", "success")
-        self.message_warning = ThemedMessage("部分风格需要自绘增强。", "warning")
+        self.message_success = MkMessage("保存成功，主题已同步。", "success")
+        self.message_warning = MkMessage("部分风格需要自绘增强。", "warning")
         message_row.addWidget(self.message_success)
         message_row.addWidget(self.message_warning)
         message_section.addLayout(message_row)
 
         # ── Upload ──
         upload_section = self._make_section("上传 (Upload)")
-        self.upload_demo = ThemedUpload(multiple=True, tip_text="支持拖拽或点击选择，适合图片/视频/模型文件。")
+        self.upload_demo = MkUpload(multiple=True, tip_text="支持拖拽或点击选择，适合图片/视频/模型文件。")
         upload_section.addWidget(self.upload_demo)
 
         # ── Breadcrumb ──
         breadcrumb_section = self._make_section("面包屑 (Breadcrumb)")
-        self.breadcrumb_demo = ThemedBreadcrumb(separator="/")
+        self.breadcrumb_demo = MkBreadcrumb(separator="/")
         self.breadcrumb_demo.set_items([
             {"id": "home", "text": "首页"},
             {"id": "themes", "text": "主题系统"},
@@ -539,12 +516,12 @@ class ThemeGallery(QMainWindow):
 
         # ── Pagination ──
         page_section = self._make_section("分页器 (Pagination)")
-        self.pagination_demo = ThemedPagination(total=186, page_size=10, current=8)
+        self.pagination_demo = MkPagination(total=186, page_size=10, current=8)
         page_section.addWidget(self.pagination_demo)
 
         # ── Table ──
         table_section = self._make_section("表格 (Table)")
-        self.table_demo = ThemedTable(0, 3)
+        self.table_demo = MkTable(0, 3)
         self.table_demo.set_headers(["组件", "状态", "主题适配"])
         self.table_demo.set_data([
             ["Button", "完成", "交互态/复杂风格"],
@@ -556,7 +533,7 @@ class ThemeGallery(QMainWindow):
 
         # ── DataTable ──
         data_table_section = self._make_section("数据表组合 (DataTable)")
-        self.data_table_demo = ThemedDataTable(
+        self.data_table_demo = MkDataTable(
             columns=["模型", "尺寸", "状态"],
             data=[
                 ["yolov8n.pt", "6.2MB", "Ready"],
@@ -572,9 +549,9 @@ class ThemeGallery(QMainWindow):
         image_section = self._make_section("图像组件 (Image Compare / Split)")
         image_row = QHBoxLayout()
         image_row.setSpacing(14)
-        self.image_compare_demo = ThemedImageCompare()
+        self.image_compare_demo = MkImageCompare()
         self.image_compare_demo.setFixedHeight(150)
-        self.image_split_demo = ThemedImageSplit()
+        self.image_split_demo = MkImageSplit()
         self.image_split_demo.setFixedHeight(150)
         image_row.addWidget(self.image_compare_demo)
         image_row.addWidget(self.image_split_demo)
@@ -582,7 +559,7 @@ class ThemeGallery(QMainWindow):
 
         # ── Window Shell ──
         window_section = self._make_section("窗口外壳 (Window / TitleBar)")
-        self.window_shell_demo = ThemedWindowShell("MonkeyQt Theme Preview")
+        self.window_shell_demo = MkWindowShell("MonkeyQt Theme Preview")
         self.window_shell_demo.setFixedHeight(130)
         shell_text = QLabel("可作为自定义标题栏、嵌入面板或窗口预览容器的主题化基础。")
         shell_text.setWordWrap(True)
@@ -592,7 +569,7 @@ class ThemeGallery(QMainWindow):
 
         # ── Tabs ──
         tabs_section = self._make_section("标签页 (Tabs)")
-        self.tabs_demo = ThemedTabs()
+        self.tabs_demo = MkTabs()
         for tab_id, title, body in [
             ("overview", "概览", "主题 token、组件状态和全局 QSS 的综合预览。"),
             ("metrics", "指标", "用于仪表盘、YOLO 检测面板、表单参数区等场景。"),
@@ -607,7 +584,7 @@ class ThemeGallery(QMainWindow):
 
         # ── Console ──
         console_section = self._make_section("控制台日志 (Console)")
-        self.console_demo = ThemedConsole()
+        self.console_demo = MkConsole()
         self.console_demo.setFixedHeight(220)
         console_section.addWidget(self.console_demo)
 

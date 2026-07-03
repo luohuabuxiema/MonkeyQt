@@ -43,8 +43,13 @@ class MkTable(QTableWidget):
                 val_str = str(value)
                 item = QTableWidgetItem(val_str)
                 item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-                item.setToolTip(val_str)
+                # item.setToolTip(val_str) will be called automatically via setItem override
                 self.setItem(row_idx, col_idx, item)
+
+    def setItem(self, row, column, item):
+        if item and not item.toolTip():
+            item.setToolTip(item.text())
+        super().setItem(row, column, item)
 
     def auto_fit_columns(self):
         """
