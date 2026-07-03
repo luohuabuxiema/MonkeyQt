@@ -16,9 +16,19 @@ class MkCard(QFrame):
         card_layout = card.content_layout  # 在此添加子组件
     """
 
-    def __init__(self, title="", parent=None):
+    def __init__(self, title="", show_title=True, parent=None):
+        from PySide6.QtWidgets import QWidget
+        if isinstance(title, QWidget):
+            parent = title
+            title = ""
+            show_title = True
+        elif isinstance(show_title, QWidget):
+            parent = show_title
+            show_title = True
+
         super().__init__(parent)
         self._title = title
+        self._show_title = show_title
         self._hovered = False
         self._time_angle = 0.0
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
@@ -34,8 +44,8 @@ class MkCard(QFrame):
         self._title_label.setStyleSheet("background: transparent;")
         font = QFont("Segoe UI", 13, QFont.Weight.DemiBold)
         self._title_label.setFont(font)
-        if title:
-            self._layout.addWidget(self._title_label)
+        self._layout.addWidget(self._title_label)
+        self._title_label.setVisible(bool(title) and show_title)
 
         # 内容区域（用户可往此添加子组件）
         self._content_widget = QFrame()
@@ -84,7 +94,7 @@ class MkCard(QFrame):
         radius = t.get("--radius", "6px")
         border_w = t.get("--border-width", "1px")
 
-        card_bg = bg if not t.is_dark() else t._lighten_hex(bg, 0.06)
+        card_bg = t.get("--surface", bg if not t.is_dark() else t._lighten_hex(bg, 0.06))
 
         self.setStyleSheet(f"""
             MkCard {{
@@ -169,9 +179,10 @@ class MkCard(QFrame):
         elif t.is_glow():
             inset = rect.adjusted(2, 2, -2, -2)
             # 主体
-            card_bg = QColor(20, 20, 30) if t.is_dark() else QColor(bg)
+            card_bg = qcolor(t.get("--surface", "#1B2525")) if t.is_dark() else QColor(bg)
+            border_color = qcolor(t.get("--border", primary))
             painter.setBrush(QBrush(card_bg))
-            painter.setPen(QPen(QColor(primary), 1))
+            painter.setPen(QPen(border_color, 1))
             painter.drawRoundedRect(inset, radius, radius)
 
         elif t.is_pixel():
@@ -220,4 +231,13 @@ class MkCard(QFrame):
     def title(self, value):
         self._title = value
         self._title_label.setText(value)
-        self._title_label.setVisible(bool(value))
+        self._title_label.setVisible(bool(value) and self._show_title)
+
+    @Property(bool)
+    def show_title(self):
+        return self._show_title
+
+    @show_title.setter
+    def show_title(self, value):
+        self._show_title = bool(value)
+        self._title_label.setVisible(bool(self._title) and self._show_title)
