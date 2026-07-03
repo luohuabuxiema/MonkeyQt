@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from PySide6.QtCore import Qt, Property
 from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QFont
-from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QSizePolicy
+from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout
 
 from monkeyqt.themes.engine import ThemeEngine
 from monkeyqt.themes.style_utils import draw_liquid_glass, parse_px, qcolor
@@ -33,14 +33,14 @@ class MkCard(QFrame):
         self._time_angle = 0.0
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setMinimumSize(200, 120)
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         # 内部布局
         self._layout = QVBoxLayout(self)
-        self._layout.setContentsMargins(20, 16, 20, 16)
-        
-        has_header = bool(title) and show_title
-        self._layout.setSpacing(8 if has_header else 0)
+        if show_title:
+            self._layout.setContentsMargins(20, 16, 20, 16)
+        else:
+            self._layout.setContentsMargins(0, 0, 0, 0)
+        self._layout.setSpacing(8 if show_title else 0)
 
         # 标题
         self._title_label = QLabel(title)
@@ -48,12 +48,11 @@ class MkCard(QFrame):
         font = QFont("Segoe UI", 13, QFont.Weight.DemiBold)
         self._title_label.setFont(font)
         self._layout.addWidget(self._title_label)
-        self._title_label.setVisible(has_header)
+        self._title_label.setVisible(bool(title) and show_title)
 
         # 内容区域（用户可往此添加子组件）
         self._content_widget = QFrame()
         self._content_widget.setStyleSheet("background: transparent; border: none;")
-        self._content_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.content_layout = QVBoxLayout(self._content_widget)
         self.content_layout.setContentsMargins(0, 0, 0, 0)
         self.content_layout.setSpacing(6)
@@ -99,15 +98,16 @@ class MkCard(QFrame):
         border_w = t.get("--border-width", "1px")
 
         card_bg = t.get("--surface", bg if not t.is_dark() else t._lighten_hex(bg, 0.06))
+        border_qss = "none" if not self._show_title else f"{border_w} solid {border}"
 
         self.setStyleSheet(f"""
             MkCard {{
                 background-color: {card_bg};
-                border: {border_w} solid {border};
+                border: {border_qss};
                 border-radius: {radius};
             }}
             MkCard:hover {{
-                border-color: {t._lighten_hex(t.get('--primary', '#409EFF'), 0.3)};
+                border-color: {t._lighten_hex(t.get('--primary', '#409EFF'), 0.3) if self._show_title else 'transparent'};
             }}
         """)
 
@@ -161,48 +161,65 @@ class MkCard(QFrame):
                     glass = QColor(255, 255, 255, 20)
                 else:
                     glass = QColor(255, 255, 255, 50)
-                painter.setPen(QPen(qcolor(t.get("--glass-border", "rgba(255, 255, 255, 100)")), 1))
+                if self._show_title:
+                    painter.setPen(QPen(qcolor(t.get("--glass-border", "rgba(255, 255, 255, 100)")), 1))
+                else:
+                    painter.setPen(Qt.PenStyle.NoPen)
                 painter.setBrush(QBrush(glass))
                 painter.drawRoundedRect(inset, radius, radius)
                 # 顶部高光线
-                painter.setPen(QPen(QColor(255, 255, 255, 60), 1))
-                painter.drawLine(inset.left() + radius, inset.top(),
-                               inset.right() - radius, inset.top())
+                if self._show_title:
+                    painter.setPen(QPen(QColor(255, 255, 255, 60), 1))
+                    painter.drawLine(inset.left() + radius, inset.top(),
+                                   inset.right() - radius, inset.top())
 
         elif t.is_brutal():
             inset = rect.adjusted(4, 4, -8, -8)
-            # 硬偏移阴影
-            painter.setPen(Qt.PenStyle.NoPen)
-            painter.setBrush(QBrush(QColor("#000000")))
-            painter.drawRect(inset.translated(4, 4))
-            # 白色主体
-            painter.setBrush(QBrush(QColor("#FFFFFF")))
-            painter.setPen(QPen(QColor("#000000"), 2))
-            painter.drawRect(inset)
+            if self._show_title:
+                # 硬偏移阴影
+                painter.setPen(Qt.PenStyle.NoPen)
+                painter.setBrush(QBrush(QColor("#000000")))
+                painter.drawRect(inset.translated(4, 4))
+                # 白色主体
+                painter.setBrush(QBrush(QColor("#FFFFFF")))
+                painter.setPen(QPen(QColor("#000000"), 2))
+                painter.drawRect(inset)
+            else:
+                painter.setPen(Qt.PenStyle.NoPen)
+                painter.setBrush(QBrush(QColor("#FFFFFF")))
+                painter.drawRect(inset)
 
         elif t.is_glow():
             inset = rect.adjusted(2, 2, -2, -2)
             # 主体
             card_bg = qcolor(t.get("--surface", "#1B2525")) if t.is_dark() else QColor(bg)
-            border_color = qcolor(t.get("--border", primary))
             painter.setBrush(QBrush(card_bg))
-            painter.setPen(QPen(border_color, 1))
+            if self._show_title:
+                border_color = qcolor(t.get("--border", primary))
+                painter.setPen(QPen(border_color, 1))
+            else:
+                painter.setPen(Qt.PenStyle.NoPen)
             painter.drawRoundedRect(inset, radius, radius)
 
         elif t.is_pixel():
             inset = rect.adjusted(3, 3, -6, -6)
-            # 像素阴影
-            pixel = 3
-            painter.setPen(Qt.PenStyle.NoPen)
-            painter.setBrush(QBrush(QColor("#000000")))
-            for x in range(inset.left() + pixel, inset.right() + pixel, pixel):
-                painter.drawRect(x, inset.bottom(), pixel, pixel)
-            for y in range(inset.top() + pixel, inset.bottom() + pixel, pixel):
-                painter.drawRect(inset.right(), y, pixel, pixel)
-            # 主体
-            painter.setBrush(QBrush(QColor("#FFFFFF")))
-            painter.setPen(QPen(QColor("#000000"), 2))
-            painter.drawRect(inset)
+            if self._show_title:
+                # 像素阴影
+                pixel = 3
+                painter.setPen(Qt.PenStyle.NoPen)
+                painter.setBrush(QBrush(QColor("#000000")))
+                for x in range(inset.left() + pixel, inset.right() + pixel, pixel):
+                    painter.drawRect(x, inset.bottom(), pixel, pixel)
+                for y in range(inset.top() + pixel, inset.bottom() + pixel, pixel):
+                    painter.drawRect(inset.right(), y, pixel, pixel)
+                # 主体
+                painter.setBrush(QBrush(QColor("#FFFFFF")))
+                painter.setPen(QPen(QColor("#000000"), 2))
+                painter.drawRect(inset)
+            else:
+                painter.setPen(Qt.PenStyle.NoPen)
+                painter.setBrush(QBrush(QColor("#FFFFFF")))
+                painter.drawRect(inset)
 
         painter.end()
 
@@ -235,10 +252,7 @@ class MkCard(QFrame):
     def title(self, value):
         self._title = value
         self._title_label.setText(value)
-        has_header = bool(value) and self._show_title
-        self._title_label.setVisible(has_header)
-        self._layout.setSpacing(8 if has_header else 0)
-        self.updateGeometry()
+        self._title_label.setVisible(bool(value) and self._show_title)
 
     @Property(bool)
     def show_title(self):
@@ -247,7 +261,12 @@ class MkCard(QFrame):
     @show_title.setter
     def show_title(self, value):
         self._show_title = bool(value)
-        has_header = bool(self._title) and self._show_title
-        self._title_label.setVisible(has_header)
-        self._layout.setSpacing(8 if has_header else 0)
-        self.updateGeometry()
+        self._title_label.setVisible(bool(self._title) and self._show_title)
+        if self._show_title:
+            self._layout.setContentsMargins(20, 16, 20, 16)
+            self._layout.setSpacing(8)
+        else:
+            self._layout.setContentsMargins(0, 0, 0, 0)
+            self._layout.setSpacing(0)
+        self._update_style()
+        self.update()
