@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from PySide6.QtCore import Qt, Property
 from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QFont
-from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout
+from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QSizePolicy
 
 from monkeyqt.themes.engine import ThemeEngine
 from monkeyqt.themes.style_utils import draw_liquid_glass, parse_px, qcolor
@@ -33,11 +33,14 @@ class MkCard(QFrame):
         self._time_angle = 0.0
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setMinimumSize(200, 120)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         # 内部布局
         self._layout = QVBoxLayout(self)
         self._layout.setContentsMargins(20, 16, 20, 16)
-        self._layout.setSpacing(8)
+        
+        has_header = bool(title) and show_title
+        self._layout.setSpacing(8 if has_header else 0)
 
         # 标题
         self._title_label = QLabel(title)
@@ -45,11 +48,12 @@ class MkCard(QFrame):
         font = QFont("Segoe UI", 13, QFont.Weight.DemiBold)
         self._title_label.setFont(font)
         self._layout.addWidget(self._title_label)
-        self._title_label.setVisible(bool(title) and show_title)
+        self._title_label.setVisible(has_header)
 
         # 内容区域（用户可往此添加子组件）
         self._content_widget = QFrame()
         self._content_widget.setStyleSheet("background: transparent; border: none;")
+        self._content_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.content_layout = QVBoxLayout(self._content_widget)
         self.content_layout.setContentsMargins(0, 0, 0, 0)
         self.content_layout.setSpacing(6)
@@ -231,7 +235,10 @@ class MkCard(QFrame):
     def title(self, value):
         self._title = value
         self._title_label.setText(value)
-        self._title_label.setVisible(bool(value) and self._show_title)
+        has_header = bool(value) and self._show_title
+        self._title_label.setVisible(has_header)
+        self._layout.setSpacing(8 if has_header else 0)
+        self.updateGeometry()
 
     @Property(bool)
     def show_title(self):
@@ -240,4 +247,7 @@ class MkCard(QFrame):
     @show_title.setter
     def show_title(self, value):
         self._show_title = bool(value)
-        self._title_label.setVisible(bool(self._title) and self._show_title)
+        has_header = bool(self._title) and self._show_title
+        self._title_label.setVisible(has_header)
+        self._layout.setSpacing(8 if has_header else 0)
+        self.updateGeometry()
