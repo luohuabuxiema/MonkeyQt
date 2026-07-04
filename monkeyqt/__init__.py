@@ -40,6 +40,7 @@ from .components.feedback.card import MkCard
 # Layout
 from .components.layout.window import MkTitleBar, MkWindow
 from .components.layout.window_shell import MkWindowShell
+from .components.layout.box import MkQVBoxLayout, MkQHBoxLayout, MkVBox, MkHBox
 
 
 # Themes (67 UI Styles)
@@ -94,6 +95,10 @@ __all__ = [
     "MkTitleBar",
     "MkWindow",
     "MkWindowShell",
+    "MkQVBoxLayout",
+    "MkQHBoxLayout",
+    "MkVBox",
+    "MkHBox",
     # Theme engine and helpers
     "ThemeEngine",
     "apply_monkeyqt_theme",
