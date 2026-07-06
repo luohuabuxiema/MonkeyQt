@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from PySide6.QtCore import Qt, Property
+from PySide6.QtCore import Qt, Property, QRectF
 from PySide6.QtGui import QPainter, QColor, QPen, QBrush
 from PySide6.QtWidgets import QFrame, QVBoxLayout, QHBoxLayout, QWidget
 
@@ -25,14 +25,21 @@ class MkQVBoxLayout(QFrame):
     支持自动填充/自适应大小、外边距(padding)、内间距(spacing/gap)、背景颜色、圆角以及可控制显示/隐藏的边框线。
     """
 
-    def __init__(self, widgets=None, spacing=8, padding=12, border=False, radius=6, bg_color=None, parent=None):
+    def __init__(self, widgets=None, spacing=8, padding=12, border=False, border_width=1, radius=6, bg_color=None, parent=None):
         super().__init__(parent)
         self._padding = padding
         self._border = border
+        self._border_width = border_width
         self._radius = radius
         self._bg_color = bg_color
 
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setStyleSheet(f"""
+            {self.__class__.__name__} {{
+                background: transparent;
+                border: none;
+            }}
+        """)
         
         # 核心排版引擎
         self._layout = QVBoxLayout(self)
@@ -58,8 +65,10 @@ class MkQVBoxLayout(QFrame):
 
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        rect = self.rect()
-        inset = rect.adjusted(1, 1, -1, -1)
+        rect = QRectF(self.rect())
+        border_w = self._border_width if self._border else 0
+        half_w = border_w / 2.0
+        inset = rect.adjusted(half_w, half_w, -half_w, -half_w)
         
         t = ThemeEngine
         
@@ -82,7 +91,7 @@ class MkQVBoxLayout(QFrame):
                 border_color = qcolor(self._border)
             else:
                 border_color = qcolor(t.get("--border", "#E2E8F0"))
-            painter.setPen(QPen(border_color, 1))
+            painter.setPen(QPen(border_color, self._border_width))
         else:
             painter.setPen(Qt.PenStyle.NoPen)
             
@@ -186,6 +195,15 @@ class MkQVBoxLayout(QFrame):
         self._bg_color = val
         self.update()
 
+    @Property(int)
+    def border_width(self):
+        return self._border_width
+
+    @border_width.setter
+    def border_width(self, val):
+        self._border_width = int(val)
+        self.update()
+
 
 class MkQHBoxLayout(QFrame):
     """
@@ -193,14 +211,21 @@ class MkQHBoxLayout(QFrame):
     支持自动填充/自适应大小、外边距(padding)、内间距(spacing/gap)、背景颜色、圆角以及可控制显示/隐藏的边框线。
     """
 
-    def __init__(self, widgets=None, spacing=8, padding=12, border=False, radius=6, bg_color=None, parent=None):
+    def __init__(self, widgets=None, spacing=8, padding=12, border=False, border_width=1, radius=6, bg_color=None, parent=None):
         super().__init__(parent)
         self._padding = padding
         self._border = border
+        self._border_width = border_width
         self._radius = radius
         self._bg_color = bg_color
 
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setStyleSheet(f"""
+            {self.__class__.__name__} {{
+                background: transparent;
+                border: none;
+            }}
+        """)
         
         # 核心排版引擎
         self._layout = QHBoxLayout(self)
@@ -226,8 +251,10 @@ class MkQHBoxLayout(QFrame):
 
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        rect = self.rect()
-        inset = rect.adjusted(1, 1, -1, -1)
+        rect = QRectF(self.rect())
+        border_w = self._border_width if self._border else 0
+        half_w = border_w / 2.0
+        inset = rect.adjusted(half_w, half_w, -half_w, -half_w)
         
         t = ThemeEngine
         
@@ -250,7 +277,7 @@ class MkQHBoxLayout(QFrame):
                 border_color = qcolor(self._border)
             else:
                 border_color = qcolor(t.get("--border", "#E2E8F0"))
-            painter.setPen(QPen(border_color, 1))
+            painter.setPen(QPen(border_color, self._border_width))
         else:
             painter.setPen(Qt.PenStyle.NoPen)
             
@@ -352,6 +379,15 @@ class MkQHBoxLayout(QFrame):
     @bg_color.setter
     def bg_color(self, val):
         self._bg_color = val
+        self.update()
+
+    @Property(int)
+    def border_width(self):
+        return self._border_width
+
+    @border_width.setter
+    def border_width(self, val):
+        self._border_width = int(val)
         self.update()
 
 
