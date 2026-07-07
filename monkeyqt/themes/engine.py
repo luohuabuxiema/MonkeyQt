@@ -532,32 +532,25 @@ class ThemeEngine(QObject):
                 border-color: {hover_primary};
             }}
 
-            QCheckBox, QRadioButton {{
+            QRadioButton {{
                 color: {fg};
                 background: transparent;
                 spacing: 8px;
             }}
 
-            QCheckBox::indicator, QRadioButton::indicator {{
+            QRadioButton::indicator {{
                 width: 15px;
                 height: 15px;
                 background-color: {panel_bg};
                 border: {border_w} solid {panel_border};
-            }}
-
-            QCheckBox::indicator {{
-                border-radius: 4px;
-            }}
-
-            QRadioButton::indicator {{
                 border-radius: 8px;
             }}
 
-            QCheckBox::indicator:hover, QRadioButton::indicator:hover {{
+            QRadioButton::indicator:hover {{
                 border-color: {primary};
             }}
 
-            QCheckBox::indicator:checked, QRadioButton::indicator:checked {{
+            QRadioButton::indicator:checked {{
                 background-color: {primary};
                 border-color: {primary};
             }}
