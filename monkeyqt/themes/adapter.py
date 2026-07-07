@@ -2317,8 +2317,8 @@ def _table_checkbox_qss(p: dict[str, str | int | bool]) -> str:
             margin: 0px;
         }}
         MkCheckBox::indicator {{
-            width: 16px;
-            height: 16px;
+            width: 14px;
+            height: 14px;
             background-color: {surface};
             border: 1px solid {border};
             border-radius: {0 if p['flat'] else 4}px;

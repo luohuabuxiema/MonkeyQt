@@ -487,16 +487,6 @@ class AuthGallery(QWidget):
                 margin-top: 10px;
                 background: transparent;
             }
-            QComboBox, QCheckBox {
-                font-size: 12px;
-                color: #475569;
-            }
-            QComboBox {
-                border: 1px solid #cbd5e1;
-                border-radius: 4px;
-                padding: 4px;
-                background-color: #ffffff;
-            }
         """)
         
         control_layout = QVBoxLayout(control_panel)
@@ -840,55 +830,25 @@ class WindowGallery(QWidget):
         
         # 1. Preset Selector
         control_layout.addWidget(QLabel("选择主题预设风格 (Presets)"))
-        self.preset_combo = QComboBox()
+        self.preset_combo = MkComboBox()
         self.preset_combo.addItem("默认风格 (default)", "default")
         self.preset_combo.addItem("Shadcn UI风格 (shadcn)", "shadcn")
         self.preset_combo.addItem("IDA Pro风格 (ida)", "ida")
         self.preset_combo.addItem("向日葵风格 (sunlogin)", "sunlogin")
         self.preset_combo.addItem("汽水音乐风格 (soda)", "soda")
         self.preset_combo.addItem("Antigravity风格 (antigravity)", "antigravity")
-        self.preset_combo.setStyleSheet("""
-            QComboBox {
-                border: 1px solid #cbd5e1;
-                border-radius: 4px;
-                padding: 4px;
-                background-color: #ffffff;
-                color: #475569;
-                font-size: 12px;
-            }
-        """)
         control_layout.addWidget(self.preset_combo)
         
         # 2. Custom Background Color override
         control_layout.addWidget(QLabel("自定义背景色 (Hex/RGBA)"))
         self.bg_color_input = QLineEdit()
         self.bg_color_input.setPlaceholderText("留空则使用预设默认色")
-        self.bg_color_input.setStyleSheet("""
-            QLineEdit {
-                border: 1px solid #cbd5e1;
-                border-radius: 4px;
-                padding: 4px 8px;
-                background-color: #ffffff;
-                color: #475569;
-                font-size: 12px;
-            }
-        """)
         control_layout.addWidget(self.bg_color_input)
         
         # 3. Custom Text Color override
         control_layout.addWidget(QLabel("自定义文字色 (Hex)"))
         self.text_color_input = QLineEdit()
         self.text_color_input.setPlaceholderText("留空则使用预设默认色")
-        self.text_color_input.setStyleSheet("""
-            QLineEdit {
-                border: 1px solid #cbd5e1;
-                border-radius: 4px;
-                padding: 4px 8px;
-                background-color: #ffffff;
-                color: #475569;
-                font-size: 12px;
-            }
-        """)
         control_layout.addWidget(self.text_color_input)
         
         # 4. Height override
@@ -907,19 +867,9 @@ class WindowGallery(QWidget):
         
         # 6. Close button behavior
         control_layout.addWidget(QLabel("关闭按钮行为"))
-        self.close_combo = QComboBox()
+        self.close_combo = MkComboBox()
         self.close_combo.addItem("销毁窗口并退出 (close)", "close")
         self.close_combo.addItem("隐藏到后台/托盘 (hide)", "hide")
-        self.close_combo.setStyleSheet("""
-            QComboBox {
-                border: 1px solid #cbd5e1;
-                border-radius: 4px;
-                padding: 4px;
-                background-color: #ffffff;
-                color: #475569;
-                font-size: 12px;
-            }
-        """)
         control_layout.addWidget(self.close_combo)
         
         # 7. Action Button

@@ -40,24 +40,24 @@ class CheckBoxHeader(QHeaderView):
             "primary": "#409eff",
             "check": "#ffffff",
             "radius": 4,
-            "border_width": 1.2,
+            "border_width": 1.0,
         }
 
         box_size = 16
         x = rect.x() + (rect.width() - box_size) // 2
         y = rect.y() + (rect.height() - box_size) // 2
-        box_rect = QRect(x, y, box_size, box_size).adjusted(0, 0, -1, -1)
 
         radius = int(palette.get("radius", 4))
-        border_width = float(palette.get("border_width", 1.2))
+        border_width = float(palette.get("border_width", 1.0))
         fill = QColor(palette["primary"] if self._checked else palette["surface"])
         border = QColor(palette["primary"] if self._checked else palette["border"])
 
         painter.save()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         
-        # Use QRectF for drawing to prevent rounding errors
-        box_rect_f = QRectF(box_rect)
+        # Calculate half width adjustment so that outer size is exactly 16x16
+        half_w = border_width / 2.0
+        box_rect_f = QRectF(x, y, box_size, box_size).adjusted(half_w, half_w, -half_w, -half_w)
         painter.setPen(QPen(border, border_width))
         painter.setBrush(fill)
         painter.drawRoundedRect(box_rect_f, radius, radius)
@@ -425,7 +425,7 @@ class MkDataTable(QWidget):
             if self.selection_enabled:
                 chk = MkCheckBox()
                 chk.setObjectName("DataTableRowCheckBox")
-                chk.setFixedSize(20, 20)
+                chk.setFixedSize(16, 16)
                 chk.setChecked(unique_key in self._selected_keys)
                 
                 # Prevent checkbox from stealing click triggers and wrap cleanly
