@@ -4,8 +4,20 @@
 from __future__ import annotations
 
 import ctypes
+import os
 import sys
 import types
+
+_themes_dir = os.path.dirname(os.path.abspath(__file__))
+_check_svg_path = os.path.join(_themes_dir, "check.svg")
+if not os.path.exists(_check_svg_path):
+    try:
+        with open(_check_svg_path, "w", encoding="utf-8") as _f:
+            _f.write('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><polyline points="216 72 104 184 48 128" fill="none" stroke="white" stroke-linecap="round" stroke-linejoin="round" stroke-width="28"/></svg>')
+    except Exception:
+        pass
+
+CHECK_SVG_URL = _check_svg_path.replace("\\", "/")
 
 from PySide6.QtCore import QEvent, QObject, QRectF, Qt, QTimer
 from PySide6.QtGui import QColor, QPainter, QPainterPath, QRegion
@@ -2197,6 +2209,7 @@ def _checkbox_qss(p: dict[str, str | int | bool]) -> str:
         MkCheckBox::indicator:checked {{
             background-color: {primary};
             border-color: {primary if not p['flat'] else '#000000'};
+            image: url({CHECK_SVG_URL});
         }}
         MkCheckBox::indicator:disabled {{
             background-color: {muted_surface};
@@ -2229,7 +2242,7 @@ def _checkbox_palette(p: dict[str, str | int | bool], table: bool = False) -> di
         "border": border.name(QColor.NameFormat.HexRgb),
         "primary": qcolor(str(p["primary"])).name(QColor.NameFormat.HexRgb),
         "check": qcolor(str(p["primary_text"])).name(QColor.NameFormat.HexRgb),
-        "radius": 0 if p["flat"] else 3,
+        "radius": 0 if p["flat"] else 4,
         "border_width": 1.0 if table else 1.2,
     }
 
@@ -2321,10 +2334,12 @@ def _table_checkbox_qss(p: dict[str, str | int | bool]) -> str:
         MkCheckBox::indicator:checked {{
             background-color: {primary};
             border-color: {primary};
+            image: url({CHECK_SVG_URL});
         }}
         MkCheckBox::indicator:checked:hover {{
             background-color: {primary_hover};
             border-color: {primary_hover};
+            image: url({CHECK_SVG_URL});
         }}
         MkCheckBox::indicator:disabled {{
             background-color: {disabled_bg};

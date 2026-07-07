@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem,
     QHeaderView, QAbstractItemView, QLabel, QPushButton, QFrame, QSizePolicy
 )
-from PySide6.QtCore import Qt, Signal, QSize, QRect, QPoint
+from PySide6.QtCore import Qt, Signal, QSize, QRect, QPoint, QRectF
 from PySide6.QtGui import QPainter, QColor, QPixmap, QCursor, QFont, QPen
 from monkeyqt.components.basic.checkbox import MkCheckBox
 from monkeyqt.components.navigation.pagination import MkPagination
@@ -39,7 +39,7 @@ class CheckBoxHeader(QHeaderView):
             "border": "#dcdfe6",
             "primary": "#409eff",
             "check": "#ffffff",
-            "radius": 2,
+            "radius": 4,
             "border_width": 1.2,
         }
 
@@ -48,16 +48,19 @@ class CheckBoxHeader(QHeaderView):
         y = rect.y() + (rect.height() - box_size) // 2
         box_rect = QRect(x, y, box_size, box_size).adjusted(0, 0, -1, -1)
 
-        radius = int(palette.get("radius", 2))
+        radius = int(palette.get("radius", 4))
         border_width = float(palette.get("border_width", 1.2))
         fill = QColor(palette["primary"] if self._checked else palette["surface"])
         border = QColor(palette["primary"] if self._checked else palette["border"])
 
         painter.save()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        
+        # Use QRectF for drawing to prevent rounding errors
+        box_rect_f = QRectF(box_rect)
         painter.setPen(QPen(border, border_width))
         painter.setBrush(fill)
-        painter.drawRoundedRect(box_rect, radius, radius)
+        painter.drawRoundedRect(box_rect_f, radius, radius)
 
         if self._checked:
             check = QColor(palette["check"])
@@ -91,7 +94,7 @@ class MkImageCellWidget(QWidget):
         self.img_path = img_path
         self._is_hovered = False
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setFixedSize(50, 50)
+        self.setFixedSize(40, 40)
         
         # Preload and scale pixmap
         self.pixmap = QPixmap(self.img_path)
@@ -115,39 +118,39 @@ class MkImageCellWidget(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         
-        rect = self.rect()
+        rect = QRectF(self.rect())
         
         # 1. Clip path for rounded border-radius 6px
         from PySide6.QtGui import QPainterPath
         path = QPainterPath()
-        path.addRoundedRect(QRect(0, 0, rect.width(), rect.height()), 6, 6)
+        path.addRoundedRect(rect, 6, 6)
         painter.setClipPath(path)
         
         if not self.pixmap.isNull():
             # Draw fitting image
             scaled_pixmap = self.pixmap.scaled(
-                rect.size(),
+                self.rect().size(),
                 Qt.AspectRatioMode.KeepAspectRatioByExpanding,
                 Qt.TransformationMode.SmoothTransformation
             )
             # Center offset draw
-            x = (rect.width() - scaled_pixmap.width()) // 2
-            y = (rect.height() - scaled_pixmap.height()) // 2
+            x = (self.width() - scaled_pixmap.width()) // 2
+            y = (self.height() - scaled_pixmap.height()) // 2
             painter.drawPixmap(x, y, scaled_pixmap)
         else:
             # Draw solid fallback background
-            painter.fillRect(rect, QColor("#f4f4f5"))
+            painter.fillRect(self.rect(), QColor("#f4f4f5"))
             painter.setPen(QColor("#a1a1aa"))
             font = QFont("Microsoft YaHei", 8)
             painter.setFont(font)
-            painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, "No Img")
+            painter.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter, "No Img")
             
         # 2. Draw hover translucent overlay with Phosphor eye icon
         if self._is_hovered:
-            painter.fillRect(rect, QColor(0, 0, 0, 100))
+            painter.fillRect(self.rect(), QColor(0, 0, 0, 100))
             eye_pixmap = MkPhosphorIcon.get_pixmap("eye", "#ffffff", 18)
-            px = (rect.width() - 18) // 2
-            py = (rect.height() - 18) // 2
+            px = (self.width() - 18) // 2
+            py = (self.height() - 18) // 2
             painter.drawPixmap(px, py, eye_pixmap)
             
         painter.end()
@@ -162,7 +165,7 @@ class MkVideoCellWidget(QWidget):
         self.video_path = video_path
         self._is_hovered = False
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setFixedSize(50, 50)
+        self.setFixedSize(40, 40)
 
     def enterEvent(self, event):
         self._is_hovered = True
@@ -183,28 +186,28 @@ class MkVideoCellWidget(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         
-        rect = self.rect()
+        rect = QRectF(self.rect())
         
         # Clip path for rounded border-radius 6px
         from PySide6.QtGui import QPainterPath
         path = QPainterPath()
-        path.addRoundedRect(QRect(0, 0, rect.width(), rect.height()), 6, 6)
+        path.addRoundedRect(rect, 6, 6)
         painter.setClipPath(path)
         
         # Video background color (sleek slate background)
-        painter.fillRect(rect, QColor("#0f172a") if not self._is_hovered else QColor("#1e293b"))
+        painter.fillRect(self.rect(), QColor("#0f172a") if not self._is_hovered else QColor("#1e293b"))
         
         # Draw dynamic play button
         icon_color = "#38bdf8" if self._is_hovered else "#ffffff"
         play_pix = MkPhosphorIcon.get_pixmap("play", icon_color, 24)
-        px = (rect.width() - 24) // 2
-        py = (rect.height() - 24) // 2
+        px = (self.width() - 24) // 2
+        py = (self.height() - 24) // 2
         painter.drawPixmap(px, py, play_pix)
         
         # Subtle hover border highlight
         if self._is_hovered:
-            painter.setPen(QPen(QColor("#38bdf8"), 1.5))
-            painter.drawRoundedRect(rect.adjusted(0, 0, -1, -1), 6, 6)
+            painter.setPen(QPen(QColor("#38bdf8"), 1))
+            painter.drawRoundedRect(rect.adjusted(0.5, 0.5, -0.5, -0.5), 6, 6)
             
         painter.end()
 

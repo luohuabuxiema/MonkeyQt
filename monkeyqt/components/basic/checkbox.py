@@ -1,6 +1,18 @@
+import os
 from PySide6.QtWidgets import QCheckBox, QWidget
 from PySide6.QtCore import Property, Qt
 from monkeyqt.common.enums import MkSize
+
+_cur_dir = os.path.dirname(os.path.abspath(__file__))
+_check_svg_path = os.path.join(_cur_dir, "check.svg")
+if not os.path.exists(_check_svg_path):
+    try:
+        with open(_check_svg_path, "w", encoding="utf-8") as _f:
+            _f.write('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><polyline points="216 72 104 184 48 128" fill="none" stroke="white" stroke-linecap="round" stroke-linejoin="round" stroke-width="28"/></svg>')
+    except Exception:
+        pass
+CHECK_SVG_URL = _check_svg_path.replace("\\", "/")
+
 
 class MkCheckBox(QCheckBox):
     """
@@ -20,9 +32,9 @@ class MkCheckBox(QCheckBox):
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         
         self._apply_style()
-
+ 
     def _apply_style(self):
-        """注入 Element Plus 风格的 QSS 样式"""
+        """注入 Element Plus 风格 of QSS 样式"""
         self.setStyleSheet("""
             /* 基础样式与文本颜色 */
             MkCheckBox {
@@ -37,7 +49,7 @@ class MkCheckBox(QCheckBox):
             MkCheckBox:disabled {
                 color: #c0c4cc;
             }
-
+ 
             /* 自定义勾选框 (Indicator) */
             MkCheckBox::indicator {
                 width: 14px;
@@ -47,19 +59,17 @@ class MkCheckBox(QCheckBox):
                 border-radius: 2px;
                 transition: border-color .25s cubic-bezier(.71,-.46,.29,1.46),background-color .25s cubic-bezier(.71,-.46,.29,1.46);
             }
-
+ 
             /* 悬浮时的框边框变蓝 */
             MkCheckBox::indicator:hover {
                 border-color: #409eff;
             }
-
+ 
             /* 选中状态 */
             MkCheckBox::indicator:checked {
                 background-color: #409eff;
                 border-color: #409eff;
-                /* Qt 的 QSS 不支持绘制复杂的 SVG，这里我们用一个 unicode 字符模拟对号，或者依赖背景图。
-                   为保持纯代码，我们先利用自带的选中样式或后续加载本地 svg */
-                image: url(none); /* 阻止原生丑陋渲染 */
+                image: url(__CHECK_SVG__);
             }
             
             /* 禁用状态 */
@@ -95,7 +105,7 @@ class MkCheckBox(QCheckBox):
                 width: 12px;
                 height: 12px;
             }
-        """)
+        """.replace("__CHECK_SVG__", CHECK_SVG_URL))
 
     # --- 暴露属性 ---
     @Property(str)
