@@ -550,6 +550,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#3-qss" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 自定义组件的默认样式与免 QSS 配置说明
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1875,6 +1886,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#3-qss" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 自定义组件的默认样式与免 QSS 配置说明
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2019,6 +2041,12 @@
 </span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="c1"># 重新将该组件加入主题受控范围</span>
 </span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="n">include_in_theme</span><span class="p">(</span><span class="n">my_widget</span><span class="p">)</span>
 </span></code></pre></div>
+<h3 id="3-qss">3. 自定义组件的默认样式与免 QSS 配置说明<a class="headerlink" href="#3-qss" title="Permanent link">&para;</a></h3>
+<p>为了降低开发者的样式配置负担，所有 <code>Mk</code> 核心组件（如 <code>MkCheckBox</code> 复选框、<code>MkComboBox</code> 下拉框、<code>MkInput</code> 输入框等）都内置了完整且高清的样式与绘图资源（例如：复选框在各种操作系统及 Qt 环境下均可无缝渲染出高清 SVG 矢量打勾图标，且在高级数据表格 <code>MkDataTable</code> 中会自动完成完美对齐）。</p>
+<ul>
+<li><strong>无需额外重写 QSS</strong>：无需像传统 PySide 开发那样在外部为主程序或组件书写复杂的边框、对齐、或者 <code>::indicator</code> 选中态图片样式，主题引擎在切换主题时会自动向这些内置组件应用最适配的视觉呈现。</li>
+<li><strong>避免样式覆盖冲突</strong>：如果为内置组件自定义了特殊的样式表，请尽量使用特定的类选择器或局部覆盖，避免与主题引擎的 Design Tokens 产生冲突。</li>
+</ul>
 <hr />
 <h2 id="mkthemeselector">内置主题选择器 (<code>MkThemeSelector</code>)<a class="headerlink" href="#mkthemeselector" title="Permanent link">&para;</a></h2>
 <p>MonkeyQt 提供了一个开箱即用的主题下拉选择器 <code>MkThemeSelector</code>，可直接拖放到标题栏或设置面板中，实现真正的全站主题热重载。</p>
