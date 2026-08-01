@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-MonkeyQt Theme Gallery — 67 种 UI 风格可视化展示器
+MonkeyQt Theme Gallery — 68 种 UI 风格可视化展示器
 
 用法:
     python -m monkeyqt.themes.gallery
@@ -22,7 +22,7 @@ from monkeyqt import (
     MkAvatar, MkPagination, MkBreadcrumb, MkDropdown, MkTable,
     MkForm, MkDatePicker, MkMultiComboBox, MkUpload, MkTopbar,
     MkMenu, MkMessage, MkCaptchaWidget, MkDataTable, MkImageCompare,
-    MkImageSplit, MkWindowShell, MkConsole
+    MkImageSplit, MkWindowShell, MkConsole, use_theme
 )
 
 
@@ -99,11 +99,11 @@ THEME_CN_NAMES = {
 
 
 class ThemeGallery(QMainWindow):
-    """67 种 UI 风格的可视化切换展示窗口"""
+    """68 种 UI 风格的可视化切换展示窗口"""
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("MonkeyQt 主题画廊 - 67 种风格")
+        self.setWindowTitle("MonkeyQt 主题画廊 - 68 种风格")
         self.resize(1280, 800)
         self.setMinimumSize(900, 600)
 
@@ -610,8 +610,10 @@ class ThemeGallery(QMainWindow):
         if not name:
             return
 
-        # 切换全局主题
-        ThemeEngine.set_theme(name)
+        # Use the same optimized path as application code. The manager updates
+        # self-managed controls via themeChanged and adapts the remaining
+        # composite controls once, scoped to this gallery window.
+        use_theme(name, root=self)
         tokens = ThemeEngine.current_tokens()
 
         # 更新信息栏
@@ -645,36 +647,6 @@ class ThemeGallery(QMainWindow):
         """)
         self.lbl_theme_name.setStyleSheet(f"background: transparent; color: {fg};")
         self.lbl_theme_meta.setStyleSheet(f"background: transparent; color: {fg}; opacity: 0.7;")
-
-        # 刷新所有组件
-        for w in [self.btn_primary, self.btn_secondary, self.btn_default,
-                   self.btn_danger, self.btn_success, self.btn_disabled,
-                   self.topbar_demo, self.menu_demo,
-                   self.check_enabled, self.check_glass, self.check_disabled,
-                   self.input_normal, self.input_focused,
-                   self.combo_style, self.combo_status,
-                   self.form_demo, self.date_picker_demo, self.multi_combo_demo, self.captcha_demo,
-                   self.dropdown_action, self.dropdown_more,
-                   self.slider_conf, self.slider_iou,
-                   self.card_1, self.card_2,
-                   self.avatar_a, self.avatar_b, self.avatar_c,
-                   self.prog_25, self.prog_65, self.prog_100,
-                   self.ring_normal, self.ring_success, self.ring_warning,
-                   self.alert_info, self.alert_success, self.alert_warning, self.alert_error,
-                   self.message_success, self.message_warning,
-                   self.upload_demo,
-                   self.breadcrumb_demo, self.pagination_demo, self.table_demo, self.data_table_demo,
-                   self.image_compare_demo, self.image_split_demo, self.window_shell_demo, self.tabs_demo,
-                   self.console_demo]:
-            if hasattr(w, 'set_theme_style'):
-                w.set_theme_style(name)
-            elif hasattr(w, '_update_style'):
-                w._update_style()
-            self._safe_widget_update(w)
-
-        # 开关也需刷新
-        self._safe_widget_update(self.switch_on)
-        self._safe_widget_update(self.switch_off)
 
         # 写入测试日志
         self.console_demo.clear()

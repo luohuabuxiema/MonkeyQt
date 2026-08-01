@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 MonkeyQt Theme Engine — 全局风格引擎
-管理 67 套 Design Token 的切换与注入
+管理 68 套 Design Token 的切换与注入
 """
 
 from PySide6.QtWidgets import QApplication
@@ -58,15 +58,6 @@ class ThemeEngine(QObject):
             qss = cls._build_global_qss()
             app.setStyleSheet(qss)
 
-            # 强制刷新所有 widget
-            for widget in app.allWidgets():
-                try:
-                    widget.style().unpolish(widget)
-                    widget.style().polish(widget)
-                    widget.update()
-                except (TypeError, RuntimeError):
-                    pass  # 某些 widget（如 QListWidget）的 update() 签名不同
-
         # 触发信号
         cls.instance().themeChanged.emit(style_name)
 
@@ -82,13 +73,6 @@ class ThemeEngine(QObject):
         if app:
             qss = cls._build_global_qss()
             app.setStyleSheet(qss)
-            for widget in app.allWidgets():
-                try:
-                    widget.style().unpolish(widget)
-                    widget.style().polish(widget)
-                    widget.update()
-                except (TypeError, RuntimeError):
-                    pass
 
         cls.instance().themeChanged.emit(cls.DEFAULT_THEME_NAME)
         return True
@@ -422,15 +406,25 @@ class ThemeEngine(QObject):
                 color: {fg};
             }}
 
+            /* QStackedWidget and several layout containers inherit QFrame.
+               Frames are therefore borderless by default; opt-in cards can
+               use mkPanel=true, while dedicated MonkeyQt components keep
+               their more specific local styles. */
             QFrame {{
-                border-color: {panel_border};
+                background-color: transparent;
+                border: none;
             }}
 
-            QFrame, QGroupBox, QScrollArea, QAbstractScrollArea {{
+            QFrame[mkPanel="true"], QGroupBox, QScrollArea, QAbstractScrollArea {{
                 background-color: {card_bg};
                 color: {fg};
                 border: {border_w} solid {panel_border};
                 border-radius: {radius};
+            }}
+
+            QFrame[mkBorderless="true"] {{
+                background-color: transparent;
+                border: none;
             }}
 
             QScrollArea QWidget, QAbstractScrollArea QWidget {{

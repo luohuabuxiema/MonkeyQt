@@ -287,8 +287,19 @@ def _theme_class_name(widget: QWidget) -> str:
     return widget.__class__.__name__
 
 
-def apply_monkeyqt_theme(root: QWidget | None = None) -> None:
-    """Apply or restore token styling for the existing MonkeyQt components below root."""
+def apply_monkeyqt_theme(
+    root: QWidget | None = None,
+    *,
+    skip_self_managed: bool = False,
+) -> None:
+    """Apply token styling to the supported components below *root*.
+
+    ``skip_self_managed`` is used by the global manager immediately after the
+    ``themeChanged`` signal. Components exposing ``set_theme_style`` have
+    already handled that signal, so invoking the same method again would only
+    repeat their QSS work. Direct and automatic subtree applications keep the
+    default so newly-created widgets are still initialized correctly.
+    """
     widgets = list(_iter_widgets(root))
 
 
@@ -298,7 +309,7 @@ def apply_monkeyqt_theme(root: QWidget | None = None) -> None:
         if _should_skip(widget) or not _is_theme_supported(widget):
             continue
         _save_widget(widget)
-        _apply_widget(widget, palette)
+        _apply_widget(widget, palette, skip_self_managed=skip_self_managed)
 
 
 def restore_monkeyqt_theme(root: QWidget | None = None) -> None:
@@ -384,8 +395,33 @@ def _is_theme_disabled(widget: QWidget) -> bool:
     return False
 
 
+_SPECIAL_NATIVE_THEME_OBJECTS = {
+    "MkWindowContainer",
+    "AuthControlPanel",
+    "DataTableInteractionCard",
+    "UploadLogArea",
+    "ctrl_panel",
+    "cam_panel",
+    "specs_card",
+    "display_frame",
+    "dashboard_status",
+    "dashboard_status_dot",
+    "dashboard_cam_icon",
+}
+
+
 def _is_theme_supported(widget: QWidget) -> bool:
     name = _theme_class_name(widget)
+    object_name = widget.objectName()
+
+    # Standard Qt widgets are already covered by ThemeEngine's application
+    # stylesheet. Applying another widget-local stylesheet to every QLabel,
+    # QWidget, QFrame, input and view forces Qt to parse and repolish hundreds
+    # of subtrees on every switch. Keep local adaptation only for the few
+    # native widgets that carry a MonkeyQt-specific semantic role.
+    if name in _NATIVE_PYSIDE_WIDGETS and object_name not in _SPECIAL_NATIVE_THEME_OBJECTS:
+        return False
+
     return (
         name in {
             "MkButton",
@@ -718,8 +754,15 @@ def _palette() -> dict[str, str | int | bool]:
 
 
 
-def _apply_widget(widget: QWidget, p: dict[str, str | int | bool]) -> None:
+def _apply_widget(
+    widget: QWidget,
+    p: dict[str, str | int | bool],
+    *,
+    skip_self_managed: bool = False,
+) -> None:
     if hasattr(widget, "set_theme_style"):
+        if skip_self_managed:
+            return
         try:
             widget.set_theme_style()
         except Exception:
@@ -1959,12 +2002,9 @@ def _apply_window(widget: QWidget, p: dict[str, str | int | bool]) -> None:
                     border: none;
                 }
             """)
-        if getattr(widget, "container_frame", None) is not None:
-            _save_widget(widget.container_frame)
-            _apply_window_container(widget.container_frame, p)
-        if getattr(widget, "titlebar", None) is not None:
-            _save_widget(widget.titlebar)
-            _apply_titlebar(widget.titlebar, p)
+        # container_frame and titlebar are part of the same traversal and have
+        # their own adapter branches. Styling them here as well made every
+        # theme switch parse and polish their QSS twice.
 
 
 def _restore_window(widget: QWidget) -> None:

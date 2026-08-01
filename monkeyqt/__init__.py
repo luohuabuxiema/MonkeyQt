@@ -43,7 +43,7 @@ from .components.layout.window_shell import MkWindowShell
 from .components.layout.box import MkQVBoxLayout, MkQHBoxLayout, MkVBox, MkHBox
 
 
-# Themes (67 UI Styles)
+# Themes (68 UI Styles)
 from .themes import (
     ThemeEngine,
     apply_monkeyqt_theme,

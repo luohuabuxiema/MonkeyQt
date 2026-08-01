@@ -159,13 +159,12 @@ class _ThemeAutoApplier(QObject):
             return False
 
         event_type = event.type()
-        if event_type == QEvent.Type.ChildAdded:
-            child = event.child() if hasattr(event, "child") else None
-            if isinstance(child, QWidget):
-                self.schedule(child)
-        elif event_type == QEvent.Type.Show and isinstance(obj, QWidget):
-            # Constructors may add or restyle internal children after ChildAdded
-            # was handled. A forced Show pass catches the completed widget tree.
+        if event_type == QEvent.Type.Show and isinstance(obj, QWidget):
+            # Apply only after construction is complete. Inspecting ChildAdded
+            # objects during native Qt widget construction can expose a base
+            # QWidget wrapper in older PySide6 releases (notably for headers),
+            # and it also queues large numbers of invisible implementation
+            # children that already inherit the application stylesheet.
             self.schedule(obj, force=True)
         return False
 
@@ -309,7 +308,7 @@ def use_theme(
 
     ok = ThemeEngine.set_theme(_normalize_theme_name(style_name))
     if ok:
-        apply_monkeyqt_theme(root)
+        apply_monkeyqt_theme(root, skip_self_managed=True)
         manager._mark_applied(root)
     return ok
 
@@ -329,14 +328,14 @@ def set_theme_chrome(
         clear_missing=False,
         refresh=True,
     )
-    apply_monkeyqt_theme(root)
+    apply_monkeyqt_theme(root, skip_self_managed=True)
     _manager()._mark_applied(root)
 
 
 def clear_theme_chrome(root: QWidget | None = None) -> None:
     """Return titlebar/sidebar colors to the current theme's automatic palette."""
     ThemeEngine.set_overrides(remove=["--titlebar-bg", "--sidebar-bg"], refresh=True)
-    apply_monkeyqt_theme(root)
+    apply_monkeyqt_theme(root, skip_self_managed=True)
     _manager()._mark_applied(root)
 
 
@@ -388,7 +387,7 @@ def clear_theme(root: QWidget | None = None) -> bool:
         manager.root = root
     ok = ThemeEngine.clear_theme()
     if ok:
-        apply_monkeyqt_theme(root)
+        apply_monkeyqt_theme(root, skip_self_managed=True)
     return ok
 
 

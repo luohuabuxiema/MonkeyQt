@@ -17,7 +17,7 @@ from monkeyqt.core.icons import MkPhosphorIcon
 class MkTitleBar(QWidget):
     """
     Customizable title bar component mimicking modern UI designs.
-    Supports presets: 'default', 'shadcn', 'ida', 'sunlogin', 'soda', 'antigravity'
+    Supports presets: 'default', 'shadcn', 'ida', 'sunlogin', 'soda', 'ide'
     """
     
     closeClicked = Signal()
@@ -187,25 +187,14 @@ class MkTitleBar(QWidget):
             self.center_layout.addWidget(search_input)
             self.center_layout.addStretch()
             
-        elif preset == "antigravity":
-            self._bg_color = "#1e1e2e"  # Deep Catppuccin Mocha style
+        elif preset == "ide":
+            self._bg_color = "#1e1e2e"  # Deep Catppuccin / IDE Mocha style
             self._text_color = "#cdd6f4"
             self._hover_color = "#313244"
             self._height = 42
             self._button_style = "windows"
             self.title_label.setFont(QFont("Outfit", 9, QFont.Weight.Medium))
             self._border_bottom = "1px solid #313244"
-            
-            # Centered path & branch widget
-            breadcrumb = QLabel("src/monkeyqt/components/layout/window.py")
-            breadcrumb.setStyleSheet("color: #a6adc8; font-size: 11px; font-family: Consolas;")
-            branch_info = QLabel("⌥ main")
-            branch_info.setStyleSheet("color: #f9e2af; font-size: 11px; font-weight: bold; background-color: #313244; padding: 2px 6px; border-radius: 4px;")
-            
-            self.center_layout.addStretch()
-            self.center_layout.addWidget(breadcrumb)
-            self.center_layout.addWidget(branch_info)
-            self.center_layout.addStretch()
             
         else:  # "default"
             self._bg_color = "#ffffff"
@@ -306,7 +295,7 @@ class MkTitleBar(QWidget):
             self.btn_min.setIconSize(QSize(12, 12))
             self.btn_max.setIconSize(QSize(12, 12))
             self.btn_close.setIconSize(QSize(12, 12))
-            
+
             # Calculate parent window's top-right corner radius to prevent visual overflow
             window_radius = 8
             if self.parent_window and hasattr(self.parent_window, "_border_radius"):
@@ -627,12 +616,12 @@ class MkWindow(QMainWindow):
         bg_color = self.titlebar._bg_color if self.titlebar._bg_color else "#ffffff"
         
         # Container style with rounded corners and border
-        border_color = "#e4e4e7" if self._preset == "shadcn" else "#3f3f3f" if self._preset == "ida" else "#313244" if self._preset == "antigravity" else "#e2e8f0"
+        border_color = "#e4e4e7" if self._preset == "shadcn" else "#3f3f3f" if self._preset == "ida" else "#313244" if self._preset == "ide" else "#e2e8f0"
         
         # Dark/Light presets backgrounds
         window_bg = "#ffffff" if self._preset == "shadcn" else "#f8fafc"
-        if self._preset in ["ida", "sunlogin", "soda", "antigravity"]:
-            window_bg = "#1e1e2e" if self._preset == "antigravity" else "#1e1f22" if self._preset == "sunlogin" else "#121212" if self._preset == "soda" else "#1a1a1a"
+        if self._preset in ["ida", "sunlogin", "soda", "ide"]:
+            window_bg = "#1e1e2e" if self._preset == "ide" else "#1e1f22" if self._preset == "sunlogin" else "#121212" if self._preset == "soda" else "#1a1a1a"
             
         self.container_frame.setStyleSheet(f"""
             QFrame#MkWindowContainer {{

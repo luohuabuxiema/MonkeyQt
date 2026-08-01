@@ -2,7 +2,7 @@
 """
 MonkeyQt Theme Tokens — 自动生成，请勿手动编辑
 由 scripts/compile_themes.py 从 ui-ux-pro-max styles.csv 编译而来
-共 67 套 Design Token
+共 68 套 Design Token
 """
 
 

@@ -14,7 +14,7 @@ from monkeyqt import (
     MkAvatar, MkTable, MkDataTable, MkImageCompare, MkImageSplit,
     MkTitleBar, MkWindow, MkUpload, MkComboBox, MkMultiComboBox,
     MkConsole,
-    ThemeEngine, MkThemeSelector, apply_monkeyqt_theme
+    ThemeEngine, MkThemeSelector, apply_monkeyqt_theme, use_theme
 )
 
 class ButtonGallery(QWidget):
@@ -641,7 +641,7 @@ class AuthGallery(QWidget):
         
         self.preview_layout.addWidget(self.auth_screen)
         if ThemeEngine.current_theme():
-            apply_monkeyqt_theme(self.window())
+            apply_monkeyqt_theme(self.auth_screen)
  
     def _on_login_submitted(self, username, password, captcha_code, remember_me=False):
         remember_str = " (记住密码: 是)" if remember_me else " (记住密码: 否)"
@@ -836,7 +836,7 @@ class WindowGallery(QWidget):
         self.preset_combo.addItem("IDA Pro风格 (ida)", "ida")
         self.preset_combo.addItem("向日葵风格 (sunlogin)", "sunlogin")
         self.preset_combo.addItem("汽水音乐风格 (soda)", "soda")
-        self.preset_combo.addItem("Antigravity风格 (antigravity)", "antigravity")
+        self.preset_combo.addItem("IDE风格 (ide)", "ide")
         control_layout.addWidget(self.preset_combo)
         
         # 2. Custom Background Color override
@@ -974,12 +974,12 @@ class WindowGallery(QWidget):
         self.mock_titlebar.rebuild_layout()
         
         # Refresh Mock window container styling (border, radius)
-        border_color = "#e4e4e7" if preset == "shadcn" else "#3f3f3f" if preset == "ida" else "#313244" if preset == "antigravity" else "#e2e8f0"
+        border_color = "#e4e4e7" if preset == "shadcn" else "#3f3f3f" if preset == "ida" else "#313244" if preset == "ide" else "#e2e8f0"
         
         window_bg = "#ffffff"
         client_text = "#94a3b8"
-        if preset in ["ida", "sunlogin", "soda", "antigravity"]:
-            window_bg = "#1e1e2e" if preset == "antigravity" else "#1e1f22" if preset == "sunlogin" else "#121212" if preset == "soda" else "#1a1a1a"
+        if preset in ["ida", "sunlogin", "soda", "ide"]:
+            window_bg = "#1e1e2e" if preset == "ide" else "#1e1f22" if preset == "sunlogin" else "#121212" if preset == "soda" else "#1a1a1a"
             client_text = "#64748b"
             
         self.mock_win_frame.setStyleSheet(f"""
@@ -1033,7 +1033,7 @@ class WindowGallery(QWidget):
         info_label.setFont(title_font)
         
         # Select title color based on preset theme
-        title_color = "#ffffff" if preset in ["ida", "sunlogin", "soda", "antigravity"] else "#0f172a"
+        title_color = "#ffffff" if preset in ["ida", "sunlogin", "soda", "ide"] else "#0f172a"
         info_label.setStyleSheet(f"color: {title_color};")
         
         desc_label = QLabel(
@@ -1047,7 +1047,7 @@ class WindowGallery(QWidget):
             "• 将鼠标指针悬停在<b>窗口外沿四周及四角</b>，会显现大小缩放箭头，拖拽即可直接<b>调整窗口大小</b>。<br>"
             "• 窗体周围在无边框下自带高档<b>卡片式投影效果</b>，视觉十分丝滑！"
         )
-        desc_color = "#94a3b8" if preset in ["ida", "sunlogin", "soda", "antigravity"] else "#475569"
+        desc_color = "#94a3b8" if preset in ["ida", "sunlogin", "soda", "ide"] else "#475569"
         desc_label.setStyleSheet(f"font-size: 12px; line-height: 20px; color: {desc_color};")
         
         close_btn = MkButton("关闭该独立窗口", type="danger")
@@ -1145,7 +1145,8 @@ class MainGallery(MkWindow):
     def __init__(self):
         super().__init__(use_custom_title_bar=True, preset="default")
         self.setWindowTitle("MonkeyQt - Enterprise Gallery")
-        self.resize(1000, 700)
+        # self.resize(1000, 700)
+        self.resize(1500, 1000)
         
         # 自定义标题栏：高度加高，移除下边框线
         self.titlebar._height = 48
@@ -1202,36 +1203,29 @@ class MainGallery(MkWindow):
         self.content_area = QStackedWidget()
         self.content_area.setObjectName("GalleryContentArea")
         
-        self.page_button = ButtonGallery()
-        self.page_checkbox = CheckboxGallery()
-        self.page_topbar = TopbarGallery()
-        self.page_navmisc = NavMiscGallery()
-        self.page_feedback = FeedbackGallery()
-        self.page_form = FormGallery()
-        self.page_auth = AuthGallery()
-        self.page_data = DataGallery()
-        self.page_datatable = DataTableGallery()
-        self.page_image_compare = ImageCompareGallery()
-        self.page_image_split = ImageSplitGallery()
-        self.page_console = ConsoleGallery()
-        self.page_window = WindowGallery()
-        self.page_upload = UploadGallery()
+        # Gallery pages are intentionally lazy. Creating all demos up front
+        # leaves hundreds of invisible widgets in the application-wide style
+        # tree, so every theme switch needlessly repolishes hidden pages.
+        self._page_factories = {
+            "btn": ("page_button", ButtonGallery),
+            "chk": ("page_checkbox", CheckboxGallery),
+            "topbar": ("page_topbar", TopbarGallery),
+            "navmisc": ("page_navmisc", NavMiscGallery),
+            "feedback": ("page_feedback", FeedbackGallery),
+            "form": ("page_form", FormGallery),
+            "authscreen": ("page_auth", AuthGallery),
+            "data": ("page_data", DataGallery),
+            "datatable": ("page_datatable", DataTableGallery),
+            "image_compare": ("page_image_compare", ImageCompareGallery),
+            "image_split": ("page_image_split", ImageSplitGallery),
+            "console": ("page_console", ConsoleGallery),
+            "window": ("page_window", WindowGallery),
+            "upload": ("page_upload", UploadGallery),
+        }
+        self._pages = {}
+        for attribute, _factory in self._page_factories.values():
+            setattr(self, attribute, None)
         self.page_empty = QWidget()
-        
-        self.content_area.addWidget(self.page_button)
-        self.content_area.addWidget(self.page_checkbox)
-        self.content_area.addWidget(self.page_topbar)
-        self.content_area.addWidget(self.page_navmisc)
-        self.content_area.addWidget(self.page_feedback)
-        self.content_area.addWidget(self.page_form)
-        self.content_area.addWidget(self.page_auth)
-        self.content_area.addWidget(self.page_data)
-        self.content_area.addWidget(self.page_datatable)
-        self.content_area.addWidget(self.page_image_compare)
-        self.content_area.addWidget(self.page_image_split)
-        self.content_area.addWidget(self.page_console)
-        self.content_area.addWidget(self.page_window)
-        self.content_area.addWidget(self.page_upload)
         self.content_area.addWidget(self.page_empty)
         
         main_layout.addWidget(self.content_area, stretch=1)
@@ -1247,7 +1241,7 @@ class MainGallery(MkWindow):
         self._apply_gallery_theme_shell(ThemeEngine.current_theme())
 
     def _setup_theme_selector(self):
-        """在标题栏加入 MonkeyQt 默认样式 + 67 种 UI 风格切换。"""
+        """在标题栏加入 MonkeyQt 默认样式 + 68 种 UI 风格切换。"""
         self.theme_label = QLabel("主题样式")
         self.theme_label.setObjectName("GalleryThemeLabel")
         self.theme_selector = MkThemeSelector()
@@ -1261,10 +1255,11 @@ class MainGallery(MkWindow):
         self._apply_gallery_theme_shell(ThemeEngine.current_theme())
 
     def _apply_gallery_theme_shell(self, theme_name: str):
-        """主题选择同时刷新演示外壳和当前 MonkeyQt 原组件样式。"""
-        apply_monkeyqt_theme(self)
+        """主题选择时刷新 Gallery 自有的演示外壳。
 
-
+        MonkeyQt 组件树已由 use_theme() 统一适配；不要在
+        themeChanged 回调里再遍历一次，否则每次切换会全量应用两遍。
+        """
         tokens = ThemeEngine.current_tokens()
         bg = tokens.get("--bg", "#FFFFFF")
         surface = tokens.get("--glass-surface", tokens.get("--surface", "#FFFFFF")) if ThemeEngine.is_glass() else tokens.get("--surface", "#FFFFFF")
@@ -1299,7 +1294,6 @@ class MainGallery(MkWindow):
                 font-weight: 700;
             }}
         """)
-        apply_monkeyqt_theme(self)
 
     def switch_page(self, item_id):
         # 演示侧边栏收缩
@@ -1314,39 +1308,26 @@ class MainGallery(MkWindow):
         else:
             self.content_area.setContentsMargins(30, 30, 30, 30)
 
-        if item_id == "btn":
-            self.content_area.setCurrentWidget(self.page_button)
-        elif item_id == "chk":
-            self.content_area.setCurrentWidget(self.page_checkbox)
-        elif item_id == "topbar":
-            self.content_area.setCurrentWidget(self.page_topbar)
-        elif item_id == "navmisc":
-            self.content_area.setCurrentWidget(self.page_navmisc)
-        elif item_id == "feedback":
-            self.content_area.setCurrentWidget(self.page_feedback)
-        elif item_id == "form":
-            self.content_area.setCurrentWidget(self.page_form)
-        elif item_id == "authscreen":
-            self.content_area.setCurrentWidget(self.page_auth)
-        elif item_id == "data":
-            self.content_area.setCurrentWidget(self.page_data)
-        elif item_id == "datatable":
-            self.content_area.setCurrentWidget(self.page_datatable)
-        elif item_id == "image_compare":
-            self.content_area.setCurrentWidget(self.page_image_compare)
-        elif item_id == "image_split":
-            self.content_area.setCurrentWidget(self.page_image_split)
-        elif item_id == "console":
-            self.content_area.setCurrentWidget(self.page_console)
-        elif item_id == "window":
-            self.content_area.setCurrentWidget(self.page_window)
-        elif item_id == "upload":
-            self.content_area.setCurrentWidget(self.page_upload)
-        else:
+        page_spec = self._page_factories.get(item_id)
+        if page_spec is None:
             self.content_area.setCurrentWidget(self.page_empty)
+            return
+
+        page = self._pages.get(item_id)
+        if page is None:
+            attribute, factory = page_spec
+            page = factory()
+            self._pages[item_id] = page
+            setattr(self, attribute, page)
+            self.content_area.addWidget(page)
+            if ThemeEngine.current_theme():
+                apply_monkeyqt_theme(page)
+
+        self.content_area.setCurrentWidget(page)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    use_theme("亮色")
     window = MainGallery()
     window.show()
     sys.exit(app.exec())
