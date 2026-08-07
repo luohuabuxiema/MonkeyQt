@@ -5,14 +5,14 @@ from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QPainterPath, QFont, Q
 from monkeyqt.themes.engine import ThemeEngine
 from monkeyqt.themes.style_utils import draw_liquid_glass, parse_px, qcolor, readable_text
 from monkeyqt.common.enums import MkType, MkSize
+from monkeyqt_icons import Ph
 
 class MkButton(QPushButton):
     """
     MkButton 组件 - 完美融合 68 种内置主题（玻璃拟态、新拟物化、科幻等）的 3D 自定义绘制，
     并完美兼容已有的 mk_type 和 mk_size API。
     """
-    def __init__(self, text="", parent=None, type=None, size=None, btn_type=None):
-        # 兼容 Qt Designer (它实例化时会将 parent 传给第一个参数)
+    def __init__(self, text="", parent=None, type=None, size=None, btn_type=None, icon=None):
         if isinstance(text, QWidget):
             parent = text
             text = ""
@@ -33,6 +33,7 @@ class MkButton(QPushButton):
         self._mk_size = resolved_size
         self._hovered = False
         self._pressed = False
+        self._ph_icon_spec = None
 
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setMinimumHeight(36)
@@ -41,6 +42,9 @@ class MkButton(QPushButton):
 
         self.setProperty("mk_type", resolved_type)
         self.setProperty("mk_size", resolved_size)
+
+        if icon is not None:
+            self.setIcon(icon)
 
         ThemeEngine.instance().themeChanged.connect(self.set_theme_style)
         self._update_style()
@@ -274,7 +278,32 @@ class MkButton(QPushButton):
         elif t.is_pixel():
             font.setFamily("Consolas")
         painter.setFont(font)
-        painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, self.text())
+
+        icon = self.icon()
+        text = self.text()
+        has_icon = not icon.isNull()
+
+        if has_icon:
+            icon_sz = self.iconSize()
+            icon_w = icon_sz.width()
+            icon_h = icon_sz.height()
+            spacing = 6 if text else 0
+            fm = painter.fontMetrics()
+            text_w = fm.horizontalAdvance(text) if text else 0
+            total_w = icon_w + spacing + text_w
+
+            start_x = rect.left() + (rect.width() - total_w) // 2
+            icon_y = rect.top() + (rect.height() - icon_h) // 2
+
+            pixmap = icon.pixmap(icon_sz)
+            painter.drawPixmap(start_x, icon_y, pixmap)
+
+            if text:
+                text_rect = QRect(start_x + icon_w + spacing, rect.top(), text_w + 10, rect.height())
+                painter.drawText(text_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, text)
+        else:
+            painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, text)
+
         painter.end()
 
     def enterEvent(self, event):
@@ -304,7 +333,51 @@ class MkButton(QPushButton):
             self._time_angle -= 2 * math.pi
         self.update()
 
+    def _get_button_text_color(self) -> str:
+        t = ThemeEngine
+        primary = t.get("--primary", "#409EFF")
+        fg = t.get("--fg", "#1E293B")
+
+        if self._btn_type == "primary":
+            return readable_text(qcolor(primary))
+        elif self._btn_type in ("danger", "success", "warning"):
+            return "#FFFFFF"
+        elif self._btn_type in ("text", "outline"):
+            return primary
+
+        if t.is_glow():
+            return primary
+        elif t.is_glass():
+            return t.get("--glass-text", fg)
+        elif t.is_brutal():
+            return "#000000"
+        return fg
+
+    def setIcon(self, icon):
+        if hasattr(icon, "_ph_spec"):
+            self._ph_icon_spec = getattr(icon, "_ph_spec", None)
+            try:
+                spec = dict(self._ph_icon_spec)
+                orig_color = spec.get("color")
+                if orig_color in (None, "auto", "default", "fg", "foreground", "currentcolor"):
+                    spec["color"] = self._get_button_text_color()
+                icon = Ph.icon(**spec)
+            except Exception:
+                pass
+        super().setIcon(icon)
+
     def set_theme_style(self, style_name: str = None):
+        if getattr(self, "_ph_icon_spec", None):
+            try:
+
+                spec = dict(self._ph_icon_spec)
+                orig_color = spec.get("color")
+                if orig_color in (None, "auto", "default", "fg", "foreground", "currentcolor"):
+                    spec["color"] = self._get_button_text_color()
+                new_icon = Ph.icon(**spec)
+                super().setIcon(new_icon)
+            except Exception as e:
+                pass
         self._update_style()
         self.update()
 

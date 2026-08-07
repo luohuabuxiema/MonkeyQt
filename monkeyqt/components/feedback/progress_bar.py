@@ -89,6 +89,14 @@ class MkProgressBar(QWidget):
             self._percentage = value
             self.update()
 
+    def setValue(self, value: int):
+        """Qt API compatibility method for setting percentage value."""
+        self.percentage = value
+
+    def value(self) -> int:
+        """Qt API compatibility method for getting percentage value."""
+        return self._percentage
+
     @Property(str)
     def status(self):
         return self._status
