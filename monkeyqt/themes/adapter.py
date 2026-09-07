@@ -1984,7 +1984,10 @@ def _apply_window(widget: QWidget, p: dict[str, str | int | bool]) -> None:
 
         def _theme_update_style(self):
             result = self._mk_theme_original_update_style()
-            _apply_window(self, _palette())
+            palette = _palette()
+            _apply_window(self, palette)
+            if getattr(self, "container_frame", None) is not None:
+                _apply_window_container(self.container_frame, palette)
             return result
 
         widget.update_style = types.MethodType(_theme_update_style, widget)
@@ -2020,10 +2023,11 @@ def _restore_window(widget: QWidget) -> None:
 
 def _apply_window_container(widget: QWidget, p: dict[str, str | int | bool]) -> None:
     window = widget.window()
+    is_maximized = hasattr(window, "isMaximized") and window.isMaximized()
     native_corners = bool(getattr(window, "_mk_theme_uses_native_corners", False))
-    radius = 0 if native_corners else min(int(p["radius_px"]), 8)
+    radius = 0 if (native_corners or is_maximized) else min(int(p["radius_px"]), 8)
     border = _control_border(p) if p["glass"] else str(p["border"])
-    border_rule = "none" if native_corners else f"{p['border_width']} solid {border}"
+    border_rule = "none" if (native_corners or is_maximized) else f"{p['border_width']} solid {border}"
     surface = _control_surface(p, floating=True) if p["glass"] else str(p["chrome_surface"] if p["dark"] else p["bg"])
     widget.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
     widget.setStyleSheet(f"""
@@ -2033,7 +2037,7 @@ def _apply_window_container(widget: QWidget, p: dict[str, str | int | bool]) -> 
             border-radius: {radius}px;
         }}
     """)
-    if native_corners:
+    if native_corners or is_maximized:
         _restore_rounded_mask(widget)
     else:
         _apply_rounded_mask(widget, radius, window)

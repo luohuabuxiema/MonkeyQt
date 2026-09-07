@@ -17,7 +17,6 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QPixmap, QImage, QIcon, QFont
 from monkeyqt import MkMenu, MkWindow, MkMessage, use_theme
-from monkeyqt.core.icons import MkPhosphorIcon
 from core.yolo_predictor import YoloPredictor, YoloThread
 from core.camera_scanner import CameraScanner
 from ui.yolo_dashboard import YoloDashboardWidget
@@ -536,7 +535,7 @@ class QuickStartApp(MkWindow):
 
 if __name__ == "__main__": 
     app = QApplication(sys.argv) 
-    use_theme("暗黑")
+    use_theme("新拟物化")
     window = QuickStartApp() 
     window.show() 
     sys.exit(app.exec()) 

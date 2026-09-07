@@ -317,13 +317,11 @@ class MkTitleBar(QWidget):
                     background-color: transparent; 
                     border: none; 
                     border-radius: 0px; 
-                    border-top-right-radius: {window_radius}px;
                 }}
                 QPushButton:hover {{ 
                     background-color: #e81123; 
                     color: #ffffff; 
                     border-radius: 0px; 
-                    border-top-right-radius: {window_radius}px;
                 }}
             """)
 
@@ -615,8 +613,12 @@ class MkWindow(QMainWindow):
         radius = 0 if self.isMaximized() else self._border_radius
         bg_color = self.titlebar._bg_color if self.titlebar._bg_color else "#ffffff"
         
-        # Container style with rounded corners and border
-        border_color = "#e4e4e7" if self._preset == "shadcn" else "#3f3f3f" if self._preset == "ida" else "#313244" if self._preset == "ide" else "#e2e8f0"
+        # When maximized, frameless window should not have any border
+        if self.isMaximized():
+            border_rule = "none"
+        else:
+            border_color = "#e4e4e7" if self._preset == "shadcn" else "#3f3f3f" if self._preset == "ida" else "#313244" if self._preset == "ide" else "#e2e8f0"
+            border_rule = f"1px solid {border_color}"
         
         # Dark/Light presets backgrounds
         window_bg = "#ffffff" if self._preset == "shadcn" else "#f8fafc"
@@ -626,7 +628,7 @@ class MkWindow(QMainWindow):
         self.container_frame.setStyleSheet(f"""
             QFrame#MkWindowContainer {{
                 background-color: {window_bg};
-                border: 1px solid {border_color};
+                border: {border_rule};
                 border-radius: {radius}px;
             }}
         """)
@@ -971,14 +973,20 @@ class MkWindow(QMainWindow):
                 self.titlebar.update_buttons()
 
             if self.use_custom_title_bar:
+                uses_native_corners = bool(getattr(self, "_mk_theme_uses_native_corners", False))
                 if self.isMaximized():
                     self.shadow_layout.setContentsMargins(0, 0, 0, 0)
                     if self.container_frame.graphicsEffect():
                         self.container_frame.graphicsEffect().setEnabled(False)
                 else:
-                    self.shadow_layout.setContentsMargins(10, 10, 10, 10)
-                    if self.container_frame.graphicsEffect():
-                        self.container_frame.graphicsEffect().setEnabled(True)
+                    if uses_native_corners:
+                        self.shadow_layout.setContentsMargins(0, 0, 0, 0)
+                        if self.container_frame.graphicsEffect():
+                            self.container_frame.graphicsEffect().setEnabled(False)
+                    else:
+                        self.shadow_layout.setContentsMargins(10, 10, 10, 10)
+                        if self.container_frame.graphicsEffect():
+                            self.container_frame.graphicsEffect().setEnabled(True)
                 self.update_style()
         except RuntimeError:
             pass
