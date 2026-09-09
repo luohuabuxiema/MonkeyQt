@@ -1,21 +1,273 @@
 # -*- coding: utf-8 -*-
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor, QFont, QPainter, QPen, QBrush
-from PySide6.QtWidgets import QComboBox, QFrame, QListView
+import time
+from PySide6.QtCore import Qt, QPoint, QRect, QEvent
+from PySide6.QtGui import QColor, QFont, QPainter, QPen, QBrush, QKeyEvent
+from PySide6.QtWidgets import (
+    QComboBox, QFrame, QListView, QWidget, QVBoxLayout,
+    QGraphicsDropShadowEffect
+)
 
 from monkeyqt.themes.engine import ThemeEngine
 from monkeyqt.themes.style_utils import draw_liquid_glass, parse_px, qcolor, readable_text
+
+
+class MkDropdownPopup(QWidget):
+    """
+    无边框透明浮动卡片下拉弹窗 (Frameless Floating Card Dropdown)
+    彻底消除 Windows 平台原生 HWND 方形黑角与锯齿遮挡，
+    呈现媲美 Web/macOS 的真实抗锯齿圆角、柔和外发散阴影与高质感卡片。
+    """
+    MARGIN = 10  # 预留给柔和发散外阴影的空间，避免阴影边缘被窗口硬裁切
+
+    def __init__(self, combo: "MkComboBox"):
+        super().__init__(None, Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint | Qt.WindowType.NoDropShadowWindowHint)
+        self.combo = combo
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating, False)
+
+        root_layout = QVBoxLayout(self)
+        root_layout.setContentsMargins(self.MARGIN, self.MARGIN, self.MARGIN, self.MARGIN)
+        root_layout.setSpacing(0)
+
+        # 核心浮动卡片
+        self.card = QFrame(self)
+        self.card.setObjectName("mkDropdownCard")
+        self._card_layout = QVBoxLayout(self.card)
+        self._card_layout.setContentsMargins(4, 4, 4, 4)
+        self._card_layout.setSpacing(0)
+
+        # 弥散外阴影
+        self.shadow = QGraphicsDropShadowEffect(self.card)
+        self.shadow.setBlurRadius(20)
+        self.shadow.setOffset(0, 4)
+        self.shadow.setColor(QColor(0, 0, 0, 40))
+        self.card.setGraphicsEffect(self.shadow)
+
+        root_layout.addWidget(self.card)
+
+        self.view = None
+        if combo.view() is not None:
+            self.set_view(combo.view())
+
+        self.update_theme_style()
+
+    def set_view(self, view: QListView):
+        if self.view is not None and self.view != view:
+            self._card_layout.removeWidget(self.view)
+            try:
+                self.view.clicked.disconnect(self._on_item_clicked)
+            except Exception:
+                pass
+
+        self.view = view
+        self.view.setParent(self.card)
+        self.view.setFrameShape(QFrame.Shape.NoFrame)
+        self.view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.view.setSelectionMode(QListView.SelectionMode.SingleSelection)
+        if hasattr(self.view, "viewport") and self.view.viewport():
+            self.view.viewport().setAutoFillBackground(False)
+        self.view.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+
+        self._card_layout.addWidget(self.view)
+        self.view.clicked.connect(self._on_item_clicked)
+        self.update_theme_style()
+
+    def update_theme_style(self):
+        t = ThemeEngine
+        is_dark = t.is_dark() or getattr(self.combo, "_is_dark", False)
+        primary = t.get("--primary", "#409EFF")
+        fg = t.get("--fg", "#1E293B") if not is_dark else (t.get("--fg", "#F1F5F9") if t.is_dark() else "#F1F5F9")
+        surface = t.get("--surface", "#FFFFFF") if not is_dark else (t.get("--surface", "#18181B") if t.is_dark() else "#18181B")
+        border = t.get("--border", "#E2E8F0") if not is_dark else (t.get("--border", "#3F3F46") if t.is_dark() else "#3F3F46")
+        radius_raw = t.get("--radius", "8px")
+        radius = parse_px(radius_raw, 8, 4, 20)
+        selection_fg = readable_text(primary)
+
+        if t.is_brutal() or t.is_pixel():
+            self.shadow.setEnabled(False)
+            card_border = "2px solid #000000"
+            card_radius = 0
+            card_bg = "#FFFFFF"
+        else:
+            self.shadow.setEnabled(True)
+            if is_dark:
+                self.shadow.setColor(QColor(0, 0, 0, 130))
+                self.shadow.setBlurRadius(24)
+                self.shadow.setOffset(0, 4)
+            else:
+                self.shadow.setColor(QColor(0, 0, 0, 38))
+                self.shadow.setBlurRadius(20)
+                self.shadow.setOffset(0, 4)
+            card_border = f"1px solid {t.get('--glass-border', border) if t.is_glass() else border}"
+            card_radius = radius
+            card_bg = surface
+
+        self.card.setStyleSheet(f"""
+            QFrame#mkDropdownCard {{
+                background-color: {card_bg};
+                border: {card_border};
+                border-radius: {card_radius}px;
+            }}
+        """)
+
+        hover_bg = t.get('--surface-muted', '#f1f5f9') if not is_dark else 'rgba(255, 255, 255, 0.08)'
+
+        if self.view is not None:
+            self.view.setStyleSheet(f"""
+                QListView {{
+                    background-color: transparent;
+                    border: none;
+                    outline: none;
+                    color: {fg};
+                    padding: 2px;
+                    selection-background-color: {primary};
+                    selection-color: {selection_fg};
+                }}
+                QListView::item {{
+                    min-height: 30px;
+                    padding: 5px 12px;
+                    border-radius: {max(card_radius - 2, 4) if card_radius > 0 else 0}px;
+                    margin: 1px 2px;
+                    color: {fg};
+                }}
+                QListView::item:hover {{
+                    background-color: {hover_bg};
+                    color: {fg};
+                }}
+                QListView::item:selected {{
+                    background-color: {primary};
+                    color: {selection_fg};
+                }}
+                QScrollBar:vertical {{
+                    background: transparent;
+                    width: 6px;
+                    margin: 4px 2px 4px 0px;
+                }}
+                QScrollBar::handle:vertical {{
+                    background: {'rgba(255, 255, 255, 0.25)' if is_dark else 'rgba(148, 163, 184, 0.5)'};
+                    border-radius: 3px;
+                    min-height: 24px;
+                }}
+                QScrollBar::handle:vertical:hover {{
+                    background: {'rgba(255, 255, 255, 0.4)' if is_dark else 'rgba(148, 163, 184, 0.8)'};
+                }}
+                QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+                    background: none;
+                    border: none;
+                    height: 0px;
+                }}
+                QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{
+                    background: transparent;
+                }}
+            """)
+
+    def _on_item_clicked(self, index):
+        if index.isValid():
+            self.combo.setCurrentIndex(index.row())
+            self.combo.activated.emit(index.row())
+        self.hide()
+
+    def keyPressEvent(self, event: QKeyEvent):
+        key = event.key()
+        if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            if self.view is not None:
+                curr = self.view.currentIndex()
+                if curr.isValid():
+                    self.combo.setCurrentIndex(curr.row())
+                    self.combo.activated.emit(curr.row())
+            self.hide()
+            event.accept()
+        elif key == Qt.Key.Key_Escape:
+            self.hide()
+            event.accept()
+        elif key in (Qt.Key.Key_Up, Qt.Key.Key_Down, Qt.Key.Key_PageUp, Qt.Key.Key_PageDown):
+            if self.view is not None:
+                self.view.keyPressEvent(event)
+            event.accept()
+        else:
+            super().keyPressEvent(event)
+
+    def hideEvent(self, event):
+        self.combo._last_close_time = time.time()
+        self.combo.update()
+        super().hideEvent(event)
+
+    def show_at_combo(self):
+        combo = self.combo
+        count = combo.count()
+        if count == 0:
+            return
+
+        max_visible = combo.maxVisibleItems()
+        visible_rows = min(count, max_visible)
+        needs_scroll = count > max_visible
+
+        total_items_h = 0
+        for i in range(visible_rows):
+            s = self.view.sizeHintForRow(i) if self.view is not None else 32
+            total_items_h += max(s, 32)
+
+        content_h = total_items_h + 10
+        total_h = content_h + self.MARGIN * 2
+
+        if self.view is not None:
+            self.view.setVerticalScrollBarPolicy(
+                Qt.ScrollBarPolicy.ScrollBarAsNeeded if needs_scroll else Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+            )
+
+        hint_w = self.view.sizeHintForColumn(0) if self.view is not None else 0
+        card_w = max(combo.width(), hint_w + (32 if needs_scroll else 16))
+        card_w = min(card_w, 640)
+        total_w = card_w + self.MARGIN * 2
+        self.resize(total_w, total_h)
+
+        screen = combo.screen()
+        avail = screen.availableGeometry() if screen else QRect(0, 0, 1920, 1080)
+        global_pos = combo.mapToGlobal(QPoint(0, 0))
+
+        space_below = avail.bottom() - (global_pos.y() + combo.height())
+        space_above = global_pos.y() - avail.top()
+
+        if space_below < content_h + 10 and space_above > space_below:
+            popup_y = global_pos.y() - total_h + self.MARGIN + 3
+        else:
+            popup_y = global_pos.y() + combo.height() - self.MARGIN - 3
+
+        popup_x = global_pos.x() - self.MARGIN
+        if popup_x + total_w > avail.right():
+            popup_x = avail.right() - total_w
+        if popup_x < avail.left():
+            popup_x = avail.left()
+
+        self.move(popup_x, popup_y)
+
+        idx = combo.currentIndex()
+        if 0 <= idx < count and self.view is not None and combo.model() is not None:
+            model_idx = combo.model().index(idx, 0)
+            self.view.setCurrentIndex(model_idx)
+            self.view.scrollTo(model_idx)
+
+        self.show()
+        self.raise_()
+        self.activateWindow()
+        if self.view is not None:
+            self.view.setFocus()
+
 
 class MkComboBox(QComboBox):
     """
     MkComboBox 组件 - 完美融合 68 种内置主题风格的高清矢量绘制和对比度适配，
     支持玻璃拟态、拟物化、科幻发光以及经典样式的自动切换。
+    内置 Web 标准高保真圆角阴影浮动卡片下拉窗口。
     """
     def __init__(self, parent=None):
         super().__init__(parent)
         self._hovered = False
         self._pressed = False
         self._time_angle = 0.0
+        self._last_close_time = 0.0
+        self._popup_widget = None
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setMinimumHeight(38)
         self.setFont(QFont("Segoe UI", 10))
@@ -26,8 +278,35 @@ class MkComboBox(QComboBox):
         view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setView(view)
 
+        self._popup_widget = MkDropdownPopup(self)
+
         ThemeEngine.instance().themeChanged.connect(self.set_theme_style)
         self.set_theme_style()
+
+    def setView(self, itemView):
+        super().setView(itemView)
+        if hasattr(self, "_popup_widget") and self._popup_widget is not None:
+            self._popup_widget.set_view(itemView)
+
+    def showPopup(self):
+        if time.time() - getattr(self, "_last_close_time", 0) < 0.25:
+            return
+        if self.count() == 0:
+            return
+        if not hasattr(self, "_popup_widget") or self._popup_widget is None:
+            self._popup_widget = MkDropdownPopup(self)
+        self._popup_widget.show_at_combo()
+
+    def hidePopup(self):
+        if hasattr(self, "_popup_widget") and self._popup_widget is not None:
+            self._popup_widget.hide()
+        super().hidePopup()
+
+    def hideEvent(self, event):
+        if hasattr(self, "_popup_widget") and self._popup_widget is not None:
+            self._popup_widget.hide()
+        super().hideEvent(event)
+
 
     def set_theme_style(self, style_name: str = None):
         t = ThemeEngine
@@ -61,27 +340,6 @@ class MkComboBox(QComboBox):
                 }}
                 QComboBox::drop-down {{ width: 30px; border: none; }}
                 QComboBox::down-arrow {{ image: none; width: 0; height: 0; }}
-                QComboBox QAbstractItemView {{
-                    background-color: {surface if not t.is_glass() else t.get('--glass-surface', surface)};
-                    color: {fg};
-                    border: 1px solid {t.get('--glass-border', border) if t.is_glass() else border};
-                    border-radius: {radius};
-                    padding: 5px;
-                    outline: none;
-                    selection-background-color: {primary};
-                    selection-color: {selection_fg};
-                }}
-                QComboBox QAbstractItemView::item {{
-                    min-height: 30px;
-                    padding: 5px 10px;
-                    border-radius: 5px;
-                    color: {fg};
-                }}
-                QComboBox QAbstractItemView::item:selected,
-                QComboBox QAbstractItemView::item:hover {{
-                    background-color: {primary};
-                    color: {selection_fg};
-                }}
             """)
         else:
             hover = t.get("--hover-primary", primary)
@@ -107,28 +365,11 @@ class MkComboBox(QComboBox):
                     border: none;
                 }}
                 QComboBox::down-arrow {{ image: none; width: 0; height: 0; }}
-                QComboBox QAbstractItemView {{
-                    background-color: {surface};
-                    color: {fg};
-                    border: 1px solid {border};
-                    border-radius: {radius};
-                    padding: 5px;
-                    outline: none;
-                    selection-background-color: {primary};
-                    selection-color: {selection_fg};
-                }}
-                QComboBox QAbstractItemView::item {{
-                    min-height: 30px;
-                    padding: 5px 10px;
-                    border-radius: 5px;
-                    color: {fg};
-                }}
-                QComboBox QAbstractItemView::item:selected,
-                QComboBox QAbstractItemView::item:hover {{
-                    background-color: {primary};
-                    color: {selection_fg};
-                }}
             """)
+
+        if hasattr(self, "_popup_widget") and self._popup_widget is not None:
+            self._popup_widget.update_theme_style()
+
         self.update()
 
     def paintEvent(self, event):
@@ -231,8 +472,15 @@ class MkComboBox(QComboBox):
         super().leaveEvent(event)
 
     def mousePressEvent(self, event):
+        if time.time() - getattr(self, "_last_close_time", 0) < 0.25:
+            event.accept()
+            return
         self._pressed = True
         self.update()
+        if not self.isEditable():
+            self.showPopup()
+            event.accept()
+            return
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event):

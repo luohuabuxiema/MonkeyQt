@@ -2491,6 +2491,13 @@ def _combobox_qss(p: dict[str, str | int | bool]) -> str:
 
 
 def _apply_combobox_view(widget: QWidget, p: dict[str, str | int | bool]) -> None:
+    if hasattr(widget, "_popup_widget"):
+        if widget._popup_widget is not None:
+            try:
+                widget._popup_widget.update_theme_style()
+            except Exception:
+                pass
+        return
     if not hasattr(widget, "view"):
         return
     try:
@@ -3628,6 +3635,8 @@ def _apply_submenu(widget: QWidget, p: dict[str, str | int | bool]) -> None:
         _style_label(widget.text_label, normal_text_style)
     if hasattr(widget, "icon_label"):
         _style_label(widget.icon_label, normal_icon_style)
+        if hasattr(getattr(widget, "_icon_str", None), "pixmap"):
+            widget.icon_label.setPixmap(widget._icon_str.pixmap(size=18, color=str(p["text"])))
 
     widget._mk_theme_submenu_normal_text_style = normal_text_style
     widget._mk_theme_submenu_normal_icon_style = normal_icon_style
@@ -3652,7 +3661,9 @@ def _apply_submenu(widget: QWidget, p: dict[str, str | int | bool]) -> None:
                         self.text_label.setStyleSheet(self._mk_theme_submenu_hover_text_style)
                     if hasattr(self, "icon_label"):
                         self.icon_label.setStyleSheet(self._mk_theme_submenu_hover_icon_style)
-                    if MkPhosphorIcon is not None and getattr(self, "_icon_str", None) and self._icon_str in PHOSPHOR_ICONS:
+                    if hasattr(getattr(self, "_icon_str", None), "pixmap"):
+                        self.icon_label.setPixmap(self._icon_str.pixmap(size=18, color=self._mk_theme_submenu_primary))
+                    elif MkPhosphorIcon is not None and getattr(self, "_icon_str", None) and self._icon_str in PHOSPHOR_ICONS:
                         self.icon_label.setPixmap(MkPhosphorIcon.get_pixmap(self._icon_str, self._mk_theme_submenu_primary, 18))
                     return False
                 if event.type() == event.Type.Leave:
@@ -3660,7 +3671,9 @@ def _apply_submenu(widget: QWidget, p: dict[str, str | int | bool]) -> None:
                         self.text_label.setStyleSheet(self._mk_theme_submenu_normal_text_style)
                     if hasattr(self, "icon_label"):
                         self.icon_label.setStyleSheet(self._mk_theme_submenu_normal_icon_style)
-                    if MkPhosphorIcon is not None and getattr(self, "_icon_str", None) and self._icon_str in PHOSPHOR_ICONS:
+                    if hasattr(getattr(self, "_icon_str", None), "pixmap"):
+                        self.icon_label.setPixmap(self._icon_str.pixmap(size=18, color=self._mk_theme_submenu_text))
+                    elif MkPhosphorIcon is not None and getattr(self, "_icon_str", None) and self._icon_str in PHOSPHOR_ICONS:
                         self.icon_label.setPixmap(MkPhosphorIcon.get_pixmap(self._icon_str, self._mk_theme_submenu_text, 18))
                     return False
             return self._mk_theme_original_event_filter(obj, event)

@@ -24,10 +24,12 @@ class MkMenuItem(QPushButton):
         self.icon_label.setAlignment(Qt.AlignCenter)
         self.icon_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         if self._icon_str:
-            if self._icon_str in PHOSPHOR_ICONS:
+            if hasattr(self._icon_str, "pixmap"):
+                self.icon_label.setPixmap(self._icon_str.pixmap(size=18, color="#606266"))
+            elif isinstance(self._icon_str, str) and self._icon_str in PHOSPHOR_ICONS:
                 self.icon_label.setPixmap(MkPhosphorIcon.get_pixmap(self._icon_str, "#606266", 18))
             else:
-                self.icon_label.setText(self._icon_str)
+                self.icon_label.setText(str(self._icon_str))
         
         self.text_label = QLabel(self._original_text)
         self.text_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
@@ -64,7 +66,7 @@ class MkMenuItem(QPushButton):
             QLabel {
                 color: #409eff;
                 font-size: 14px;
-                font-weight: bold;
+                font-weight: normal;
                 font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
                 border: none;
                 background: transparent;
@@ -88,7 +90,9 @@ class MkMenuItem(QPushButton):
         self._update_label_styles()
 
     def _update_icon_color(self, color_hex):
-        if self._icon_str and self._icon_str in PHOSPHOR_ICONS:
+        if hasattr(self._icon_str, "pixmap"):
+            self.icon_label.setPixmap(self._icon_str.pixmap(size=18, color=color_hex))
+        elif self._icon_str and isinstance(self._icon_str, str) and self._icon_str in PHOSPHOR_ICONS:
             self.icon_label.setPixmap(MkPhosphorIcon.get_pixmap(self._icon_str, color_hex, 18))
 
     def enterEvent(self, event):
@@ -176,14 +180,16 @@ class MkSubMenu(QWidget):
         self.icon_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         self.icon_label.setStyleSheet("color: #303133; font-size: 16px;")
         if self._icon_str:
-            if self._icon_str in PHOSPHOR_ICONS:
+            if hasattr(self._icon_str, "pixmap"):
+                self.icon_label.setPixmap(self._icon_str.pixmap(size=18, color="#303133"))
+            elif isinstance(self._icon_str, str) and self._icon_str in PHOSPHOR_ICONS:
                 self.icon_label.setPixmap(MkPhosphorIcon.get_pixmap(self._icon_str, "#303133", 18))
             else:
-                self.icon_label.setText(self._icon_str)
+                self.icon_label.setText(str(self._icon_str))
         
         self.text_label = QLabel(self._original_title)
         self.text_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        self.text_label.setStyleSheet("color: #303133; font-size: 14px; font-weight: bold;")
+        self.text_label.setStyleSheet("color: #303133; font-size: 14px; font-weight: normal;")
         
         self.title_layout.addWidget(self.icon_label)
         self.title_layout.addWidget(self.text_label)
@@ -209,14 +215,19 @@ class MkSubMenu(QWidget):
     def eventFilter(self, obj, event):
         if obj == self.title_btn:
             if event.type() == event.Type.Enter:
-                self.text_label.setStyleSheet("color: #409eff; font-size: 14px; font-weight: bold;")
+                self.text_label.setStyleSheet("color: #409eff; font-size: 14px; font-weight: normal;")
                 self.icon_label.setStyleSheet("color: #409eff; font-size: 16px;")
-                if self._icon_str and self._icon_str in PHOSPHOR_ICONS:
+                if hasattr(self._icon_str, "pixmap"):
+                    self.icon_label.setPixmap(self._icon_str.pixmap(size=18, color="#409eff"))
+                elif self._icon_str and isinstance(self._icon_str, str) and self._icon_str in PHOSPHOR_ICONS:
                     self.icon_label.setPixmap(MkPhosphorIcon.get_pixmap(self._icon_str, "#409eff", 18))
             elif event.type() == event.Type.Leave:
-                self.text_label.setStyleSheet("color: #303133; font-size: 14px; font-weight: bold;")
+                self.text_label.setStyleSheet("color: #303133; font-size: 14px; font-weight: normal;")
                 self.icon_label.setStyleSheet("color: #303133; font-size: 16px;")
-                if self._icon_str and self._icon_str in PHOSPHOR_ICONS:
+                if hasattr(self._icon_str, "pixmap"):
+                    color = getattr(self, "_icon_color", "#303133")
+                    self.icon_label.setPixmap(self._icon_str.pixmap(size=18, color=color))
+                elif self._icon_str and isinstance(self._icon_str, str) and self._icon_str in PHOSPHOR_ICONS:
                     self.icon_label.setPixmap(MkPhosphorIcon.get_pixmap(self._icon_str, "#303133", 18))
         return super().eventFilter(obj, event)
 
@@ -236,11 +247,21 @@ class MkSubMenu(QWidget):
             self.title_btn.setToolTip(self._original_title)
             self.content_widget.setVisible(False) # 强制收起子项
             self.title_layout.setContentsMargins(20, 0, 20, 0)
+            for i in range(self.title_layout.count()):
+                item = self.title_layout.itemAt(i)
+                w = item.widget() if item else None
+                if w and w not in (self.icon_label, self.text_label):
+                    w.hide()
         else:
             self.text_label.show()
             self.title_btn.setToolTip("")
             self.content_widget.setVisible(self._is_expanded) # 恢复原来的展开状态
             self.title_layout.setContentsMargins(20, 0, 20, 0)
+            for i in range(self.title_layout.count()):
+                item = self.title_layout.itemAt(i)
+                w = item.widget() if item else None
+                if w and w not in (self.icon_label, self.text_label):
+                    w.show()
         
         for item in self._items:
             item.set_collapsed(is_collapsed)
