@@ -1,9 +1,71 @@
 # -*- coding: utf-8 -*-
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QRectF
 from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QTableWidget, QTableWidgetItem
+from PySide6.QtGui import QPainter, QPainterPath, QColor, QPen
 
 from monkeyqt.themes.engine import ThemeEngine
 from monkeyqt.themes.style_utils import readable_text
+
+
+class MkTableHeaderView(QHeaderView):
+    """
+    MkTableHeaderView - 自适应圆角表头视图。
+    精准绘制顶部左、右圆角背景，彻底解决 QTableView / QTableWidget 顶部左右圆角被直角表头遮挡模糊的问题。
+    """
+    def __init__(self, orientation=Qt.Orientation.Horizontal, radius=6.0, bg_color="#F1F5F9", border_color="#E2E8F0", parent=None):
+        super().__init__(orientation, parent)
+        self._radius = float(radius)
+        self._bg_color = QColor(bg_color) if isinstance(bg_color, str) else bg_color
+        self._border_color = QColor(border_color) if isinstance(border_color, str) else border_color
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.viewport().setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+
+    def set_radius(self, radius: float):
+        self._radius = float(radius)
+        self.viewport().update()
+
+    def set_bg_color(self, color):
+        self._bg_color = QColor(color) if isinstance(color, str) else color
+        self.viewport().update()
+
+    def set_border_color(self, color):
+        self._border_color = QColor(color) if isinstance(color, str) else color
+        self.viewport().update()
+
+    def paintEvent(self, event):
+        # 1. 绘制平滑抗锯齿的顶部圆角背景（仅左上和右上带圆角，右下和左下为平直边缘）
+        painter = QPainter(self.viewport())
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        rect = QRectF(self.viewport().rect())
+        r = float(max(0.0, self._radius - 1.0))
+
+        if r > 0.5:
+            path = QPainterPath()
+            path.moveTo(rect.left(), rect.bottom())
+            path.lineTo(rect.left(), rect.top() + r)
+            path.quadTo(rect.left(), rect.top(), rect.left() + r, rect.top())
+            path.lineTo(rect.right() - r, rect.top())
+            path.quadTo(rect.right(), rect.top(), rect.right(), rect.top() + r)
+            path.lineTo(rect.right(), rect.bottom())
+            path.closeSubpath()
+            painter.fillPath(path, self._bg_color)
+        else:
+            painter.fillRect(rect, self._bg_color)
+
+        painter.end()
+
+        # 2. 调用基类绘制表头内容（文本、排序箭头等）
+        super().paintEvent(event)
+
+        # 3. 绘制表头底部分割线
+        if self._border_color.isValid() and self._border_color.alpha() > 0:
+            p2 = QPainter(self.viewport())
+            p2.setPen(QPen(self._border_color, 1.0))
+            y = self.viewport().rect().height() - 1
+            p2.drawLine(0, y, self.viewport().rect().width(), y)
+            p2.end()
+
 
 class MkTable(QTableWidget):
     """
@@ -11,6 +73,8 @@ class MkTable(QTableWidget):
     """
     def __init__(self, rows=0, columns=0, parent=None):
         super().__init__(rows, columns, parent)
+        self._header_view = MkTableHeaderView(Qt.Orientation.Horizontal, parent=self)
+        self.setHorizontalHeader(self._header_view)
         self.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
@@ -67,6 +131,14 @@ class MkTable(QTableWidget):
             self.horizontalHeader().setSectionResizeMode(col_idx, QHeaderView.ResizeMode.Interactive)
             self.setColumnWidth(col_idx, max(width, 90))
 
+    def update(self, *args):
+        """Safely handle update() without arguments (like QWidget.update) or with QModelIndex."""
+        if not args:
+            self.viewport().update()
+            super(QAbstractItemView, self).update()
+        else:
+            super().update(*args)
+
     def set_theme_style(self, style_name: str = None):
         t = ThemeEngine
         primary = t.get("--primary", "#409EFF")
@@ -75,7 +147,8 @@ class MkTable(QTableWidget):
         border = t.get("--glass-border", t.get("--border", "#E2E8F0")) if t.is_glass() else t.get("--border", "#E2E8F0")
         surface = t.get("--glass-surface", t.get("--surface", "#FFFFFF")) if t.is_glass() else t.get("--surface", "#FFFFFF")
         surface_muted = t.get("--surface-muted", "#F1F5F9")
-        radius = "0px" if t.is_brutal() or t.is_pixel() else t.get("--radius", "6px")
+        radius_val = 0.0 if t.is_brutal() or t.is_pixel() else float(str(t.get("--radius", "6px")).replace("px", ""))
+        radius = f"{int(radius_val)}px"
         active_fg = readable_text(primary)
         border_rule = "2px solid #000000" if t.is_brutal() or t.is_pixel() else f"1px solid {border}"
         grid_rule = "#000000" if t.is_brutal() or t.is_pixel() else border
@@ -86,6 +159,11 @@ class MkTable(QTableWidget):
             surface = "#10121C"
             surface_muted = "#182033"
             fg = "#E5F6FF"
+
+        if hasattr(self, "_header_view") and self._header_view is not None:
+            self._header_view.set_radius(radius_val)
+            self._header_view.set_bg_color(surface_muted)
+            self._header_view.set_border_color(grid_rule)
 
         self.setStyleSheet(f"""
             QTableWidget {{
@@ -100,11 +178,16 @@ class MkTable(QTableWidget):
                 selection-background-color: {primary};
                 selection-color: {active_fg};
             }}
+            QHeaderView {{
+                background-color: transparent;
+                background: transparent;
+                border: none;
+            }}
             QHeaderView::section {{
-                background: {surface_muted};
+                background-color: transparent;
+                background: transparent;
                 color: {muted if not t.is_brutal() else '#000000'};
                 border: none;
-                border-bottom: 1px solid {grid_rule};
                 padding: 10px 9px;
                 font-weight: {weight};
             }}

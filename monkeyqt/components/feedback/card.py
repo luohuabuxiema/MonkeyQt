@@ -44,6 +44,7 @@ class MkCard(QFrame):
 
         # 标题
         self._title_label = QLabel(title)
+        self._title_label.setObjectName("MkCardTitle")
         self._title_label.setStyleSheet("background: transparent;")
         font = QFont("Segoe UI", 13, QFont.Weight.DemiBold)
         self._title_label.setFont(font)
@@ -59,7 +60,6 @@ class MkCard(QFrame):
         self._layout.addWidget(self._content_widget)
 
         ThemeEngine.instance().themeChanged.connect(self.set_theme_style)
-        self._update_style()
 
     def _update_style(self):
         t = ThemeEngine
@@ -107,7 +107,7 @@ class MkCard(QFrame):
                 border-radius: {radius};
             }}
             MkCard:hover {{
-                border-color: {t._lighten_hex(t.get('--primary', '#409EFF'), 0.3) if self._show_title else 'transparent'};
+                border-color: {t.get('--input-hover-border', border) if self._show_title else 'transparent'};
             }}
         """)
 
@@ -241,7 +241,17 @@ class MkCard(QFrame):
         self.update()
 
     def set_theme_style(self, style_name: str = None):
-        self._update_style()
+        t = ThemeEngine
+        if t.is_liquid_glass():
+            if not hasattr(self, "_liquid_timer"):
+                from PySide6.QtCore import QTimer
+                self._liquid_timer = QTimer(self)
+                self._liquid_timer.timeout.connect(self._on_liquid_timeout)
+            if not self._liquid_timer.isActive():
+                self._liquid_timer.start(33)
+        else:
+            if hasattr(self, "_liquid_timer") and self._liquid_timer.isActive():
+                self._liquid_timer.stop()
         self.update()
 
     @Property(str)

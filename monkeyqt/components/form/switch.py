@@ -1,12 +1,12 @@
-# -*- coding: utf-8 -*-
 from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import Qt, Signal, Property, QPropertyAnimation, QEasingCurve
 from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QPainterPath
 
+from monkeyqt.components.layout.widget import MkQWidget
 from monkeyqt.themes.engine import ThemeEngine
 from monkeyqt.themes.style_utils import draw_liquid_glass, qcolor
 
-class MkSwitch(QWidget):
+class MkSwitch(MkQWidget):
     """
     MkSwitch 组件 - 开关组件，支持 68 种主题风格的自适应绘制与平滑过渡过渡效果。
     """
@@ -31,7 +31,6 @@ class MkSwitch(QWidget):
         self._anim.setEasingCurve(QEasingCurve.Type.InOutCubic)
         self._anim.setDuration(200)
         
-        ThemeEngine.instance().themeChanged.connect(self.set_theme_style)
         self.set_theme_style()
 
     def paintEvent(self, event):
@@ -142,7 +141,8 @@ class MkSwitch(QWidget):
             painter.drawEllipse(hx, hy, handle_size, handle_size)
 
         else:
-            painter.setBrush(QBrush(QColor(255, 255, 255, 235) if t.is_glass() else QColor("#FFFFFF")))
+            handle_color = QColor("#0F172A") if (t.is_dark() and self._checked and primary.name().upper() == "#FFFFFF") else (QColor(255, 255, 255, 235) if t.is_glass() else QColor("#FFFFFF"))
+            painter.setBrush(QBrush(handle_color))
             painter.setPen(QPen(QColor(255, 255, 255, 90), 1) if t.is_glass() else Qt.PenStyle.NoPen)
             painter.drawEllipse(hx, hy, handle_size, handle_size)
 
@@ -158,6 +158,9 @@ class MkSwitch(QWidget):
             self._checked = checked
             self.toggled.emit(self._checked)
             self._start_animation()
+
+    def on_theme_changed(self, theme_name: str = ""):
+        self.set_theme_style(theme_name)
 
     def set_theme_style(self, style_name: str = None):
         t = ThemeEngine

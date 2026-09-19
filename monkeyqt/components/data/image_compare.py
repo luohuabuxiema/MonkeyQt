@@ -2,7 +2,9 @@ from PySide6.QtWidgets import QWidget, QSizePolicy
 from PySide6.QtCore import Qt, Property, QRect, QPoint, QPropertyAnimation, QEasingCurve, QSize
 from PySide6.QtGui import QPainter, QPixmap, QImage, QColor, QPen, QFont, QFontMetrics, QPainterPath
 
-class MkImageCompare(QWidget):
+from monkeyqt.components.layout.widget import MkQWidget
+
+class MkImageCompare(MkQWidget):
     """
     MkImageCompare - Before/After Image Comparison Slider Component.
     Inspired by modern Web design, it lets users interactively slide to compare two images

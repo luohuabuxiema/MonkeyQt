@@ -12,8 +12,10 @@ from PySide6.QtCore import Qt, Signal, QEvent, QSize
 from PySide6.QtGui import QPixmap, QIcon, QFont, QCursor
 from monkeyqt.core.icons import MkPhosphorIcon
 from monkeyqt.components.basic.button import MkButton
+from monkeyqt.themes.engine import ThemeEngine
+from ..layout.widget import MkQWidget
 
-class MkUpload(QWidget):
+class MkUpload(MkQWidget):
     """
     Modern file upload component supporting drag-and-drop,
     file list display, size validation, and type filters.
@@ -80,42 +82,58 @@ class MkUpload(QWidget):
         
         self.main_layout.addWidget(self.file_list_widget)
         
-        # Apply initial styles
-        self.setStyleSheet("""
-            QFrame#MkDropArea {
-                border: 2px dashed #cbd5e1;
+        ThemeEngine.instance().themeChanged.connect(self.update_theme_style)
+        self.update_theme_style()
+        self.set_drag_state(False)
+        
+    def update_theme_style(self, style_name: str = None):
+        t = ThemeEngine
+        is_dark = t.is_dark()
+        surface = t.get("--surface", "#FFFFFF")
+        surface_muted = t.get("--surface-muted", "#F8FAFC")
+        border = t.get("--border", "#E2E8F0")
+        fg = t.get("--fg", "#1E293B")
+        muted = t.get("--text-muted", "#64748B")
+        active_border = t.get("--input-focus-border", "#FFFFFF" if is_dark else "#0F172A")
+        hover_bg = "rgba(255, 255, 255, 0.08)" if is_dark else "rgba(0, 0, 0, 0.04)"
+        if t.is_glow() or t.is_brutal() or t.is_pixel():
+            active_border = t.get("--primary", "#409EFF")
+
+        self.setStyleSheet(f"""
+            QFrame#MkDropArea {{
+                border: 2px dashed {border};
                 border-radius: 8px;
-                background-color: #f8fafc;
-            }
-            QFrame#MkDropArea[dragActive="true"] {
-                border-color: #3b82f6;
-                background-color: #eff6ff;
-            }
-            QFrame#MkDropArea:hover {
-                border-color: #3b82f6;
-                background-color: #eff6ff;
-            }
-            QLabel {
-                color: #334155;
+                background-color: {surface};
+            }}
+            QFrame#MkDropArea[dragActive="true"] {{
+                border-color: {active_border};
+                background-color: {hover_bg};
+            }}
+            QFrame#MkDropArea:hover {{
+                border-color: {active_border};
+                background-color: {hover_bg};
+            }}
+            QLabel {{
+                color: {fg};
                 background: transparent;
                 border: none;
-            }
-            QFrame#FileCard {
-                background-color: #f8fafc;
-                border: 1px solid #e2e8f0;
+            }}
+            QFrame#FileCard {{
+                background-color: {surface_muted};
+                border: 1px solid {border};
                 border-radius: 6px;
-            }
-            QFrame#FileCard:hover {
-                background-color: #f1f5f9;
-                border-color: #cbd5e1;
-            }
+            }}
+            QFrame#FileCard:hover {{
+                background-color: {hover_bg};
+                border-color: {active_border};
+            }}
         """)
-        self.set_drag_state(False)
         self.update_icons()
-        
+
     def update_icons(self):
         # High resolution upload icon
-        upload_pix = MkPhosphorIcon.get_pixmap("upload-simple", "#64748b", 48)
+        muted = ThemeEngine.get("--text-muted", "#64748B")
+        upload_pix = MkPhosphorIcon.get_pixmap("upload-simple", muted, 48)
         self.icon_label.setPixmap(upload_pix)
 
     def set_drag_state(self, active: bool):
@@ -123,7 +141,7 @@ class MkUpload(QWidget):
         self.drop_area.style().unpolish(self.drop_area)
         self.drop_area.style().polish(self.drop_area)
         
-        color = "#3b82f6" if active else "#64748b"
+        color = ThemeEngine.get("--input-focus-border", "#FFFFFF" if ThemeEngine.is_dark() else "#0F172A") if active else ThemeEngine.get("--text-muted", "#64748b")
         self.icon_label.setPixmap(MkPhosphorIcon.get_pixmap("upload-simple", color, 48))
 
     def eventFilter(self, obj, event: QEvent) -> bool:

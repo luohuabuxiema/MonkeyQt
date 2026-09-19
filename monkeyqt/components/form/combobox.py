@@ -7,11 +7,12 @@ from PySide6.QtWidgets import (
     QGraphicsDropShadowEffect
 )
 
+from monkeyqt.components.layout.widget import MkQWidget
 from monkeyqt.themes.engine import ThemeEngine
 from monkeyqt.themes.style_utils import draw_liquid_glass, parse_px, qcolor, readable_text
 
 
-class MkDropdownPopup(QWidget):
+class MkDropdownPopup(MkQWidget):
     """
     无边框透明浮动卡片下拉弹窗 (Frameless Floating Card Dropdown)
     彻底消除 Windows 平台原生 HWND 方形黑角与锯齿遮挡，
@@ -72,6 +73,7 @@ class MkDropdownPopup(QWidget):
         self._card_layout.addWidget(self.view)
         self.view.clicked.connect(self._on_item_clicked)
         self.update_theme_style()
+        self.view.doItemsLayout()
 
     def update_theme_style(self):
         t = ThemeEngine
@@ -121,14 +123,13 @@ class MkDropdownPopup(QWidget):
                     outline: none;
                     color: {fg};
                     padding: 2px;
-                    selection-background-color: {primary};
-                    selection-color: {selection_fg};
+                    selection-background-color: transparent;
                 }}
                 QListView::item {{
                     min-height: 30px;
                     padding: 5px 12px;
                     border-radius: {max(card_radius - 2, 4) if card_radius > 0 else 0}px;
-                    margin: 1px 2px;
+                    margin: 2px 4px;
                     color: {fg};
                 }}
                 QListView::item:hover {{
@@ -161,6 +162,7 @@ class MkDropdownPopup(QWidget):
                     background: transparent;
                 }}
             """)
+            self.view.doItemsLayout()
 
     def _on_item_clicked(self, index):
         if index.isValid():
@@ -199,6 +201,9 @@ class MkDropdownPopup(QWidget):
         if count == 0:
             return
 
+        if self.view is not None:
+            self.view.doItemsLayout()
+
         max_visible = combo.maxVisibleItems()
         visible_rows = min(count, max_visible)
         needs_scroll = count > max_visible
@@ -230,9 +235,9 @@ class MkDropdownPopup(QWidget):
         space_above = global_pos.y() - avail.top()
 
         if space_below < content_h + 10 and space_above > space_below:
-            popup_y = global_pos.y() - total_h + self.MARGIN + 3
+            popup_y = global_pos.y() - total_h + self.MARGIN - 4
         else:
-            popup_y = global_pos.y() + combo.height() - self.MARGIN - 3
+            popup_y = global_pos.y() + combo.height() - self.MARGIN + 4
 
         popup_x = global_pos.x() - self.MARGIN
         if popup_x + total_w > avail.right():
@@ -342,7 +347,8 @@ class MkComboBox(QComboBox):
                 QComboBox::down-arrow {{ image: none; width: 0; height: 0; }}
             """)
         else:
-            hover = t.get("--hover-primary", primary)
+            focus_border = t.get("--input-focus-border", "#FFFFFF" if t.is_dark() else "#0F172A")
+            hover_border = t.get("--input-hover-border", "rgba(255, 255, 255, 0.40)" if t.is_dark() else "#94A3B8")
             self.setStyleSheet(f"""
                 QComboBox {{
                     background-color: {surface};
@@ -353,8 +359,8 @@ class MkComboBox(QComboBox):
                     font-size: 13px;
                     min-height: 24px;
                 }}
-                QComboBox:hover {{ border-color: {hover}; }}
-                QComboBox:focus, QComboBox:on {{ border-color: {primary}; }}
+                QComboBox:hover {{ border-color: {hover_border}; }}
+                QComboBox:focus, QComboBox:on {{ border-color: {focus_border}; }}
                 QComboBox:disabled {{
                     background-color: {t.get('--surface-muted', '#F1F5F9')};
                     color: {muted};
@@ -451,7 +457,8 @@ class MkComboBox(QComboBox):
         t = ThemeEngine
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        color = qcolor(t.get("--primary", "#409EFF") if (self._hovered or self.hasFocus()) else t.get("--text-muted", "#64748B"))
+        active_color = t.get("--input-focus-border", "#FFFFFF" if t.is_dark() else "#0F172A") if not (t.is_glow() or t.is_brutal()) else t.get("--primary", "#409EFF")
+        color = qcolor(active_color if (self._hovered or self.hasFocus()) else t.get("--text-muted", "#64748B"))
         if t.is_brutal() or t.is_pixel():
             color = QColor("#000000")
         painter.setPen(QPen(color, 1.8, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))

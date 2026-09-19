@@ -3,10 +3,15 @@ from PySide6.QtWidgets import QWidget, QHBoxLayout, QPushButton, QLabel, QLineEd
 from PySide6.QtCore import Qt, Signal, Property
 from PySide6.QtGui import QIntValidator
 
-class MkPagination(QWidget):
+from monkeyqt.themes.engine import ThemeEngine
+from monkeyqt.themes.style_utils import readable_text
+from ..layout.widget import MkQWidget
+
+
+class MkPagination(MkQWidget):
     """
     分页器 (Pagination) 组件
-    模仿 Element Plus 风格
+    自适应 68 种主题风格的高清矢量翻页组件，暗色/亮色自动采用现代高对比度 ChatGPT/Ultralytics 胶囊样式。
     """
     pageChanged = Signal(int)
 
@@ -18,59 +23,107 @@ class MkPagination(QWidget):
         self._total_pages = max(1, (self._total + self._page_size - 1) // self._page_size)
 
         self._setup_ui()
+        self.set_theme_style()
         self._update_ui()
+
+    def on_theme_changed(self, theme_name: str = ""):
+        self.set_theme_style()
+
+    def set_theme_style(self, style_name: str = None):
+        t = ThemeEngine
+        is_dark = t.is_dark()
+        fg = t.get("--fg", "#1E293B")
+        surface = t.get("--surface", "#FFFFFF")
+        surface_muted = t.get("--surface-muted", "#F8FAFC")
+        border = t.get("--border", "#E2E8F0")
+        muted = t.get("--text-muted", "#64748B")
+        primary = t.get("--primary", "#409EFF")
+
+        if t.is_glow() or t.is_brutal() or t.is_pixel():
+            active_bg = primary
+            active_fg = readable_text(primary)
+            active_border = primary
+            hover_fg = primary
+            hover_bg = surface_muted
+        elif is_dark:
+            active_bg = "#FFFFFF"
+            active_fg = "#0F172A"
+            active_border = "#FFFFFF"
+            hover_fg = "#FFFFFF"
+            hover_bg = "rgba(255, 255, 255, 0.10)"
+        else:
+            active_bg = "#0F172A"
+            active_fg = "#FFFFFF"
+            active_border = "#0F172A"
+            hover_fg = "#0F172A"
+            hover_bg = "rgba(0, 0, 0, 0.05)"
+
+        focus_border = t.get("--input-focus-border", "#FFFFFF" if is_dark else "#0F172A")
+        hover_border = t.get("--input-hover-border", "rgba(255, 255, 255, 0.40)" if is_dark else "#94A3B8")
+
+        self.setStyleSheet(f"""
+            QPushButton {{
+                border: 1px solid transparent;
+                background-color: transparent;
+                color: {fg};
+                min-width: 32px;
+                min-height: 32px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                outline: none;
+            }}
+            QPushButton:hover {{
+                color: {hover_fg};
+                background-color: {hover_bg};
+            }}
+            QPushButton:disabled {{
+                color: {muted};
+                background-color: transparent;
+                opacity: 0.5;
+            }}
+            QPushButton[class="active"] {{
+                background-color: {active_bg};
+                color: {active_fg};
+                border: 1px solid {active_border};
+                font-weight: 700;
+            }}
+            QPushButton[class="active"]:hover {{
+                background-color: {active_bg};
+                color: {active_fg};
+            }}
+            QLabel {{
+                color: {muted};
+                font-size: 13px;
+                margin: 0 4px;
+                background: transparent;
+                border: none;
+            }}
+            QLineEdit {{
+                border: 1px solid {border};
+                border-radius: 6px;
+                color: {fg};
+                background-color: {surface};
+                min-width: 40px;
+                max-width: 40px;
+                min-height: 26px;
+                max-height: 28px;
+                text-align: center;
+                padding: 0 4px;
+            }}
+            QLineEdit:hover {{
+                border-color: {hover_border};
+            }}
+            QLineEdit:focus {{
+                border-color: {focus_border};
+            }}
+        """)
 
     def _setup_ui(self):
         self.layout = QHBoxLayout(self)
-        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setContentsMargins(0, 2, 0, 2)
         self.layout.setSpacing(4)
         self.layout.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-
-        # Style
-        self.setStyleSheet("""
-            QPushButton {
-                border: none;
-                background-color: transparent;
-                color: #606266;
-                min-width: 32px;
-                min-height: 32px;
-                border-radius: 4px;
-                font-size: 14px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                color: #00a896; /* #409eff if you prefer blue */
-            }
-            QPushButton:disabled {
-                color: #c0c4cc;
-                background-color: transparent;
-            }
-            QPushButton.active {
-                background-color: #00a896;
-                color: white;
-            }
-            QPushButton.active:hover {
-                color: white;
-            }
-            QLabel {
-                color: #606266;
-                font-size: 14px;
-                margin: 0 4px;
-            }
-            QLineEdit {
-                border: 1px solid #dcdfe6;
-                border-radius: 4px;
-                color: #606266;
-                min-width: 40px;
-                max-width: 40px;
-                min-height: 28px;
-                text-align: center;
-                padding: 0 4px;
-            }
-            QLineEdit:focus {
-                border-color: #00a896;
-            }
-        """)
 
         # Total label
         self.total_label = QLabel(f"共计 {self._total}")

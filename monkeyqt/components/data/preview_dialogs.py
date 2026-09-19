@@ -11,8 +11,10 @@ try:
 except ImportError:
     HAS_MULTIMEDIA = False
 
+from monkeyqt.components.layout.widget import MkQWidget
 
-class MkLightboxCanvas(QWidget):
+
+class MkLightboxCanvas(MkQWidget):
     """Transparent custom canvas widget drawing the zoomable/panning image."""
     def __init__(self, original_pixmap: QPixmap, dialog, parent=None):
         super().__init__(parent)
@@ -153,7 +155,7 @@ class MkLightboxDialog(QDialog):
             }
             QPushButton:hover {
                 background-color: rgba(255, 255, 255, 45);
-                border-color: #409eff;
+                border-color: rgba(255, 255, 255, 120);
             }
         """)
         
@@ -349,12 +351,12 @@ class MkVideoPlayerDialog(QDialog):
                     border-radius: 2px;
                 }
                 QSlider::sub-page:horizontal {
-                    background: #409eff;
+                    background: #ffffff;
                     border-radius: 2px;
                 }
                 QSlider::handle:horizontal {
                     background: #ffffff;
-                    border: 1px solid #409eff;
+                    border: 1px solid rgba(255, 255, 255, 180);
                     width: 12px;
                     height: 12px;
                     margin: -4px 0;
@@ -369,7 +371,7 @@ class MkVideoPlayerDialog(QDialog):
             # Play/Pause toggle
             self.play_btn = QPushButton(self.controls_widget)
             self.play_btn.setFixedSize(32, 32)
-            self.play_btn.setIcon(MkPhosphorIcon.get_icon("play", "#ffffff", "#409eff", 16))
+            self.play_btn.setIcon(MkPhosphorIcon.get_icon("play", "#ffffff", "#ffffff", 16))
             self.play_btn.setCursor(Qt.CursorShape.PointingHandCursor)
             self.play_btn.clicked.connect(self._toggle_play)
             controls_layout.addWidget(self.play_btn)
@@ -388,7 +390,7 @@ class MkVideoPlayerDialog(QDialog):
             # Mute/Volume icon
             self.volume_btn = QPushButton(self.controls_widget)
             self.volume_btn.setFixedSize(32, 32)
-            self.volume_btn.setIcon(MkPhosphorIcon.get_icon("speaker-high", "#ffffff", "#409eff", 16))
+            self.volume_btn.setIcon(MkPhosphorIcon.get_icon("speaker-high", "#ffffff", t_primary, 16))
             self.volume_btn.setCursor(Qt.CursorShape.PointingHandCursor)
             self.volume_btn.clicked.connect(self._toggle_mute)
             controls_layout.addWidget(self.volume_btn)
@@ -411,9 +413,15 @@ class MkVideoPlayerDialog(QDialog):
             fallback_layout.setContentsMargins(40, 40, 40, 40)
             fallback_layout.setSpacing(20)
             
+            from monkeyqt.themes.engine import ThemeEngine
+            t_primary = ThemeEngine.get("--primary", "#FFFFFF")
+            t_is_dark = ThemeEngine.is_dark()
+            btn_bg = t_primary if not (t_is_dark and t_primary == "#FFFFFF") else "#FFFFFF"
+            btn_fg = "#0F172A" if (t_is_dark and t_primary == "#FFFFFF") else "#FFFFFF"
+
             message_icon = QLabel(fallback_widget)
             message_icon.setFixedSize(64, 64)
-            message_icon.setPixmap(MkPhosphorIcon.get_pixmap("play", "#409eff", 64))
+            message_icon.setPixmap(MkPhosphorIcon.get_pixmap("play", t_primary, 64))
             fallback_layout.addWidget(message_icon, alignment=Qt.AlignmentFlag.AlignCenter)
             
             message_title = QLabel("视频解码服务已就绪", fallback_widget)
@@ -423,11 +431,10 @@ class MkVideoPlayerDialog(QDialog):
             message_desc = QLabel(
                 f"出于对 PySide6 底层依赖环境（QtMultimedia、GStreamer/DirectShow）的稳定性考量，\n"
                 f"我们已经安全拦截播放器加载。视频文件路径准备就绪：\n\n"
-                f"{self.video_path}\n\n"
-                f"为了获得最佳的硬件解码和超高清播放体验，推荐直接点击下方按钮拉起你的系统默认视频播放器。",
+                f"{os.path.basename(self.video_path)}",
                 fallback_widget
             )
-            message_desc.setStyleSheet("color: #a0cfff; font-size: 13px; line-height: 20px;")
+            message_desc.setStyleSheet("color: #94A3B8; font-size: 13px; line-height: 20px;")
             message_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
             fallback_layout.addWidget(message_desc, alignment=Qt.AlignmentFlag.AlignCenter)
             
@@ -437,19 +444,19 @@ class MkVideoPlayerDialog(QDialog):
             
             launch_system_btn = QPushButton("使用系统播放器打开", fallback_widget)
             launch_system_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-            launch_system_btn.setStyleSheet("""
-                QPushButton {
-                    background-color: #409eff;
+            launch_system_btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {btn_bg};
                     border: none;
-                    color: white;
+                    color: {btn_fg};
                     padding: 10px 20px;
                     border-radius: 6px;
                     font-size: 13px;
                     font-weight: bold;
-                }
-                QPushButton:hover {
-                    background-color: #66b1ff;
-                }
+                }}
+                QPushButton:hover {{
+                    opacity: 0.9;
+                }}
             """)
             launch_system_btn.clicked.connect(self._launch_system_player)
             btn_layout.addWidget(launch_system_btn)
@@ -501,19 +508,24 @@ class MkVideoPlayerDialog(QDialog):
         # Initial volume
         self.audio.setVolume(0.7)
         
+        from monkeyqt.themes.engine import ThemeEngine
+        t_primary = ThemeEngine.get("--primary", "#FFFFFF")
+
         # Auto-play on dialog launch
         self.player.play()
-        self.play_btn.setIcon(MkPhosphorIcon.get_icon("pause", "#ffffff", "#409eff", 16))
+        self.play_btn.setIcon(MkPhosphorIcon.get_icon("pause", "#ffffff", t_primary, 16))
 
     def _toggle_play(self):
         if not self.player:
             return
+        from monkeyqt.themes.engine import ThemeEngine
+        t_primary = ThemeEngine.get("--primary", "#FFFFFF")
         if self.player.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
             self.player.pause()
-            self.play_btn.setIcon(MkPhosphorIcon.get_icon("play", "#ffffff", "#409eff", 16))
+            self.play_btn.setIcon(MkPhosphorIcon.get_icon("play", "#ffffff", t_primary, 16))
         else:
             self.player.play()
-            self.play_btn.setIcon(MkPhosphorIcon.get_icon("pause", "#ffffff", "#409eff", 16))
+            self.play_btn.setIcon(MkPhosphorIcon.get_icon("pause", "#ffffff", t_primary, 16))
 
     def _on_timeline_seek(self, position):
         if self.player:
@@ -553,30 +565,34 @@ class MkVideoPlayerDialog(QDialog):
     def _toggle_mute(self):
         if not self.audio:
             return
+        from monkeyqt.themes.engine import ThemeEngine
+        t_primary = ThemeEngine.get("--primary", "#FFFFFF")
         is_muted = self.audio.isMuted()
         self.audio.setMuted(not is_muted)
         
         if not is_muted:
             # Now muted
-            self.volume_btn.setIcon(MkPhosphorIcon.get_icon("speaker-x", "#ffffff", "#409eff", 16))
+            self.volume_btn.setIcon(MkPhosphorIcon.get_icon("speaker-x", "#ffffff", t_primary, 16))
             self.volume_slider.setValue(0)
         else:
             # Now unmuted
-            self.volume_btn.setIcon(MkPhosphorIcon.get_icon("speaker-high", "#ffffff", "#409eff", 16))
+            self.volume_btn.setIcon(MkPhosphorIcon.get_icon("speaker-high", "#ffffff", t_primary, 16))
             self.volume_slider.setValue(70)
             self.audio.setVolume(0.7)
 
     def _on_volume_changed(self, value):
         if not self.audio:
             return
+        from monkeyqt.themes.engine import ThemeEngine
+        t_primary = ThemeEngine.get("--primary", "#FFFFFF")
         vol = value / 100.0
         self.audio.setVolume(vol)
         if value == 0:
             self.audio.setMuted(True)
-            self.volume_btn.setIcon(MkPhosphorIcon.get_icon("speaker-x", "#ffffff", "#409eff", 16))
+            self.volume_btn.setIcon(MkPhosphorIcon.get_icon("speaker-x", "#ffffff", t_primary, 16))
         else:
             self.audio.setMuted(False)
-            self.volume_btn.setIcon(MkPhosphorIcon.get_icon("speaker-high", "#ffffff", "#409eff", 16))
+            self.volume_btn.setIcon(MkPhosphorIcon.get_icon("speaker-high", "#ffffff", t_primary, 16))
 
     def _launch_system_player(self):
         url = QUrl.fromLocalFile(self.video_path)

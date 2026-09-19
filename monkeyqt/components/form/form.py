@@ -4,8 +4,10 @@ from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QFormLayout, QLabel, QVBoxLayout, QWidget, QSizePolicy
 
 from monkeyqt.themes.engine import ThemeEngine
+from ..layout.widget import MkQWidget
 
-class MkForm(QWidget):
+
+class MkForm(MkQWidget):
     """
     MkForm 组件 - 提供结构化的表单布局支持，完美自适应 68 种主题风格的标签文本与标题排版。
     """
@@ -25,7 +27,9 @@ class MkForm(QWidget):
         self._description = description
 
         self._setup_ui()
-        ThemeEngine.instance().themeChanged.connect(self.set_theme_style)
+        self.set_theme_style()
+
+    def on_theme_changed(self, theme_name: str = ""):
         self.set_theme_style()
 
     def _setup_ui(self):

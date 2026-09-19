@@ -100,7 +100,10 @@ class MkAnimatedStackedWidget(QStackedWidget):
         self.animationFinished.emit(index)
 
 
-class MkHistoryNavigation(QWidget):
+from ..layout.widget import MkQWidget
+
+
+class MkHistoryNavigation(MkQWidget):
     """Back/forward buttons with browser-like page history."""
 
     pageChanged = Signal(str)

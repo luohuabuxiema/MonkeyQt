@@ -1,55 +1,71 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QStackedWidget, QButtonGroup
 from PySide6.QtCore import Qt, Signal
+from monkeyqt.themes.engine import ThemeEngine
 
 class MkTabButton(QPushButton):
-    """标签页的单个标签按钮"""
+    """标签页的单个标签按钮，自适应当前主题的高对比度下划线切换"""
     def __init__(self, tab_id, title, parent=None):
         super().__init__(title, parent)
         self.tab_id = tab_id
         self.setCheckable(True)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setStyleSheet("""
-            MkTabButton {
+        ThemeEngine.instance().themeChanged.connect(self.update_theme_style)
+        self.update_theme_style()
+
+    def update_theme_style(self):
+        t = ThemeEngine
+        is_dark = t.is_dark()
+        muted = t.get("--text-muted", "#64748B")
+        primary = t.get("--primary", "#409EFF")
+
+        if t.is_glow() or t.is_brutal() or t.is_pixel():
+            active_color = primary
+            hover_color = primary
+        elif is_dark:
+            active_color = "#FFFFFF"
+            hover_color = "#E2E8F0"
+        else:
+            active_color = "#0F172A"
+            hover_color = "#334155"
+
+        self.setStyleSheet(f"""
+            MkTabButton {{
                 border: none;
                 border-bottom: 2px solid transparent;
                 background: transparent;
-                color: #303133;
+                color: {muted};
                 font-size: 14px;
-                padding: 10px 20px;
-                font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
-            }
-            MkTabButton:hover {
-                color: #409eff;
-            }
-            MkTabButton:checked {
-                color: #409eff;
-                border-bottom: 2px solid #409eff;
-            }
+                font-weight: 500;
+                padding: 10px 18px;
+                outline: none;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif;
+            }}
+            MkTabButton:hover {{
+                color: {hover_color};
+            }}
+            MkTabButton:checked {{
+                color: {active_color};
+                border-bottom: 2px solid {active_color};
+                font-weight: 700;
+            }}
         """)
 
-class MkTabs(QWidget):
+from ..layout.widget import MkQWidget
+
+class MkTabs(MkQWidget):
     """
     MkTabs 标签页组件
-    用于平级区域大块内容的的收纳和展现。
+    用于平级区域大块内容的的收纳和展现，全量适配 68 种主题风格。
     """
     tabChanged = Signal(str) # 切换标签时发射 tab_id
 
     def __init__(self, parent=None):
-        super().__init__(parent)
-        self._layout = QVBoxLayout(self)
-        self._layout.setContentsMargins(0, 0, 0, 0)
-        self._layout.setSpacing(15)
+        super().__init__(parent, layout="v", margins=0, spacing=15)
+        self._layout = self.inner_layout
 
         # 1. 顶部的标签头区域
-        self.header_widget = QWidget()
-        self.header_widget.setStyleSheet("""
-            QWidget {
-                border-bottom: 1px solid #e4e7ed;
-            }
-        """)
-        self.header_layout = QHBoxLayout(self.header_widget)
-        self.header_layout.setContentsMargins(0, 0, 0, 0)
-        self.header_layout.setSpacing(0)
+        self.header_widget = MkQWidget(role="transparent", layout="h", margins=0, spacing=0)
+        self.header_layout = self.header_widget.inner_layout
         self.header_layout.addStretch() # 靠左对齐
 
         self._layout.addWidget(self.header_widget)
@@ -64,6 +80,21 @@ class MkTabs(QWidget):
         self._layout.addWidget(self.content_area, stretch=1)
 
         self._tabs = {} # tab_id -> widget
+
+        self.update_theme_style()
+
+    def on_theme_changed(self, theme_name: str = ""):
+        self.update_theme_style()
+
+    def update_theme_style(self):
+        t = ThemeEngine
+        border = t.get("--border", "#E2E8F0")
+        self.header_widget.setStyleSheet(f"""
+            QWidget {{
+                border-bottom: 1px solid {border};
+                background: transparent;
+            }}
+        """)
 
     def add_tab(self, tab_id: str, title: str, widget: QWidget):
         """添加一个新标签页"""

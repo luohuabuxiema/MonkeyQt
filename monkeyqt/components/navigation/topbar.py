@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QButtonGroup, QSizePolicy, QWidget
 from PySide6.QtCore import Qt, Signal
+from monkeyqt.themes.engine import ThemeEngine
 
 class MkTopbarItem(QPushButton):
     """顶部导航栏菜单项"""
@@ -13,49 +14,55 @@ class MkTopbarItem(QPushButton):
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         self.setMinimumWidth(80) # 保证每个菜单项有足够的宽度
         
-        self.setStyleSheet("""
-            MkTopbarItem {
+        ThemeEngine.instance().themeChanged.connect(self.update_theme_style)
+        self.update_theme_style()
+
+    def update_theme_style(self, style_name: str = None):
+        t = ThemeEngine
+        is_dark = t.is_dark()
+        fg = t.get("--fg", "#1E293B")
+        muted = t.get("--text-muted", "#64748B")
+        primary = t.get("--primary", "#409EFF")
+        active_color = primary if (t.is_glow() or t.is_brutal() or t.is_pixel()) else ("#FFFFFF" if is_dark else "#0F172A")
+        hover_color = "#FFFFFF" if is_dark else "#0F172A"
+        hover_bg = "rgba(255, 255, 255, 0.08)" if is_dark else "rgba(0, 0, 0, 0.04)"
+
+        self.setStyleSheet(f"""
+            MkTopbarItem {{
                 border: none;
-                border-bottom: 2px solid transparent; /* 预留底部边框空间 */
+                border-bottom: 2px solid transparent;
                 background: transparent;
-                color: #909399; /* 浅灰色，未选中状态 */
+                color: {muted};
                 font-size: 14px;
+                font-weight: 500;
                 padding: 0 20px;
-                font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
-            }
-            MkTopbarItem:hover {
-                color: #ffffff;
-                background-color: rgba(255, 255, 255, 0.05); /* 轻微的高亮背景 */
-            }
-            MkTopbarItem:checked {
-                color: #ffffff;
-                border-bottom: 2px solid #a0cfff; /* 底部高亮蓝条，模拟图片中的效果 */
-            }
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif;
+            }}
+            MkTopbarItem:hover {{
+                color: {hover_color};
+                background-color: {hover_bg};
+            }}
+            MkTopbarItem:checked {{
+                color: {active_color};
+                border-bottom: 2px solid {active_color};
+                font-weight: 700;
+            }}
         """)
 
 class MkTopbar(QFrame):
     """
     MkTopbar 顶部导航栏组件
-    适用于全站的主导航，默认带有深色背景和左侧 LOGO。
+    适用于全站的主导航，全量自适应 68 种主题风格。
     """
     itemClicked = Signal(str)
 
     def __init__(self, logo_text="LOGO", parent=None):
         super().__init__(parent)
         self.setObjectName("mk-topbar")
+        self._logo_text = logo_text
         
         # 锁定导航栏高度，这在桌面端非常常见
         self.setFixedHeight(60)
-        
-        # 深色主题背景
-        self.setStyleSheet("""
-            #mk-topbar {
-                background-color: #334155; /* Element 风格的深色石板灰 */
-                border: none;
-                border-top-left-radius: 6px;
-                border-top-right-radius: 6px;
-            }
-        """)
 
         # 主布局，横向排列
         self.layout = QHBoxLayout(self)
@@ -65,17 +72,12 @@ class MkTopbar(QFrame):
         # 1. 左侧 LOGO
         if logo_text:
             self.logo_label = QLabel(logo_text)
-            self.logo_label.setStyleSheet("""
-                QLabel {
-                    color: #ffffff;
-                    font-size: 20px;
-                    font-weight: bold;
-                    letter-spacing: 2px;
-                    font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
-                    padding-right: 30px; /* 和右边菜单拉开距离 */
-                }
-            """)
             self.layout.addWidget(self.logo_label)
+        else:
+            self.logo_label = None
+
+        ThemeEngine.instance().themeChanged.connect(self.update_theme_style)
+        self.update_theme_style()
 
         # 2. 管理所有菜单项的互斥逻辑
         self.button_group = QButtonGroup(self)
@@ -108,3 +110,26 @@ class MkTopbar(QFrame):
             if btn.item_id == item_id:
                 btn.setChecked(True)
                 break
+
+    def update_theme_style(self, style_name: str = None):
+        t = ThemeEngine
+        surface = t.get("--surface", "#FFFFFF")
+        border = t.get("--border", "#E2E8F0")
+        fg = t.get("--fg", "#1E293B")
+        self.setStyleSheet(f"""
+            #mk-topbar {{
+                background-color: {surface};
+                border-bottom: 1px solid {border};
+            }}
+        """)
+        if hasattr(self, "logo_label") and self.logo_label:
+            self.logo_label.setStyleSheet(f"""
+                QLabel {{
+                    color: {fg};
+                    font-size: 18px;
+                    font-weight: 700;
+                    letter-spacing: 1px;
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif;
+                    padding-right: 24px;
+                }}
+            """)

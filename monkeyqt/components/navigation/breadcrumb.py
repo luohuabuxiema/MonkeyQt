@@ -1,46 +1,57 @@
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QLabel, QPushButton
 from PySide6.QtCore import Qt, Signal
 
+from monkeyqt.themes.engine import ThemeEngine
+
 class MkBreadcrumbItem(QPushButton):
-    """面包屑节点"""
+    """面包屑节点，自适应当前主题"""
     def __init__(self, text, is_current=False, parent=None):
         super().__init__(text, parent)
         self.is_current = is_current
         self.setCursor(Qt.CursorShape.PointingHandCursor if not is_current else Qt.CursorShape.ArrowCursor)
+        ThemeEngine.instance().themeChanged.connect(self._apply_style)
         self._apply_style()
 
-    def _apply_style(self):
+    def _apply_style(self, theme_name: str = None):
+        t = ThemeEngine
+        is_dark = t.is_dark()
+        fg = t.get("--fg", "#1E293B")
+        muted = t.get("--text-muted", "#64748B")
+        hover_color = "#FFFFFF" if is_dark else "#0F172A"
+        if t.is_glow() or t.is_brutal() or t.is_pixel():
+            hover_color = t.get("--primary", "#409EFF")
+
         if self.is_current:
-            # 当前页，灰色且不可点击
-            self.setStyleSheet("""
-                MkBreadcrumbItem {
+            self.setStyleSheet(f"""
+                MkBreadcrumbItem {{
                     border: none;
                     background: transparent;
-                    color: #606266; /* 深灰 */
+                    color: {fg};
+                    font-size: 14px;
+                    font-weight: 600;
+                    padding: 0;
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif;
+                }}
+            """)
+        else:
+            self.setStyleSheet(f"""
+                MkBreadcrumbItem {{
+                    border: none;
+                    background: transparent;
+                    color: {muted};
                     font-size: 14px;
                     font-weight: 500;
                     padding: 0;
-                    font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
-                }
-            """)
-        else:
-            # 祖先节点，可点击，Hover时变蓝
-            self.setStyleSheet("""
-                MkBreadcrumbItem {
-                    border: none;
-                    background: transparent;
-                    color: #909399; /* 浅灰 */
-                    font-size: 14px;
-                    font-weight: bold;
-                    padding: 0;
-                    font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
-                }
-                MkBreadcrumbItem:hover {
-                    color: #409eff;
-                }
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif;
+                }}
+                MkBreadcrumbItem:hover {{
+                    color: {hover_color};
+                }}
             """)
 
-class MkBreadcrumb(QWidget):
+from ..layout.widget import MkQWidget
+
+class MkBreadcrumb(MkQWidget):
     """
     MkBreadcrumb 面包屑组件
     显示当前页面的路径，快速返回之前的任意页面。
@@ -48,11 +59,9 @@ class MkBreadcrumb(QWidget):
     itemClicked = Signal(str)
 
     def __init__(self, separator="/", parent=None):
-        super().__init__(parent)
+        super().__init__(parent, layout="h", margins=0, spacing=8)
         self.separator_text = separator
-        self.layout = QHBoxLayout(self)
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.setSpacing(8)
+        self.layout = self.inner_layout
         self.layout.addStretch() # 靠左对齐
 
         self._items_data = []
@@ -85,11 +94,14 @@ class MkBreadcrumb(QWidget):
             # 添加分隔符 (除了最后一个)
             if not is_current:
                 sep_label = QLabel(self.separator_text)
-                sep_label.setStyleSheet("""
-                    QLabel {
-                        color: #c0c4cc;
-                        font-weight: bold;
+                muted = ThemeEngine.get("--text-muted", "#64748B")
+                sep_label.setStyleSheet(f"""
+                    QLabel {{
+                        color: {muted};
+                        font-weight: 600;
                         font-size: 14px;
-                    }
+                        background: transparent;
+                        border: none;
+                    }}
                 """)
                 self.layout.insertWidget(self.layout.count() - 1, sep_label)

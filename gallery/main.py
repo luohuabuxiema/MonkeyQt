@@ -5,19 +5,20 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QStackedWidget, QFrame, QComboBox, QCheckBox, QPushButton, QLineEdit, QSlider
 from PySide6.QtGui import QFont, QPixmap, QIcon
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QEvent
 from monkeyqt import (
     MkButton, MkCheckBox, MkMenu, MkTopbar, MkBreadcrumb, MkTabs,
     MkAlert, MkProgressBar, MkProgressRing,
+    MkTooltip, MkInfoIcon, create_field_header, create_input_field, create_switch_field,
     MkPagination, MkDropdown, MkSwitch, MkSlider, MkDatePicker, MkForm,
     MkInput, MkCaptchaWidget, MkAuthScreen, MkMessage,
-    MkAvatar, MkTable, MkDataTable, MkImageCompare, MkImageSplit,
+    MkAvatar, MkProTable, MkImageCompare, MkImageSplit,
     MkTitleBar, MkWindow, MkUpload, MkComboBox, MkMultiComboBox,
-    MkConsole,
+    MkConsole, MkQWidget, MkWidget,
     ThemeEngine, MkThemeSelector, apply_monkeyqt_theme, use_theme
 )
 
-class ButtonGallery(QWidget):
+class ButtonGallery(MkQWidget):
     """按钮组件的展示页"""
     def __init__(self):
         super().__init__()
@@ -69,7 +70,7 @@ class ButtonGallery(QWidget):
 
         layout.addStretch()
 
-class CheckboxGallery(QWidget):
+class CheckboxGallery(MkQWidget):
     """复选框组件的展示页"""
     def __init__(self):
         super().__init__()
@@ -103,7 +104,7 @@ class CheckboxGallery(QWidget):
 
         layout.addStretch()
 
-class TopbarGallery(QWidget):
+class TopbarGallery(MkQWidget):
     """顶部导航栏组件的展示页"""
     def __init__(self):
         super().__init__()
@@ -126,13 +127,11 @@ class TopbarGallery(QWidget):
         layout.addWidget(self.topbar)
         
         # 2. 下方的模拟内容区域
-        content_area = QWidget()
-        content_area.setStyleSheet("background-color: #f0f2f5;") # 浅灰色的内容区
-        
+        content_area = MkQWidget(role="transparent")
         content_layout = QVBoxLayout(content_area)
         
         self.status_label = QLabel("当前选中：处理中心 (home)")
-        self.status_label.setStyleSheet("font-size: 16px; color: #606266; margin: 20px;")
+        self.status_label.setFont(QFont("Microsoft YaHei", 12))
         content_layout.addWidget(self.status_label, alignment=Qt.AlignmentFlag.AlignCenter)
         
         layout.addWidget(content_area, stretch=1)
@@ -143,7 +142,7 @@ class TopbarGallery(QWidget):
     def _on_topbar_clicked(self, item_id):
         self.status_label.setText(f"当前选中：{item_id}")
 
-class NavMiscGallery(QWidget):
+class NavMiscGallery(MkQWidget):
     """面包屑与标签页展示"""
     def __init__(self):
         super().__init__()
@@ -182,13 +181,13 @@ class NavMiscGallery(QWidget):
         self.tabs.setFixedHeight(200) # 限定一下高度，方便展示
         
         # 标签1内容
-        tab1_content = QWidget()
+        tab1_content = MkQWidget(role="transparent")
         t1_layout = QVBoxLayout(tab1_content)
         t1_layout.addWidget(QLabel("用户个人中心，支持放置任意自定义 QWidget"))
 
         
         # 标签2内容
-        tab2_content = QWidget()
+        tab2_content = MkQWidget(role="transparent")
         t2_layout = QVBoxLayout(tab2_content)
         t2_layout.addWidget(QLabel("这是 配置管理 的内容面板"))
         
@@ -223,23 +222,80 @@ class NavMiscGallery(QWidget):
 
         layout.addStretch()
 
-class FeedbackGallery(QWidget):
-    """反馈类组件展示页 (Alert, Progress)"""
+class FeedbackGallery(MkQWidget):
+    """反馈类组件展示页 (Tooltip Popover, Alert, Progress)"""
     def __init__(self):
         super().__init__()
         layout = QVBoxLayout(self)
-        layout.setSpacing(30)
+        layout.setSpacing(16)
         
         title_font = QFont("Microsoft YaHei", 12, QFont.Bold)
+
+        # 1. 气泡提示与信息图标 (Tooltip Popover & InfoIcon)
+        label_tooltip = QLabel("气泡提示与信息图标 (Tooltip Popover & InfoIcon)")
+        label_tooltip.setFont(title_font)
+        layout.addWidget(label_tooltip)
+
+        # 1.1 通用控件一键绑定气泡提示 (MkTooltip.attach)
+        attach_box = QHBoxLayout()
+        attach_box.setSpacing(12)
+        btn_hover1 = MkButton("悬停查看气泡提示 (Hover Me)", type="primary")
+        MkTooltip.attach(btn_hover1, "这是使用 MkTooltip.attach 绑定的气泡提示，具有平滑圆角与自适应指示箭头。")
         
-        # 1. 警告提示 (Alert)
+        btn_hover2 = MkButton("短文本提示", type="default")
+        MkTooltip.attach(btn_hover2, "简单快捷的操作提示")
+
+        attach_box.addWidget(btn_hover1)
+        attach_box.addWidget(btn_hover2)
+        attach_box.addStretch()
+        layout.addLayout(attach_box)
+
+        # 1.2 现代化 AI 训练参数卡片展示（参考 LabelPaw & Ultralytics HUB）
+        card_train = QFrame()
+        card_train.setStyleSheet("border: 1px solid rgba(128, 128, 128, 0.18); border-radius: 8px; padding: 12px;")
+        card_lay = QVBoxLayout(card_train)
+        card_lay.setSpacing(10)
+
+        header_row = QHBoxLayout()
+        header_row.addWidget(create_field_header(
+            "基础模型选择 (Base Model)",
+            hint="选择预训练模型架构 (.pt) 或指定本地权重。YOLO 官方架构涵盖 detect、segment、pose、obb 等任务"
+        ))
+        header_row.addWidget(create_field_header(
+            "训练数据集配置 (Dataset)",
+            hint="配置用于模型训练的数据集。可直接在下方编辑 YAML 必填模板，或点击【上传 YAML...】自动解析并提取模板参数。"
+        ))
+        card_lay.addLayout(header_row)
+
+        from PySide6.QtWidgets import QGridLayout
+        grid = QGridLayout()
+        grid.setHorizontalSpacing(16)
+        grid.setVerticalSpacing(8)
+
+        f_lr0, _ = create_input_field("初始学习率 (lr0)", "0.01", "初始学习率 (lr0)。SGD 推荐 0.01，Adam/AdamW 推荐 0.001")
+        f_lrf, _ = create_input_field("最终学习率比例 (lrf)", "0.01", "最终学习率比率 (lrf)。最终学习率 = lr0 * lrf，默认 0.01")
+        f_momentum, _ = create_input_field("动量系数 (momentum)", "0.937", "动量系数 (momentum)。控制梯度更新的惯性大小（对应 SGD 的动量系数，或 Adam/AdamW 算法中的 β1 衰减参数），默认 0.937")
+        f_patience, _ = create_input_field("早停等待轮数 (patience)", "100", "早停机制等待轮数 (patience)。连续 N 轮验证集指标未提升则提前终止训练，默认 100")
+        f_close_mosaic, _ = create_input_field("关闭 Mosaic 轮数 (close_mosaic)", "10", "最后 N 轮禁用 Mosaic 数据增强 (close_mosaic)。稳定收敛提升精度，0 为全程启用，默认 10")
+        f_cos_lr, _ = create_switch_field("余弦退火调度 (cos_lr)", default_checked=True, hint="余弦退火学习率调度器 (cos_lr)。启用余弦退火动态平滑衰减学习率")
+
+        grid.addWidget(f_lr0, 0, 0)
+        grid.addWidget(f_lrf, 0, 1)
+        grid.addWidget(f_momentum, 0, 2)
+        grid.addWidget(f_patience, 1, 0)
+        grid.addWidget(f_close_mosaic, 1, 1)
+        grid.addWidget(f_cos_lr, 1, 2)
+
+        card_lay.addLayout(grid)
+        layout.addWidget(card_train)
+
+        # 2. 警告提示 (Alert)
         label_alert = QLabel("警告提示 (Alert)")
         label_alert.setFont(title_font)
         layout.addWidget(label_alert)
         
         layout.addWidget(MkAlert(title="成功提示的文案", mk_type="success", show_icon=True))
         layout.addWidget(MkAlert(title="消息提示的文案", mk_type="info", show_icon=True, closable=True))
-        layout.addWidget(MkAlert(title="警告提示的文案", mk_type="warning", show_icon=True))
         layout.addWidget(MkAlert(
             title="错误提示的文案", 
             description="这是一句绕口令：黑化肥发灰，灰化肥发黑。黑化肥发灰会挥发；灰化肥挥发会发黑。",
@@ -248,34 +304,28 @@ class FeedbackGallery(QWidget):
             closable=True
         ))
 
-        # 2. 进度条 (Progress Bar)
-        label_progress_bar = QLabel("进度条 (Progress Bar)")
+        # 3. 进度条与进度环 (Progress Bar & Progress Ring)
+        label_progress_bar = QLabel("进度展示 (Progress)")
         label_progress_bar.setFont(title_font)
         layout.addWidget(label_progress_bar)
         
-        layout.addWidget(MkProgressBar(percentage=50, status="normal"))
-        layout.addWidget(MkProgressBar(percentage=100, status="success"))
-        layout.addWidget(MkProgressBar(percentage=80, status="warning", stroke_width=10, text_inside=True))
-        layout.addWidget(MkProgressBar(percentage=50, status="exception"))
+        prog_row = QHBoxLayout()
+        prog_row.addWidget(MkProgressBar(percentage=75, status="normal"))
+        prog_row.addWidget(MkProgressBar(percentage=100, status="success"))
+        layout.addLayout(prog_row)
 
-        # 3. 进度环 (Progress Ring)
-        label_progress_ring = QLabel("进度环 (Progress Ring)")
-        label_progress_ring.setFont(title_font)
-        layout.addWidget(label_progress_ring)
-        
         ring_layout = QHBoxLayout()
-        ring_layout.addWidget(MkProgressRing(percentage=0, status="normal"))
         ring_layout.addWidget(MkProgressRing(percentage=25, status="normal"))
         ring_layout.addWidget(MkProgressRing(percentage=100, status="success"))
         ring_layout.addWidget(MkProgressRing(percentage=75, status="warning"))
         ring_layout.addWidget(MkProgressRing(percentage=50, status="exception"))
         ring_layout.addStretch()
-        
         layout.addLayout(ring_layout)
+
         layout.addStretch()
 
-class DataGallery(QWidget):
-    """数据展示组件展示页 (Avatar, Table)"""
+class DataGallery(MkQWidget):
+    """数据展示组件展示页 (Avatar)"""
     def __init__(self):
         super().__init__()
         layout = QVBoxLayout(self)
@@ -284,133 +334,179 @@ class DataGallery(QWidget):
         title_font = QFont("Microsoft YaHei", 12, QFont.Bold)
         
         # 1. 头像 (Avatar)
-        label_avatar = QLabel("头像 (Avatar)")
+        label_avatar = QLabel("头像组件 (MkAvatar)")
         label_avatar.setFont(title_font)
         layout.addWidget(label_avatar)
         
+        desc = QLabel("支持多种形状（圆形 circle、圆角矩形 square）以及丰富尺寸与文本缩略。")
+        desc.setStyleSheet("color: #64748b; font-size: 13px;")
+        layout.addWidget(desc)
+        
         avatar_layout = QHBoxLayout()
-        avatar_layout.addWidget(MkAvatar(text="User", size=50, shape="circle"))
-        avatar_layout.addWidget(MkAvatar(text="Admin", size=50, shape="square"))
+        avatar_layout.setSpacing(16)
+        avatar_layout.addWidget(MkAvatar(text="U", size=32, shape="circle"))
+        avatar_layout.addWidget(MkAvatar(text="User", size=40, shape="circle"))
+        avatar_layout.addWidget(MkAvatar(text="Admin", size=50, shape="circle"))
+        avatar_layout.addWidget(MkAvatar(text="Pro", size=60, shape="circle"))
+        avatar_layout.addWidget(MkAvatar(text="Dev", size=50, shape="square"))
+        avatar_layout.addWidget(MkAvatar(text="AI", size=40, shape="square"))
         avatar_layout.addStretch()
         layout.addLayout(avatar_layout)
-
-        # 2. 表格 (Table)
-        label_table = QLabel("表格 (Table)")
-        label_table.setFont(title_font)
-        layout.addWidget(label_table)
-        
-        self.table = MkTable()
-        self.table.set_headers(["日期", "姓名", "地址"])
-        self.table.set_data([
-            ["2016-05-02", "王小虎", "上海市普陀区金沙江路 1518 弄"],
-            ["2016-05-04", "王小虎", "上海市普陀区金沙江路 1517 弄"],
-            ["2016-05-01", "王小虎", "上海市普陀区金沙江路 1519 弄"],
-            ["2016-05-03", "王小虎", "上海市普陀区金沙江路 1516 弄"]
-        ])
-        # Give table some height for demo
-        self.table.setFixedHeight(200)
-        layout.addWidget(self.table)
         
         layout.addStretch()
 
-class DataTableGallery(QWidget):
-    """高级 DataTable 数据表格的展示页"""
+
+class ProTableGallery(MkQWidget):
+    """高级响应式 ProTable 仪表盘数据表格展示页 (继承 MkQWidget，集聚前端现代化特性)"""
     def __init__(self):
         super().__init__()
         layout = QVBoxLayout(self)
-        layout.setSpacing(20)
+        layout.setSpacing(14)
         
         title_font = QFont("Microsoft YaHei", 12, QFont.Bold)
         
-        # 1. 标题
-        label_title = QLabel("高级数据表格 (DataTable)")
+        # 1. 标题与说明
+        label_title = QLabel("现代化前端高级数据表格 (MkProTable)")
         label_title.setFont(title_font)
         layout.addWidget(label_title)
         
         desc = QLabel(
-            "自适应 shadcn-ui 风格的高级数据表格。支持全选/跨页多选、Phosphor SVG 图标操作列、"
-            "图片/视频类型列点击灯箱大图与视频播放器交互预览，开箱即用自动分页。"
+            "基于现代 Web 仪表盘美学封装的新一代数据表格，原生继承 MkQWidget(role='card')。\n"
+            "特性包含：复选框全选/跨页记忆 (selectable=True)、图片缩略图+悬浮眼眸+高清灯箱大图 (type='image')、"
+            "视频缩略图+播放角标+视频播放器弹窗 (type='video')、快速模糊过滤搜索、表头循环排序 (↑↓/↑/↓)、"
+            "外边框与圆角实时调节、每页行数下拉切换、自适应 68 种主题风格。"
         )
-        desc.setStyleSheet("color: #64748b; font-size: 13px; line-height: 18px;")
+        desc.setWordWrap(True)
+        desc.setStyleSheet("color: #64748b; font-size: 13px; line-height: 20px;")
         layout.addWidget(desc)
+
+        # 控制栏
+        control_bar = QHBoxLayout()
+        control_bar.setSpacing(8)
         
-        # 获取图片的绝对路径，确保能在各种工作目录下正确加载
+        self.btn_toggle_select = MkButton("关闭复选框", type="default", size="small")
+        self.btn_toggle_select.clicked.connect(self._toggle_selectable)
+        control_bar.addWidget(self.btn_toggle_select)
+
+        btn_select_all = MkButton("全选当前页", type="default", size="small")
+        btn_select_all.clicked.connect(lambda: self.pro_table.select_all())
+        control_bar.addWidget(btn_select_all)
+
+        btn_clear_sel = MkButton("清空已选", type="default", size="small")
+        btn_clear_sel.clicked.connect(lambda: self.pro_table.clear_selection())
+        control_bar.addWidget(btn_clear_sel)
+
+        btn_border_1 = MkButton("默认边框 (1px, R12)", type="default", size="small")
+        btn_border_1.clicked.connect(lambda: self.pro_table.set_border_props(width=1, radius=12))
+        control_bar.addWidget(btn_border_1)
+
+        btn_border_2 = MkButton("加粗边框 (2px, R14)", type="default", size="small")
+        btn_border_2.clicked.connect(lambda: self.pro_table.set_border_props(width=2, radius=14))
+        control_bar.addWidget(btn_border_2)
+
+        btn_border_0 = MkButton("无外边框 (0px)", type="default", size="small")
+        btn_border_0.clicked.connect(lambda: self.pro_table.set_border_props(width=0, radius=0))
+        control_bar.addWidget(btn_border_0)
+
+        btn_radius_round = MkButton("大圆角 (20px)", type="default", size="small")
+        btn_radius_round.clicked.connect(lambda: self.pro_table.set_border_props(width=1, radius=20))
+        control_bar.addWidget(btn_radius_round)
+
+        self.btn_toggle_action = MkButton("显示操作列", type="default", size="small")
+        self.btn_toggle_action.clicked.connect(self._toggle_action_column)
+        control_bar.addWidget(self.btn_toggle_action)
+
+        control_bar.addStretch()
+        layout.addLayout(control_bar)
+
+        # 资源文件路径
         base_dir = os.path.dirname(os.path.abspath(__file__))
         before_path = os.path.join(base_dir, "assets", "before.png")
         after_path = os.path.join(base_dir, "assets", "after.png")
         video_path = os.path.join(base_dir, "assets", "demo_video.mp4")
-        
-        # 2. 列配置 (Declarative configuration)
+
+        # 列配置：引入复选框 (selectable 参数控制)、图片 preview_img、视频 preview_vid、类型徽章、状态徽章等
         columns = [
-            {"key": "date", "label": "录入日期", "width": 120},
-            {"key": "name", "label": "操作人", "width": 80},
-            {"key": "avatar", "label": "结果图片", "type": "image", "width": 80},
-            {"key": "video", "label": "演示视频", "type": "video", "width": 80},
-            {"key": "status", "label": "状态"},
-            {"key": "action", "label": "操作", "type": "action", "width": 100}
+            {"key": "name", "label": "项目 / 模型名称", "type": "avatar_text", "width": 210, "sortable": True},
+            {"key": "preview_img", "label": "结果图片", "type": "image", "width": 88},
+            {"key": "preview_vid", "label": "演示视频", "type": "video", "width": 88},
+            {"key": "type", "label": "类型", "type": "badge", "width": 110, "sortable": True},
+            {"key": "description", "label": "描述与备注", "type": "text", "sortable": True},
+            {"key": "status", "label": "运行状态", "type": "status", "width": 110, "sortable": True},
+            {"key": "updated", "label": "更新时间", "type": "text", "width": 120, "sortable": True},
         ]
-        
-        # 12条精美数据展示分页 (每页 5 条)
+
+        # 示例多媒体数据 (14 条，支持跨页多选与分页交互)
         mock_data = [
-            {"id": "101", "date": "2026-06-01", "name": "王小虎", "avatar": before_path, "video": video_path, "status": "进行中"},
-            {"id": "102", "date": "2026-06-02", "name": "李二狗", "avatar": after_path, "video": video_path, "status": "已完成"},
-            {"id": "103", "date": "2026-06-03", "name": "张三疯", "avatar": before_path, "video": video_path, "status": "已完成"},
-            {"id": "104", "date": "2026-06-04", "name": "赵四爷", "avatar": after_path, "video": video_path, "status": "审核中"},
-            {"id": "105", "date": "2026-06-05", "name": "钱掌柜", "avatar": before_path, "video": video_path, "status": "待处理"},
-            {"id": "106", "date": "2026-06-06", "name": "孙大圣", "avatar": after_path, "video": video_path, "status": "进行中"},
-            {"id": "107", "date": "2026-06-07", "name": "猪八戒", "avatar": before_path, "video": video_path, "status": "已完成"},
-            {"id": "108", "date": "2026-06-08", "name": "沙和尚", "avatar": after_path, "video": video_path, "status": "进行中"},
-            {"id": "109", "date": "2026-06-09", "name": "唐三藏", "avatar": before_path, "video": video_path, "status": "已完成"},
-            {"id": "110", "date": "2026-06-10", "name": "白龙马", "avatar": after_path, "video": video_path, "status": "待处理"},
-            {"id": "111", "date": "2026-06-11", "name": "观音姐", "avatar": before_path, "video": video_path, "status": "已完成"},
-            {"id": "112", "date": "2026-06-12", "name": "如来佛", "avatar": after_path, "video": video_path, "status": "审核中"},
+            {"name": "Alpha 核心项目", "type": "项目", "description": "核心模板项目工程", "status": "已完成", "updated": "2 天前", "color": "#ef4444", "preview_img": before_path, "preview_vid": video_path},
+            {"name": "自动化训练流水线", "type": "项目", "description": "YOLO 自动化训练管道", "status": "已完成", "updated": "5 天前", "color": "#ec4899", "preview_img": after_path, "preview_vid": video_path},
+            {"name": "高精度图像数据集 2026", "type": "数据集", "description": "8 张高动态范围图像", "status": "就绪", "updated": "2026年5月28日", "avatar": before_path, "preview_img": before_path, "preview_vid": video_path},
+            {"name": "实用目标检测模型 v2", "type": "数据集", "description": "6 张标注样本集", "status": "就绪", "updated": "2026年5月28日", "avatar": after_path, "preview_img": after_path, "preview_vid": video_path},
+            {"name": "YOLOv8 边缘推理模型", "type": "数据集", "description": "2 张测试图像", "status": "就绪", "updated": "2026年5月27日", "avatar": before_path, "preview_img": before_path, "preview_vid": video_path},
+            {"name": "精细化分类识别模型", "type": "数据集", "description": "2 张多视角图像", "status": "就绪", "updated": "2026年5月27日", "avatar": after_path, "preview_img": after_path, "preview_vid": video_path},
+            {"name": "智能图像分割数据集", "type": "数据集", "description": "1 张超分辨率图像", "status": "就绪", "updated": "2026年5月21日", "avatar": before_path, "preview_img": before_path, "preview_vid": video_path},
+            {"name": "优质样本检测库", "type": "数据集", "description": "11 张缺陷检测图像", "status": "就绪", "updated": "2026年5月21日", "avatar": after_path, "preview_img": after_path, "preview_vid": video_path},
+            {"name": "高并发 OCR 文字识别", "type": "数据集", "description": "1 张票据图像", "status": "就绪", "updated": "2026年5月20日", "avatar": before_path, "preview_img": before_path, "preview_vid": video_path},
+            {"name": "高速模型推理服务器", "type": "项目", "description": "高吞吐并发推理服务", "status": "进行中", "updated": "2026年5月18日", "color": "#3b82f6", "preview_img": after_path, "preview_vid": video_path},
+            {"name": "待人工复核任务", "type": "项目", "description": "等待管理员手动复核", "status": "待处理", "updated": "2026年5月15日", "color": "#f59e0b", "preview_img": before_path, "preview_vid": video_path},
+            {"name": "损坏缓存清理任务", "type": "数据集", "description": "0 张图像已清理", "status": "失败", "updated": "2026年5月10日", "color": "#ef4444", "preview_img": after_path, "preview_vid": video_path},
+            {"name": "超分辨率画质放大模型", "type": "项目", "description": "4 倍画质超分放大模型", "status": "已完成", "updated": "2026年5月8日", "color": "#10b981", "preview_img": before_path, "preview_vid": video_path},
+            {"name": "自动驾驶车道线数据集", "type": "数据集", "description": "2400 张标注图像", "status": "就绪", "updated": "2026年5月5日", "avatar": before_path, "preview_img": after_path, "preview_vid": video_path},
         ]
-        
-        # 实例化数据表格 (每页 5 行)
-        self.data_table = MkDataTable(columns=columns, data=mock_data, page_size=5, selection_enabled=True, parent=self)
-        layout.addWidget(self.data_table, stretch=1)
-        
-        # 3. 实时交互回显区域
-        self.interaction_card = QFrame(self)
-        self.interaction_card.setObjectName("DataTableInteractionCard")
-        self.interaction_card.setStyleSheet("""
-            QFrame {
-                background-color: #f8fafc;
-                border: 1px solid #e2e8f0;
-                border-radius: 6px;
-            }
-            QLabel {
-                color: #475569;
-                font-size: 12px;
-            }
-        """)
-        card_layout = QVBoxLayout(self.interaction_card)
-        card_layout.setContentsMargins(10, 8, 10, 8)
-        
-        self.selected_label = QLabel("当前选中：0 项")
-        card_layout.addWidget(self.selected_label)
-        
-        self.action_label = QLabel("操作日志：等待用户交互...")
-        card_layout.addWidget(self.action_label)
-        
-        layout.addWidget(self.interaction_card)
-        
-        # 信号连接
-        self.data_table.selectionChanged.connect(self._on_selection_changed)
-        self.data_table.editRequested.connect(self._on_edit_requested)
-        self.data_table.deleteRequested.connect(self._on_delete_requested)
 
-    def _on_selection_changed(self, selected_items):
-        names = [item.get("name") for item in selected_items]
-        self.selected_label.setText(f"当前选中：{len(selected_items)} 项 ({', '.join(names) if names else '无'})")
+        self.pro_table = MkProTable(
+            columns=columns,
+            data=mock_data,
+            title="近期动态与多媒体资产",
+            description="展示最新的数据集、项目与图片/视频预览，支持跨页多选与高级交互",
+            searchable=True,
+            search_placeholder="搜索活动名称、类型或描述...",
+            selectable=True,
+            page_size=5,
+            page_size_options=[5, 10, 20],
+            border_width=1,
+            border_radius=12,
+            show_actions=False,
+            parent=self
+        )
+        layout.addWidget(self.pro_table, stretch=1)
 
-    def _on_edit_requested(self, index, row_dict):
-        self.action_label.setText(f"操作日志：[编辑信号] 触发绝对行号 {index}，数据内容: {row_dict['name']}")
+        # 实时交互状态卡
+        self.status_card = QLabel("提示：点击图片缩略图可唤起大图灯箱；点击视频缩略图可唤起播放弹窗；点击行头复选框支持全选与跨页记忆。")
+        self.status_card.setStyleSheet("color: #64748b; font-size: 12px; font-style: italic;")
+        layout.addWidget(self.status_card)
 
-    def _on_delete_requested(self, index, row_dict):
-        self.action_label.setText(f"操作日志：[删除信号] 触发绝对行号 {index}，数据内容: {row_dict['name']}")
+        # 选中项统计条
+        self.selection_label = QLabel("当前选中：0 项")
+        self.selection_label.setStyleSheet("color: #0ea5e9; font-weight: 500; font-size: 13px;")
+        layout.addWidget(self.selection_label)
 
-class FormGallery(QWidget):
+        self.pro_table.rowClicked.connect(self._on_row_clicked)
+        self.pro_table.actionTriggered.connect(self._on_action_triggered)
+        self.pro_table.selectionChanged.connect(self._on_selection_changed)
+
+    def _toggle_selectable(self):
+        new_state = not self.pro_table.selectable
+        self.pro_table.set_selectable(new_state)
+        self.btn_toggle_select.setText("关闭复选框" if new_state else "开启复选框")
+
+    def _toggle_action_column(self):
+        new_state = not self.pro_table.show_actions
+        self.pro_table.set_show_actions(new_state)
+        self.btn_toggle_action.setText("隐藏操作列" if new_state else "显示操作列")
+
+    def _on_selection_changed(self, selected_items: list):
+        names = [item.get("name", "") for item in selected_items]
+        preview_text = ", ".join(names[:3]) + ("..." if len(names) > 3 else "")
+        self.selection_label.setText(f"当前选中：{len(selected_items)} 项 ({preview_text if names else '无'})")
+
+    def _on_row_clicked(self, index: int, row_data: dict):
+        self.status_card.setText(f"点击行事件：第 {index + 1} 项，名称: {row_data.get('name')}，状态: {row_data.get('status')}")
+
+    def _on_action_triggered(self, action_name: str, index: int, row_data: dict):
+        self.status_card.setText(f"操作按钮触发：[{action_name}] 针对数据项: {row_data.get('name')}")
+
+class FormGallery(MkQWidget):
     """表单录入组件展示页 (Switch, Slider, DatePicker, ComboBox, MultiComboBox, Form)"""
     def __init__(self):
         super().__init__()
@@ -459,7 +555,7 @@ class FormGallery(QWidget):
         layout.addWidget(self.form)
         layout.addStretch()
 
-class AuthGallery(QWidget):
+class AuthGallery(MkQWidget):
     """登录与注册组件展示页"""
     def __init__(self):
         super().__init__()
@@ -472,29 +568,15 @@ class AuthGallery(QWidget):
         control_panel = QFrame(self)
         control_panel.setObjectName("AuthControlPanel")
         control_panel.setFixedWidth(260)
-        control_panel.setStyleSheet("""
-            QFrame#AuthControlPanel {
-                background-color: #f8fafc;
-                border: 1px solid #e2e8f0;
-                border-radius: 8px;
-                padding: 15px;
-            }
-            QLabel {
-                font-family: "Microsoft YaHei", sans-serif;
-                font-size: 13px;
-                font-weight: bold;
-                color: #334155;
-                margin-top: 10px;
-                background: transparent;
-            }
-        """)
+        control_panel.setProperty("mkPanel", "true")
         
         control_layout = QVBoxLayout(control_panel)
+        control_layout.setContentsMargins(15, 15, 15, 15)
         control_layout.setSpacing(12)
         
         panel_title = QLabel("Auth 自定义控制台")
         panel_title.setObjectName("AuthPanelTitle")
-        panel_title.setStyleSheet("font-size: 15px; color: #0f172a; margin-bottom: 5px;")
+        panel_title.setFont(QFont("Microsoft YaHei", 11, QFont.Bold))
         control_layout.addWidget(panel_title)
         
         # Background setting
@@ -560,7 +642,7 @@ class AuthGallery(QWidget):
         main_layout.addWidget(control_panel)
         
         # --- 2. Right Preview Panel ---
-        self.preview_container = QWidget(self)
+        self.preview_container = MkQWidget(self, role="transparent")
         self.preview_layout = QVBoxLayout(self.preview_container)
         self.preview_layout.setContentsMargins(0, 0, 0, 0)
         
@@ -676,7 +758,7 @@ class AuthGallery(QWidget):
             MkMessage.success(self.window(), f"成功添加字段：{field_name}！切换至注册面板即可预览效果")
             self.custom_field_input.clear()
 
-class ImageCompareGallery(QWidget):
+class ImageCompareGallery(MkQWidget):
     """图像对比组件展示页 (MkImageCompare)"""
     def __init__(self):
         super().__init__()
@@ -702,11 +784,11 @@ class ImageCompareGallery(QWidget):
         compare_widget = MkImageCompare(before_path, after_path)
         layout.addWidget(compare_widget, stretch=1)
         
-        tip_label = QLabel("💡 提示：可以在上方图片中任意位置点击或拖动滑块，以交互式查看“迁移结果”与“原图”细节。")
+        tip_label = QLabel("提示：可以在上方图片中任意位置点击或拖动滑块，以交互式查看“迁移结果”与“原图”细节。")
         tip_label.setStyleSheet("color: #909399; font-size: 12px; font-style: italic;")
         layout.addWidget(tip_label)
 
-class ImageSplitGallery(QWidget):
+class ImageSplitGallery(MkQWidget):
     """分屏对比组件展示页 (MkImageSplit)"""
     def __init__(self):
         super().__init__()
@@ -731,11 +813,11 @@ class ImageSplitGallery(QWidget):
         split_widget = MkImageSplit(before_path, after_path)
         layout.addWidget(split_widget, stretch=1)
         
-        tip_label = QLabel("💡 提示：您可以拖拽中央的垂直胶囊手柄调节分屏比例，或者点击手柄上的 ❮ ❯ 箭头平滑收缩/还原左侧或右侧图片！")
+        tip_label = QLabel("提示：您可以拖拽中央的垂直胶囊手柄调节分屏比例，或者点击手柄上的箭头平滑收缩/还原左侧或右侧图片。")
         tip_label.setStyleSheet("color: #909399; font-size: 12px; font-style: italic;")
         layout.addWidget(tip_label)
 
-class ConsoleGallery(QWidget):
+class ConsoleGallery(MkQWidget):
     """控制台日志组件展示页 (MkConsole / ThemedConsole)"""
     def __init__(self):
         super().__init__()
@@ -790,7 +872,7 @@ class ConsoleGallery(QWidget):
         self.console.info("欢迎使用 MonkeyQt 控制台组件。")
         self.console.success("系统所有核心组件加载完毕。")
 
-class WindowGallery(QWidget):
+class WindowGallery(MkQWidget):
     """自定义窗口与标题栏展示页"""
     def __init__(self):
         super().__init__()
@@ -802,30 +884,13 @@ class WindowGallery(QWidget):
         # Left Panel (Controls)
         control_panel = QFrame(self)
         control_panel.setFixedWidth(280)
-        control_panel.setStyleSheet("""
-            QFrame {
-                background-color: #f8fafc;
-                border: 1px solid #e2e8f0;
-                border-radius: 8px;
-                padding: 15px;
-            }
-            QLabel {
-                font-family: "Microsoft YaHei", sans-serif;
-                font-size: 13px;
-                font-weight: bold;
-                color: #334155;
-                margin-top: 10px;
-                background: transparent;
-            }
-            QComboBox, QSlider {
-                background: transparent;
-            }
-        """)
+        control_panel.setProperty("mkPanel", "true")
         control_layout = QVBoxLayout(control_panel)
+        control_layout.setContentsMargins(15, 15, 15, 15)
         control_layout.setSpacing(10)
         
         title_label = QLabel("自定义窗口控制台")
-        title_label.setStyleSheet("font-size: 15px; color: #0f172a; margin-bottom: 5px;")
+        title_label.setFont(QFont("Microsoft YaHei", 11, QFont.Bold))
         control_layout.addWidget(title_label)
         
         # 1. Preset Selector
@@ -873,7 +938,7 @@ class WindowGallery(QWidget):
         control_layout.addWidget(self.close_combo)
         
         # 7. Action Button
-        self.btn_launch = MkButton("启动独立无边框窗口 🚀", type="primary")
+        self.btn_launch = MkButton("启动独立无边框窗口", type="primary")
         self.btn_launch.clicked.connect(self.launch_demo_window)
         control_layout.addWidget(self.btn_launch)
         
@@ -883,13 +948,7 @@ class WindowGallery(QWidget):
         
         # Right Panel (Live Mini Preview)
         preview_panel = QFrame(self)
-        preview_panel.setStyleSheet("""
-            QFrame {
-                background-color: #f1f5f9;
-                border: 1px dashed #cbd5e1;
-                border-radius: 8px;
-            }
-        """)
+        preview_panel.setProperty("mkPanel", "true")
         preview_layout = QVBoxLayout(preview_panel)
         preview_layout.setContentsMargins(20, 20, 20, 20)
         preview_layout.setSpacing(15)
@@ -925,7 +984,7 @@ class WindowGallery(QWidget):
         mock_win_layout.addWidget(self.mock_titlebar)
         
         # Fake client area in mock
-        self.mock_client = QWidget()
+        self.mock_client = MkQWidget(role="surface", radius=8)
         self.mock_client.setObjectName("MockClient")
         self.mock_client_layout = QVBoxLayout(self.mock_client)
         self.mock_client_layout.setContentsMargins(20, 40, 20, 40)
@@ -1023,13 +1082,11 @@ class WindowGallery(QWidget):
         self.demo_win.update_style()
         
         # Central contents dashboard for YOLO Detection mock
-        content = QWidget()
-        content_layout = QVBoxLayout(content)
-        content_layout.setContentsMargins(30, 25, 30, 25)
-        content_layout.setSpacing(15)
+        content = MkQWidget(role="transparent", layout="v", margins=(30, 25, 30, 25), spacing=15)
+        content_layout = content.inner_layout
         
         title_font = QFont("Microsoft YaHei", 14, QFont.Bold)
-        info_label = QLabel("🚀 独立自定义无边框窗口示例")
+        info_label = QLabel("独立自定义无边框窗口示例")
         info_label.setFont(title_font)
         
         # Select title color based on preset theme
@@ -1041,7 +1098,7 @@ class WindowGallery(QWidget):
             f"<b>窗体圆角半径:</b> {radius}px<br>"
             f"<b>高度大小:</b> {height}px<br>"
             f"<b>关闭处理行为:</b> {close_behavior}<br><br>"
-            "💡 <b>核心交互提示:</b><br>"
+            "<b>核心交互提示:</b><br>"
             "• 拖拽顶部的自定义标题栏可以<b>移动</b>该无边框窗口。<br>"
             "• 双击顶部标题栏可以<b>最大化 / 还原</b>窗口大小。<br>"
             "• 将鼠标指针悬停在<b>窗口外沿四周及四角</b>，会显现大小缩放箭头，拖拽即可直接<b>调整窗口大小</b>。<br>"
@@ -1061,7 +1118,7 @@ class WindowGallery(QWidget):
         self.demo_win.resize(640, 420)
         self.demo_win.show()
 
-class UploadGallery(QWidget):
+class UploadGallery(MkQWidget):
     """文件上传组件展示页 (MkUpload)"""
     def __init__(self):
         super().__init__()
@@ -1107,17 +1164,8 @@ class UploadGallery(QWidget):
         
         self.log_area = QLabel("等待上传交互...")
         self.log_area.setObjectName("UploadLogArea")
-        self.log_area.setStyleSheet("""
-            QLabel {
-                background-color: #f1f5f9;
-                border: 1px solid #cbd5e1;
-                border-radius: 6px;
-                padding: 10px;
-                font-family: Consolas;
-                font-size: 11px;
-                color: #334155;
-            }
-        """)
+        self.log_area.setProperty("mkPanel", "true")
+        self.log_area.setFont(QFont("Consolas", 10))
         layout.addWidget(self.log_area)
         
         # Connect signals to update log box
@@ -1143,12 +1191,15 @@ class UploadGallery(QWidget):
 
 class MainGallery(MkWindow):
     def __init__(self):
-        super().__init__(use_custom_title_bar=True, preset="default")
+        super().__init__(
+            use_custom_title_bar=True,
+            preset="default",
+            sidebar_full_height=True,
+        )
         self.setWindowTitle("MonkeyQt - Enterprise Gallery")
-        # self.resize(1000, 700)
         self.resize(1500, 1000)
         
-        # 自定义标题栏：高度加高，移除下边框线
+        # 自定义标题栏：高度加高，移除下边框线 (参考 mainui.py)
         self.titlebar._height = 48
         self.titlebar._border_bottom = "none"
         self.titlebar.apply_theme_colors()
@@ -1156,56 +1207,54 @@ class MainGallery(MkWindow):
         self.update_style()
         self._setup_theme_selector()
         
-        # 主布局是水平的：左侧侧边栏，右侧内容区
-        self.central_widget = QWidget()
-        self.central_widget.setObjectName("GalleryCentralWidget")
-        main_layout = QHBoxLayout(self.central_widget)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(0)
+        # --- 创建主布局（左右结构，参考 mainui.py） ---
+        self.central_widget = MkQWidget(role="bg", layout="h", margins=0, spacing=0)
+        self.central_widget.setObjectName("MainCentralWidget")
+        self.main_layout = self.central_widget.inner_layout
         
-        # --- 1. 初始化侧边栏 ---
-        self.sidebar = MkMenu(title="MonkeyQt", icon="play", collapse_mode="header")
+        # --- 1. 创建并配置侧边栏 (参考 mainui.py) ---
+        self.sidebar = MkMenu(title="MonkeyQt", collapse_mode="hamburger")
         self.sidebar.set_border_right("none")
         
-        # 添加带图标的菜单 (这里省略了真实的 QIcon，用文字代替演示层级)
-        sub_basic = self.sidebar.add_submenu("🎯 基础组件")
-        self.sidebar.add_submenu_item(sub_basic, "btn", "Button 按钮")
-        self.sidebar.add_submenu_item(sub_basic, "chk", "CheckBox 复选框")
+        sub_basic = self.sidebar.add_submenu("基础组件", icon="squares-four")
+        self.sidebar.add_submenu_item(sub_basic, "btn", "Button 按钮", icon="cursor-click")
+        self.sidebar.add_submenu_item(sub_basic, "chk", "CheckBox 复选框", icon="check-square")
         
-        sub_nav = self.sidebar.add_submenu("🧭 导航")
-        self.sidebar.add_submenu_item(sub_nav, "sidebar", "侧边导航")
-        self.sidebar.add_submenu_item(sub_nav, "topbar", "顶部导航栏")
-        self.sidebar.add_submenu_item(sub_nav, "navmisc", "面包屑与标签页等")
+        sub_nav = self.sidebar.add_submenu("导航", icon="compass")
+        self.sidebar.add_submenu_item(sub_nav, "sidebar", "侧边导航", icon="sidebar")
+        self.sidebar.add_submenu_item(sub_nav, "topbar", "顶部导航栏", icon="layout")
+        self.sidebar.add_submenu_item(sub_nav, "navmisc", "面包屑与标签页等", icon="tabs")
         
-        sub_form = self.sidebar.add_submenu("📝 表单组件")
-        self.sidebar.add_submenu_item(sub_form, "form", "开关、滑块与日期")
-        self.sidebar.add_submenu_item(sub_form, "authscreen", "Auth 登录与注册")
-        self.sidebar.add_submenu_item(sub_form, "upload", "Upload 上传组件")
+        sub_form = self.sidebar.add_submenu("表单组件", icon="textbox")
+        self.sidebar.add_submenu_item(sub_form, "form", "开关、滑块与日期", icon="sliders")
+        self.sidebar.add_submenu_item(sub_form, "authscreen", "Auth 登录与注册", icon="user")
+        self.sidebar.add_submenu_item(sub_form, "upload", "Upload 上传组件", icon="upload-simple")
         
-        sub_data = self.sidebar.add_submenu("📊 数据展示")
-        self.sidebar.add_submenu_item(sub_data, "data", "头像与表格")
-        self.sidebar.add_submenu_item(sub_data, "datatable", "DataTable 数据表格")
-        self.sidebar.add_submenu_item(sub_data, "image_compare", "图像对比 Slider")
-        self.sidebar.add_submenu_item(sub_data, "image_split", "图像分屏 Split")
-        self.sidebar.add_submenu_item(sub_data, "console", "控制台日志 Console")
+        sub_data = self.sidebar.add_submenu("数据展示", icon="table")
+        self.sidebar.add_submenu_item(sub_data, "data", "头像展示 (Avatar)", icon="user-circle")
+        self.sidebar.add_submenu_item(sub_data, "pro_table", "ProTable 数据表格", icon="table")
+        self.sidebar.add_submenu_item(sub_data, "image_compare", "图像对比 Slider", icon="images")
+        self.sidebar.add_submenu_item(sub_data, "image_split", "图像分屏 Split", icon="columns")
+        self.sidebar.add_submenu_item(sub_data, "console", "控制台日志 Console", icon="terminal-window")
         
-        sub_feedback = self.sidebar.add_submenu("💬 反馈组件")
-        self.sidebar.add_submenu_item(sub_feedback, "feedback", "信息提示与进度")
+        sub_feedback = self.sidebar.add_submenu("反馈组件", icon="bell")
+        self.sidebar.add_submenu_item(sub_feedback, "feedback", "信息提示与进度", icon="chat-circle-dots")
         
-        sub_layout = self.sidebar.add_submenu("🪟 窗口与布局")
-        self.sidebar.add_submenu_item(sub_layout, "window", "Window 自定义窗口")
+        sub_layout = self.sidebar.add_submenu("窗口与布局", icon="browsers")
+        self.sidebar.add_submenu_item(sub_layout, "window", "Window 自定义窗口", icon="app-window")
         
-        self.sidebar.add_item("collapse", "🔄 折叠/展开侧边栏")
+        self.main_layout.addWidget(self.sidebar)
         
-        main_layout.addWidget(self.sidebar)
+        # --- 2. 创建右侧整体容器 (参考 mainui.py) ---
+        self.right_widget = MkQWidget(role="transparent", layout="v", margins=20, spacing=0)
+        self.right_widget.setObjectName("MainRightWidget")
+        self.right_layout = self.right_widget.inner_layout
         
-        # --- 2. 初始化右侧的内容区 (使用 QStackedWidget 进行页面切换) ---
+        # 主体内容区 (QStackedWidget)
         self.content_area = QStackedWidget()
-        self.content_area.setObjectName("GalleryContentArea")
+        self.content_area.setObjectName("MainContentArea")
         
-        # Gallery pages are intentionally lazy. Creating all demos up front
-        # leaves hundreds of invisible widgets in the application-wide style
-        # tree, so every theme switch needlessly repolishes hidden pages.
+        # 页面按需惰性工厂
         self._page_factories = {
             "btn": ("page_button", ButtonGallery),
             "chk": ("page_checkbox", CheckboxGallery),
@@ -1215,7 +1264,7 @@ class MainGallery(MkWindow):
             "form": ("page_form", FormGallery),
             "authscreen": ("page_auth", AuthGallery),
             "data": ("page_data", DataGallery),
-            "datatable": ("page_datatable", DataTableGallery),
+            "pro_table": ("page_pro_table", ProTableGallery),
             "image_compare": ("page_image_compare", ImageCompareGallery),
             "image_split": ("page_image_split", ImageSplitGallery),
             "console": ("page_console", ConsoleGallery),
@@ -1225,89 +1274,35 @@ class MainGallery(MkWindow):
         self._pages = {}
         for attribute, _factory in self._page_factories.values():
             setattr(self, attribute, None)
-        self.page_empty = QWidget()
+        self.page_empty = MkQWidget(role="transparent")
         self.content_area.addWidget(self.page_empty)
         
-        main_layout.addWidget(self.content_area, stretch=1)
+        self.right_layout.addWidget(self.content_area, stretch=1)
+        self.main_layout.addWidget(self.right_widget, stretch=1)
         
-        # --- 3. 信号与槽的连接 ---
+        # --- 3. 连接信号，实现点击侧边栏切换页面 ---
         self.sidebar.itemClicked.connect(self.switch_page)
         
         # 默认选中第一项
         self.sidebar.set_active("btn")
         self.switch_page("btn")
         
+        # 注册中央部件
         self.setCentralWidget(self.central_widget)
-        self._apply_gallery_theme_shell(ThemeEngine.current_theme())
 
     def _setup_theme_selector(self):
-        """在标题栏加入 MonkeyQt 默认样式 + 68 种 UI 风格切换。"""
-        self.theme_label = QLabel("主题样式")
-        self.theme_label.setObjectName("GalleryThemeLabel")
+        """在标题栏加入 MonkeyQt 默认样式 + 68 种 UI 风格切换"""
         self.theme_selector = MkThemeSelector()
-
         self.titlebar.center_layout.addStretch()
-        self.titlebar.center_layout.addWidget(self.theme_label)
         self.titlebar.center_layout.addWidget(self.theme_selector)
         self.titlebar.center_layout.addStretch()
 
-        ThemeEngine.instance().themeChanged.connect(self._apply_gallery_theme_shell)
-        self._apply_gallery_theme_shell(ThemeEngine.current_theme())
-
-    def _apply_gallery_theme_shell(self, theme_name: str):
-        """主题选择时刷新 Gallery 自有的演示外壳。
-
-        MonkeyQt 组件树已由 use_theme() 统一适配；不要在
-        themeChanged 回调里再遍历一次，否则每次切换会全量应用两遍。
-        """
-        tokens = ThemeEngine.current_tokens()
-        bg = tokens.get("--bg", "#FFFFFF")
-        surface = tokens.get("--glass-surface", tokens.get("--surface", "#FFFFFF")) if ThemeEngine.is_glass() else tokens.get("--surface", "#FFFFFF")
-        fg = tokens.get("--glass-text", tokens.get("--fg", "#1E293B")) if ThemeEngine.is_glass() else tokens.get("--fg", "#1E293B")
-        border = tokens.get("--glass-border", tokens.get("--border", "#E2E8F0")) if ThemeEngine.is_glass() else tokens.get("--border", "#E2E8F0")
-        hover = tokens.get("--surface-muted", "#F1F5F9")
-
-        self.titlebar._bg_color = surface
-        self.titlebar._text_color = fg
-        self.titlebar._hover_color = hover
-        self.titlebar._border_bottom = "none"
-        self.titlebar.apply_theme_colors()
-
-        radius = 0 if self.isMaximized() else self._border_radius
-        if self.container_frame:
-            self.container_frame.setStyleSheet(f"""
-                QFrame#MkWindowContainer {{
-                    background-color: {bg};
-                    border: 1px solid {border};
-                    border-radius: {radius}px;
-                }}
-            """)
-        if hasattr(self, "central_widget"):
-            self.central_widget.setStyleSheet(f"QWidget#GalleryCentralWidget {{ background-color: {bg}; }}")
-        if hasattr(self, "content_area"):
-            self.content_area.setStyleSheet(f"QStackedWidget {{ background-color: {bg}; }}")
-        self.theme_label.setStyleSheet(f"""
-            QLabel#GalleryThemeLabel {{
-                background: transparent;
-                color: {fg};
-                font-size: 12px;
-                font-weight: 700;
-            }}
-        """)
-
     def switch_page(self, item_id):
-        # 演示侧边栏收缩
+        """页面切换，无需任何手工样式覆盖，完全由 MonkeyQt 原生驱动"""
         if item_id == "collapse":
             self.sidebar.toggle_collapse()
             return
             
-        # 根据当前页面设置内容区域的 padding
-        # 比如 topbar 需要占满全屏演示效果，不需要外边距
-        if item_id == "topbar":
-            self.content_area.setContentsMargins(0, 0, 0, 0)
-        else:
-            self.content_area.setContentsMargins(30, 30, 30, 30)
-
         page_spec = self._page_factories.get(item_id)
         if page_spec is None:
             self.content_area.setCurrentWidget(self.page_empty)
@@ -1320,14 +1315,12 @@ class MainGallery(MkWindow):
             self._pages[item_id] = page
             setattr(self, attribute, page)
             self.content_area.addWidget(page)
-            if ThemeEngine.current_theme():
-                apply_monkeyqt_theme(page)
 
         self.content_area.setCurrentWidget(page)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    use_theme("亮色")
     window = MainGallery()
+    use_theme("亮色", window)
     window.show()
     sys.exit(app.exec())

@@ -2,7 +2,9 @@ from PySide6.QtWidgets import QWidget, QSizePolicy
 from PySide6.QtCore import Qt, Property, QRect, QPoint, QPropertyAnimation, QEasingCurve, QSize
 from PySide6.QtGui import QPainter, QPixmap, QImage, QColor, QPen, QFont, QFontMetrics, QPainterPath
 
-class MkImagePanel(QWidget):
+from monkeyqt.components.layout.widget import MkQWidget
+
+class MkImagePanel(MkQWidget):
     """
     单个图片面板，负责以 object-fit: contain 方式完整无损渲染图片，并支持悬浮文本标签。
     """
@@ -121,7 +123,7 @@ class MkImagePanel(QWidget):
             painter.setPen(QColor("#ffffff"))
             painter.drawText(QRect(label_x, label_y, rect_w, rect_h), Qt.AlignmentFlag.AlignCenter, self._label)
 
-class MkSplitterHandle(QWidget):
+class MkSplitterHandle(MkQWidget):
     """
     分屏器的玻璃手柄，支持拖动、悬浮高亮、点击左/右键独立折叠或展开侧边栏。
     手柄的分割线和胶囊会自动对齐图片实际渲染区域的边界。
@@ -225,7 +227,7 @@ class MkSplitterHandle(QWidget):
         img_bottom = self._image_bottom if self._image_bottom > self._image_top else self.height()
         
         # Determine colors based on active theme
-        primary_color = t.get("--primary", "#409eff") if t else "#409eff"
+        primary_color = t.get("--input-focus-border", "#FFFFFF" if (t and t.is_dark()) else "#0F172A") if t else "#0F172A"
         border_color = t.get("--border", "#dcdfe6") if t else "#dcdfe6"
         text_muted = t.get("--text-muted", "#909399") if t else "#909399"
         surface_color = t.get("--surface", "#ffffff") if t else "#ffffff"
@@ -295,7 +297,7 @@ class MkSplitterHandle(QWidget):
         right_path.lineTo(16, cy + 4)
         painter.drawPath(right_path)
 
-class MkImageSplit(QWidget):
+class MkImageSplit(MkQWidget):
     """
     MkImageSplit - Resizable & Collapsible Side-by-Side Image Split Container.
     Features:

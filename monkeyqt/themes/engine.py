@@ -5,7 +5,7 @@ MonkeyQt Theme Engine — 全局风格引擎
 """
 
 from PySide6.QtWidgets import QApplication
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import QObject, Signal, QTimer
 from .tokens import THEME_TOKENS, THEME_NAMES
 from .style_utils import darken, is_color, lighten, luminance, parse_px, qss_color, readable_text
 
@@ -42,8 +42,8 @@ class ThemeEngine(QObject):
 
     @classmethod
     def set_theme(cls, style_name: str) -> bool:
-        """切换到指定风格，注入全局 QSS 并触发重绘"""
-        if style_name in ("", cls.DEFAULT_THEME_KEY, cls.DEFAULT_THEME_NAME):
+        """切换到指定风格，由 Qt 原生 C++ 树下发全局 QSS 并触发毫秒级重绘"""
+        if not style_name or style_name in ("__monkeyqt_default__", "MonkeyQt Default"):
             return cls.clear_theme()
 
         if style_name not in THEME_TOKENS:
@@ -52,14 +52,36 @@ class ThemeEngine(QObject):
         cls._current_name = style_name
         cls._current_tokens = cls._normalize_tokens(THEME_TOKENS[style_name])
 
-        # 注入全局 QSS 到 QApplication
         app = QApplication.instance()
+        top_windows = []
         if app:
-            qss = cls._build_global_qss()
-            app.setStyleSheet(qss)
+            try:
+                top_windows = [w for w in app.topLevelWidgets() if w.isWindow()]
+                for w in top_windows:
+                    w.setUpdatesEnabled(False)
+            except Exception:
+                pass
 
-        # 触发信号
-        cls.instance().themeChanged.emit(style_name)
+        try:
+            if app:
+                qss = cls._build_global_qss()
+                if top_windows:
+                    for w in top_windows:
+                        try:
+                            w.setStyleSheet(qss)
+                        except Exception:
+                            pass
+                else:
+                    app.setStyleSheet(qss)
+
+            # 触发信号
+            cls.instance().themeChanged.emit(style_name)
+        finally:
+            for w in top_windows:
+                try:
+                    w.setUpdatesEnabled(True)
+                except Exception:
+                    pass
 
         return True
 
@@ -70,11 +92,35 @@ class ThemeEngine(QObject):
         cls._current_tokens = cls._normalize_tokens(cls._default_tokens)
 
         app = QApplication.instance()
+        top_windows = []
         if app:
-            qss = cls._build_global_qss()
-            app.setStyleSheet(qss)
+            try:
+                top_windows = [w for w in app.topLevelWidgets() if w.isWindow()]
+                for w in top_windows:
+                    w.setUpdatesEnabled(False)
+            except Exception:
+                pass
 
-        cls.instance().themeChanged.emit(cls.DEFAULT_THEME_NAME)
+        try:
+            if app:
+                qss = cls._build_global_qss()
+                if top_windows:
+                    for w in top_windows:
+                        try:
+                            w.setStyleSheet(qss)
+                        except Exception:
+                            pass
+                else:
+                    app.setStyleSheet(qss)
+
+            cls.instance().themeChanged.emit(cls.DEFAULT_THEME_NAME)
+        finally:
+            for w in top_windows:
+                try:
+                    w.setUpdatesEnabled(True)
+                except Exception:
+                    pass
+
         return True
 
     @classmethod
@@ -209,9 +255,9 @@ class ThemeEngine(QObject):
         if cls._name_has(name, ["dark mode", "oled"]):
             bg = "#121212"
             fg = "#F5F5F5"
-            primary = "#8AB4F8"
+            primary = "#FFFFFF"
             secondary = "#242424"
-            accent = "#5B8DEF"
+            accent = "#E2E8F0"
             border = "#303030"
         if cls._name_has(name, ["liquid glass"]):
             bg = "#EAF2FF"
@@ -233,9 +279,15 @@ class ThemeEngine(QObject):
             primary_lum = luminance(primary)
             accent_lum = luminance(accent)
             if abs(primary_lum - bg_lum) < 0.16 or primary_lum < 0.12:
-                primary = "#60A5FA"
+                if cls._name_has(name, ["dark mode", "oled", "dark", "zinc", "slate", "neutral", "charcoal", "monochrome"]):
+                    primary = "#FFFFFF"
+                else:
+                    primary = lighten(primary, 0.35)
             if abs(accent_lum - bg_lum) < 0.12 or accent_lum < 0.10:
-                accent = "#22D3EE"
+                if cls._name_has(name, ["dark mode", "oled", "dark", "zinc", "slate", "neutral", "charcoal", "monochrome"]):
+                    accent = "#E2E8F0"
+                else:
+                    accent = lighten(accent, 0.30)
 
         radius = f"{parse_px(t.get('--radius', '6px'), 6, 0, 32)}px"
         border_width = f"{parse_px(t.get('--border-width', '1px'), 1, 1, 5)}px"
@@ -267,6 +319,53 @@ class ThemeEngine(QObject):
             else:
                 surface_muted = darken(surface, 0.035)
 
+        # Determine adaptive input focus & hover borders (ChatGPT / Ultralytics style)
+        input_focus_border = t.get("--input-focus-border", "")
+        input_hover_border = t.get("--input-hover-border", "")
+        is_dark_theme = cls._looks_dark(bg)
+
+        if not is_color(input_focus_border):
+            if is_dark_theme:
+                # In neutral dark themes, inputs have clean high-contrast crisp white borders
+                if cls._name_has(name, ["dark mode", "oled", "dark", "zinc", "slate", "neutral", "charcoal", "dracula", "nord", "monokai"]):
+                    input_focus_border = "#FFFFFF"
+                    input_hover_border = "rgba(255, 255, 255, 0.45)"
+                else:
+                    if primary not in ("#409EFF", "#8AB4F8", "#60A5FA"):
+                        input_focus_border = primary
+                        input_hover_border = lighten(primary, 0.20)
+                    else:
+                        input_focus_border = "#FFFFFF"
+                        input_hover_border = "rgba(255, 255, 255, 0.45)"
+            else:
+                # In neutral light themes, inputs have high-contrast slate/charcoal borders (not element blue)
+                if cls._name_has(name, ["light", "clean", "white", "zinc", "slate", "neutral", "pure", "default", "element", "naive", "ant", "arco"]):
+                    input_focus_border = "#0F172A"
+                    input_hover_border = "#94A3B8"
+                elif primary.upper() in ("#409EFF", "#1890FF", "#3B82F6", "#2563EB", "#60A5FA"):
+                    input_focus_border = "#0F172A"
+                    input_hover_border = "#94A3B8"
+                else:
+                    input_focus_border = primary
+                    input_hover_border = lighten(primary, 0.15)
+        if not is_color(input_hover_border):
+            input_hover_border = "rgba(255, 255, 255, 0.40)" if is_dark_theme else "#94A3B8"
+
+        # Determine adaptive sidebar tokens (capsule pill navigation without forced blue)
+        sidebar_active_bg = t.get("--sidebar-active-bg", "")
+        sidebar_active_fg = t.get("--sidebar-active-fg", "")
+        sidebar_hover_bg = t.get("--sidebar-hover-bg", "")
+        sidebar_text_muted = t.get("--sidebar-text-muted", "")
+
+        if not sidebar_active_bg:
+            sidebar_active_bg = "rgba(255, 255, 255, 0.12)" if is_dark_theme else "rgba(0, 0, 0, 0.08)"
+        if not sidebar_active_fg:
+            sidebar_active_fg = "#FFFFFF" if is_dark_theme else "#0F172A"
+        if not sidebar_hover_bg:
+            sidebar_hover_bg = "rgba(255, 255, 255, 0.06)" if is_dark_theme else "rgba(0, 0, 0, 0.04)"
+        if not sidebar_text_muted:
+            sidebar_text_muted = "#A1A1AA" if is_dark_theme else "#64748B"
+
         t.update({
             "--bg": qss_color(bg, "#FFFFFF"),
             "--fg": qss_color(fg, readable_text(bg)),
@@ -279,9 +378,15 @@ class ThemeEngine(QObject):
             "--surface": qss_color(surface, "#FFFFFF"),
             "--surface-muted": qss_color(surface_muted, "#F1F5F9"),
             "--text-muted": qss_color(text_muted, "#64748B"),
-            "--focus-ring": qss_color(lighten(primary, 0.34), "#93C5FD"),
-            "--hover-primary": qss_color(lighten(primary, 0.14), "#60A5FA"),
-            "--pressed-primary": qss_color(darken(primary, 0.10), "#2563EB"),
+            "--focus-ring": qss_color(input_focus_border, "#FFFFFF" if is_dark_theme else "#0F172A"),
+            "--hover-primary": qss_color(input_hover_border, "rgba(255, 255, 255, 0.40)" if is_dark_theme else "#94A3B8"),
+            "--pressed-primary": qss_color(darken(primary, 0.10) if primary != "#FFFFFF" else "#CBD5E1", "#E2E8F0" if is_dark_theme else "#334155"),
+            "--input-focus-border": qss_color(input_focus_border, "#FFFFFF" if is_dark_theme else "#0F172A"),
+            "--input-hover-border": qss_color(input_hover_border, "rgba(255, 255, 255, 0.40)" if is_dark_theme else "#94A3B8"),
+            "--sidebar-active-bg": sidebar_active_bg,
+            "--sidebar-active-fg": qss_color(sidebar_active_fg, "#FFFFFF" if is_dark_theme else "#0F172A"),
+            "--sidebar-hover-bg": sidebar_hover_bg,
+            "--sidebar-text-muted": qss_color(sidebar_text_muted, "#A1A1AA" if is_dark_theme else "#64748B"),
             "--glass-surface": "rgba(255, 255, 255, 0.30)" if not cls._looks_dark(bg) else "rgba(255, 255, 255, 0.12)",
             "--glass-border": "rgba(255, 255, 255, 0.48)" if not cls._looks_dark(bg) else "rgba(255, 255, 255, 0.22)",
             "--glass-text": "#0F172A" if not cls._looks_dark(bg) else "#F8FAFC",
@@ -357,6 +462,8 @@ class ThemeEngine(QObject):
         text_muted = t.get("--text-muted", "#64748B")
         focus = t.get("--focus-ring", primary)
         hover_primary = t.get("--hover-primary", primary)
+        input_focus_border = t.get("--input-focus-border", "#FFFFFF" if cls.is_dark() else "#0F172A")
+        input_hover_border = t.get("--input-hover-border", "rgba(255, 255, 255, 0.40)" if cls.is_dark() else "#94A3B8")
 
         # 暗色模式自适应
         if cls.is_dark():
@@ -399,11 +506,21 @@ class ThemeEngine(QObject):
             QWidget#centralwidget,
             QWidget#MainCentralWidget,
             QWidget#MainRightWidget,
+            QWidget#GalleryCentralWidget,
             QStackedWidget,
-            QStackedWidget > QWidget,
-            QStackedWidget QWidget {{
+            QStackedWidget > QWidget {{
                 background-color: {page_bg};
                 color: {fg};
+            }}
+
+            QWidget#MainCentralWidget {{
+                border-bottom-left-radius: 8px;
+                border-bottom-right-radius: 8px;
+            }}
+
+            QWidget#MainRightWidget,
+            QWidget#GalleryCentralWidget {{
+                border-bottom-right-radius: 8px;
             }}
 
             /* QStackedWidget and several layout containers inherit QFrame.
@@ -448,12 +565,12 @@ class ThemeEngine(QObject):
 
             QLineEdit:hover, QTextEdit:hover, QPlainTextEdit:hover, QComboBox:hover,
             QSpinBox:hover, QDoubleSpinBox:hover, QDateEdit:hover, QTimeEdit:hover, QDateTimeEdit:hover {{
-                border-color: {hover_primary};
+                border-color: {input_hover_border};
             }}
 
             QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus, QComboBox:focus,
             QSpinBox:focus, QDoubleSpinBox:focus, QDateEdit:focus, QTimeEdit:focus, QDateTimeEdit:focus {{
-                border-color: {primary};
+                border-color: {input_focus_border};
             }}
 
             QLineEdit:disabled, QTextEdit:disabled, QPlainTextEdit:disabled, QComboBox:disabled,
@@ -708,6 +825,11 @@ class ThemeEngine(QObject):
                 font-weight: 700;
             }}
         """
+        try:
+            from .unified_qss import build_all_monkeyqt_qss
+            qss += "\n" + build_all_monkeyqt_qss()
+        except Exception:
+            pass
         return qss
 
     @staticmethod

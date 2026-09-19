@@ -8,10 +8,12 @@ from PySide6.QtGui import QPainter, QColor, QPixmap, QLinearGradient, QBrush, QF
 from monkeyqt.components.form.input import MkInput
 from monkeyqt.components.form.captcha import MkCaptchaWidget, MkSmsCodeWidget
 from monkeyqt.components.basic.checkbox import MkCheckBox
+from monkeyqt.components.basic.button import MkButton
 from monkeyqt.core.icons import MkPhosphorIcon
+from ..layout.widget import MkQWidget
 
 
-class MkMessage(QWidget):
+class MkMessage(MkQWidget):
     """
     MkMessage - Top-center floating toast notification (Element Plus style).
     Supports success, error, warning, and info themes with slide-down animations.
@@ -180,7 +182,7 @@ class MkMessage(QWidget):
         msg.show()
 
 
-class MkAuthScreen(QWidget):
+class MkAuthScreen(MkQWidget):
     """
     MkAuthScreen - Advanced login and registration form card suite.
     Features customizable backgrounds (gradients, images), optional avatars,
@@ -312,7 +314,10 @@ class MkAuthScreen(QWidget):
             pixmap.fill(Qt.GlobalColor.transparent)
             painter = QPainter(pixmap)
             painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-            painter.setBrush(QColor("#3b82f6"))
+            from monkeyqt.themes.engine import ThemeEngine
+            t = ThemeEngine
+            avatar_bg = QColor(t.get("--primary", "#0F172A") if (t.is_glow() or t.is_brutal() or t.is_pixel()) else ("#334155" if t.is_dark() else "#0F172A"))
+            painter.setBrush(avatar_bg)
             painter.setPen(Qt.PenStyle.NoPen)
             painter.drawEllipse(0, 0, 60, 60)
             painter.setPen(QColor("#ffffff"))
@@ -388,69 +393,20 @@ class MkAuthScreen(QWidget):
         
         # Remember Me Checkbox
         self.remember_checkbox = MkCheckBox("记住我", panel)
-        self.remember_checkbox.setStyleSheet("""
-            MkCheckBox {
-                color: #64748b;
-                font-size: 12px;
-            }
-            MkCheckBox:hover {
-                color: #3b82f6;
-            }
-        """)
         self.login_options_layout.addWidget(self.remember_checkbox)
         
         self.login_options_layout.addStretch()
         
         # Forgot Password Button
-        self.forgot_pwd_btn = QPushButton("忘记密码？", panel)
-        self.forgot_pwd_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.forgot_pwd_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.forgot_pwd_btn.setAutoDefault(False)
-        self.forgot_pwd_btn.setDefault(False)
-        self.forgot_pwd_btn.setStyleSheet("""
-            QPushButton {
-                background: transparent;
-                border: none;
-                color: #64748b;
-                font-size: 12px;
-                text-align: right;
-                outline: none;
-            }
-            QPushButton:hover {
-                color: #3b82f6;
-                text-decoration: underline;
-            }
-        """)
+        self.forgot_pwd_btn = MkButton("忘记密码？", type="text", size="small", parent=panel)
         self.forgot_pwd_btn.clicked.connect(self.forgotPasswordClicked.emit)
         self.login_options_layout.addWidget(self.forgot_pwd_btn)
         
         layout.addLayout(self.login_options_layout)
 
         # Submit Button
-        self.login_submit_btn = QPushButton("立即登录", panel)
-        self.login_submit_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.login_submit_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.login_submit_btn.setAutoDefault(False)
-        self.login_submit_btn.setDefault(False)
+        self.login_submit_btn = MkButton("立即登录", type="primary", size="large", parent=panel)
         self.login_submit_btn.setFixedHeight(38)
-        self.login_submit_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #3b82f6;
-                border: none;
-                border-radius: 6px;
-                color: #ffffff;
-                font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-                font-size: 13px;
-                font-weight: bold;
-                outline: none;
-            }
-            QPushButton:hover {
-                background-color: #2563eb;
-            }
-            QPushButton:pressed {
-                background-color: #1d4ed8;
-            }
-        """)
         self.login_submit_btn.clicked.connect(self._on_login_submitted)
         layout.addWidget(self.login_submit_btn)
         
@@ -458,25 +414,7 @@ class MkAuthScreen(QWidget):
         link_layout = QHBoxLayout()
         link_layout.setContentsMargins(0, 5, 0, 0)
         
-        register_link = QPushButton("没有账号？立即注册", panel)
-        register_link.setCursor(Qt.CursorShape.PointingHandCursor)
-        register_link.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        register_link.setAutoDefault(False)
-        register_link.setDefault(False)
-        register_link.setStyleSheet("""
-            QPushButton {
-                background: transparent;
-                border: none;
-                color: #3b82f6;
-                font-size: 12px;
-                text-align: left;
-                outline: none;
-            }
-            QPushButton:hover {
-                color: #2563eb;
-                text-decoration: underline;
-            }
-        """)
+        register_link = MkButton("没有账号？立即注册", type="text", size="small", parent=panel)
         register_link.clicked.connect(lambda: self.switch_mode("register"))
         link_layout.addWidget(register_link)
         link_layout.addStretch()
@@ -521,30 +459,8 @@ class MkAuthScreen(QWidget):
             self.reg_custom_inputs[name] = custom_input
             
         # Submit register
-        self.reg_submit_btn = QPushButton("立即注册", panel)
-        self.reg_submit_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.reg_submit_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.reg_submit_btn.setAutoDefault(False)
-        self.reg_submit_btn.setDefault(False)
+        self.reg_submit_btn = MkButton("立即注册", type="primary", size="large", parent=panel)
         self.reg_submit_btn.setFixedHeight(38)
-        self.reg_submit_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #10b981;
-                border: none;
-                border-radius: 6px;
-                color: #ffffff;
-                font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-                font-size: 13px;
-                font-weight: bold;
-                outline: none;
-            }
-            QPushButton:hover {
-                background-color: #059669;
-            }
-            QPushButton:pressed {
-                background-color: #047857;
-            }
-        """)
         self.reg_submit_btn.clicked.connect(self._on_register_submitted)
         layout.addWidget(self.reg_submit_btn)
         
@@ -552,25 +468,7 @@ class MkAuthScreen(QWidget):
         link_layout = QHBoxLayout()
         link_layout.setContentsMargins(0, 5, 0, 0)
         
-        login_link = QPushButton("已有账号？返回登录", panel)
-        login_link.setCursor(Qt.CursorShape.PointingHandCursor)
-        login_link.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        login_link.setAutoDefault(False)
-        login_link.setDefault(False)
-        login_link.setStyleSheet("""
-            QPushButton {
-                background: transparent;
-                border: none;
-                color: #64748b;
-                font-size: 12px;
-                text-align: left;
-                outline: none;
-            }
-            QPushButton:hover {
-                color: #475569;
-                text-decoration: underline;
-            }
-        """)
+        login_link = MkButton("已有账号？返回登录", type="text", size="small", parent=panel)
         login_link.clicked.connect(lambda: self.switch_mode("login"))
         link_layout.addWidget(login_link)
         link_layout.addStretch()

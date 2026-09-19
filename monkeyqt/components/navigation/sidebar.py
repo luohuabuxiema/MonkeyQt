@@ -2,6 +2,35 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QL
 from PySide6.QtCore import Qt, Signal, Property, QPropertyAnimation, QEasingCurve, QSize
 from PySide6.QtGui import QIcon, QPainter, QColor
 from monkeyqt.core.icons import MkPhosphorIcon, PHOSPHOR_ICONS
+from monkeyqt.themes.engine import ThemeEngine
+
+
+def _resolve_icon_pixmap(icon_val, color=None, size=18):
+    """Resolve icon object, monkeyqt-icons name, or inline Phosphor icon into a QPixmap."""
+    if not icon_val:
+        return None
+    if color is None:
+        color = ThemeEngine.get("--text-muted", "#606266")
+    if hasattr(icon_val, "pixmap"):
+        try:
+            return icon_val.pixmap(size=size, color=color)
+        except Exception:
+            try:
+                return icon_val.pixmap(size=size)
+            except Exception:
+                pass
+    if isinstance(icon_val, str):
+        try:
+            from monkeyqt.icons import Ph
+            pm = Ph.pixmap(icon_val, size=size, color=color)
+            if pm and not pm.isNull():
+                return pm
+        except Exception:
+            pass
+        if icon_val in PHOSPHOR_ICONS:
+            return MkPhosphorIcon.get_pixmap(icon_val, color, size)
+    return None
+
 
 class MkMenuItem(QPushButton):
     """最底层的菜单项"""
@@ -16,18 +45,17 @@ class MkMenuItem(QPushButton):
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         
         self._layout = QHBoxLayout(self)
-        self._layout.setContentsMargins(20, 0, 20, 0)
-        self._layout.setSpacing(20) # Text starts at 20 + 24 + 20 = 64
+        self._layout.setContentsMargins(12, 0, 12, 0)
+        self._layout.setSpacing(12)
         
         self.icon_label = QLabel()
         self.icon_label.setFixedWidth(24)
         self.icon_label.setAlignment(Qt.AlignCenter)
         self.icon_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         if self._icon_str:
-            if hasattr(self._icon_str, "pixmap"):
-                self.icon_label.setPixmap(self._icon_str.pixmap(size=18, color="#606266"))
-            elif isinstance(self._icon_str, str) and self._icon_str in PHOSPHOR_ICONS:
-                self.icon_label.setPixmap(MkPhosphorIcon.get_pixmap(self._icon_str, "#606266", 18))
+            pm = _resolve_icon_pixmap(self._icon_str, "#606266", 18)
+            if pm:
+                self.icon_label.setPixmap(pm)
             else:
                 self.icon_label.setText(str(self._icon_str))
         
@@ -41,80 +69,114 @@ class MkMenuItem(QPushButton):
         self._base_style = """
             MkMenuItem {
                 border: none;
-                background: transparent;
-                padding: 0px;
-                margin: 0px;
+                background-color: transparent;
+                border-radius: 8px;
+                margin: 2px 10px;
+                padding: 0px 8px;
             }
             MkMenuItem:hover {
-                background-color: transparent;
+                background-color: rgba(0, 0, 0, 0.04);
+                border-radius: 8px;
             }
             MkMenuItem:checked {
-                background-color: transparent;
-            }
-        """
-        
-        self._label_style = """
-            QLabel {
-                color: #606266;
-                font-size: 14px;
-                font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
-                border: none;
-                background: transparent;
-            }
-        """
-        self._label_checked_style = """
-            QLabel {
-                color: #409eff;
-                font-size: 14px;
-                font-weight: normal;
-                font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
-                border: none;
-                background: transparent;
-            }
-        """
-        self._label_hover_style = """
-            QLabel {
-                color: #409eff;
-                font-size: 14px;
-                font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
-                border: none;
-                background: transparent;
+                background-color: rgba(0, 0, 0, 0.08);
+                border-radius: 8px;
             }
         """
         
         self.setStyleSheet(self._base_style)
-        self._update_label_styles()
+        self._apply_theme_style()
+        try:
+            ThemeEngine.instance().themeChanged.connect(self._apply_theme_style)
+        except Exception:
+            pass
         self.toggled.connect(self._on_toggled)
+
+    def _apply_theme_style(self, theme_name=None):
+        active_bg = ThemeEngine.get("--sidebar-active-bg", "rgba(255, 255, 255, 0.12)" if ThemeEngine.is_dark() else "rgba(0, 0, 0, 0.08)")
+        active_fg = ThemeEngine.get("--sidebar-active-fg", "#FFFFFF" if ThemeEngine.is_dark() else "#0F172A")
+        hover_bg = ThemeEngine.get("--sidebar-hover-bg", "rgba(255, 255, 255, 0.06)" if ThemeEngine.is_dark() else "rgba(0, 0, 0, 0.04)")
+        muted = ThemeEngine.get("--sidebar-text-muted", "#A1A1AA" if ThemeEngine.is_dark() else "#64748B")
+        font_family = ThemeEngine.get("--font", '"Segoe UI", "Microsoft YaHei", "PingFang SC", Arial, sans-serif')
+
+        self._base_style = f"""
+            MkMenuItem {{
+                border: none;
+                background-color: transparent;
+                border-radius: 8px;
+                margin: 2px 10px;
+                padding: 0px 8px;
+            }}
+            MkMenuItem:hover {{
+                background-color: {hover_bg};
+                border-radius: 8px;
+            }}
+            MkMenuItem:checked {{
+                background-color: {active_bg};
+                border-radius: 8px;
+            }}
+        """
+        self.setStyleSheet(self._base_style)
+        self._label_style = f"""
+            QLabel {{
+                color: {muted};
+                font-size: 14px;
+                font-family: {font_family};
+                font-weight: 500;
+                border: none;
+                background: transparent;
+            }}
+        """
+        self._label_checked_style = f"""
+            QLabel {{
+                color: {active_fg};
+                font-size: 14px;
+                font-family: {font_family};
+                font-weight: 600;
+                border: none;
+                background: transparent;
+            }}
+        """
+        self._label_hover_style = f"""
+            QLabel {{
+                color: {active_fg};
+                font-size: 14px;
+                font-family: {font_family};
+                font-weight: 500;
+                border: none;
+                background: transparent;
+            }}
+        """
+        self._update_label_styles()
 
     def _on_toggled(self, checked):
         self._update_label_styles()
 
     def _update_icon_color(self, color_hex):
-        if hasattr(self._icon_str, "pixmap"):
-            self.icon_label.setPixmap(self._icon_str.pixmap(size=18, color=color_hex))
-        elif self._icon_str and isinstance(self._icon_str, str) and self._icon_str in PHOSPHOR_ICONS:
-            self.icon_label.setPixmap(MkPhosphorIcon.get_pixmap(self._icon_str, color_hex, 18))
+        pm = _resolve_icon_pixmap(self._icon_str, color_hex, 18)
+        if pm:
+            self.icon_label.setPixmap(pm)
 
     def enterEvent(self, event):
         super().enterEvent(event)
         if not self.isChecked():
-            self.icon_label.setStyleSheet(self._label_hover_style)
-            self.text_label.setStyleSheet(self._label_hover_style)
-            self._update_icon_color("#409eff")
+            active_fg = ThemeEngine.get("--sidebar-active-fg", "#FFFFFF" if ThemeEngine.is_dark() else "#0F172A")
+            self.text_label.setStyleSheet(getattr(self, "_label_hover_style", ""))
+            self._update_icon_color(active_fg)
 
     def leaveEvent(self, event):
         super().leaveEvent(event)
         self._update_label_styles()
 
     def _update_label_styles(self):
+        active_fg = ThemeEngine.get("--sidebar-active-fg", "#FFFFFF" if ThemeEngine.is_dark() else "#0F172A")
+        muted = ThemeEngine.get("--sidebar-text-muted", "#A1A1AA" if ThemeEngine.is_dark() else "#64748B")
         if self.isChecked():
-            self.icon_label.setStyleSheet(self._label_checked_style)
-            self.text_label.setStyleSheet(self._label_checked_style)
-            self._update_icon_color("#409eff")
+            self.text_label.setStyleSheet(getattr(self, "_label_checked_style", ""))
+            self._update_icon_color(active_fg)
         else:
-            self.icon_label.setStyleSheet(self._label_style)
-            self.text_label.setStyleSheet(self._label_style)
-            self._update_icon_color("#606266")
+            self.text_label.setStyleSheet(getattr(self, "_label_style", ""))
+            self._update_icon_color(muted)
 
     def set_collapsed(self, is_collapsed):
         if is_collapsed:
@@ -137,7 +199,11 @@ class MkMenuItem(QPushButton):
         if not self.text_label.isHidden(): # meaning not collapsed
             self._layout.setContentsMargins(margin, 0, 20, 0)
 
-class MkSubMenu(QWidget):
+
+from ..layout.widget import MkQWidget
+
+
+class MkSubMenu(MkQWidget):
     """带折叠功能的子菜单容器"""
     toggled = Signal(bool)
 
@@ -161,35 +227,34 @@ class MkSubMenu(QWidget):
         self.title_btn.setStyleSheet("""
             QPushButton {
                 border: none;
-                background: transparent;
-                padding: 0px;
-                margin: 0px;
+                background-color: transparent;
+                border-radius: 8px;
+                margin: 2px 10px;
+                padding: 0px 8px;
             }
             QPushButton:hover {
-                background-color: transparent;
+                background-color: rgba(0, 0, 0, 0.04);
+                border-radius: 8px;
             }
         """)
         
         self.title_layout = QHBoxLayout(self.title_btn)
-        self.title_layout.setContentsMargins(20, 0, 20, 0)
-        self.title_layout.setSpacing(20) # 保证文字在 64px 处开始
+        self.title_layout.setContentsMargins(12, 0, 12, 0)
+        self.title_layout.setSpacing(12)
         
         self.icon_label = QLabel()
         self.icon_label.setFixedWidth(24)
         self.icon_label.setAlignment(Qt.AlignCenter)
         self.icon_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        self.icon_label.setStyleSheet("color: #303133; font-size: 16px;")
-        if self._icon_str:
-            if hasattr(self._icon_str, "pixmap"):
-                self.icon_label.setPixmap(self._icon_str.pixmap(size=18, color="#303133"))
-            elif isinstance(self._icon_str, str) and self._icon_str in PHOSPHOR_ICONS:
-                self.icon_label.setPixmap(MkPhosphorIcon.get_pixmap(self._icon_str, "#303133", 18))
-            else:
-                self.icon_label.setText(str(self._icon_str))
         
         self.text_label = QLabel(self._original_title)
         self.text_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        self.text_label.setStyleSheet("color: #303133; font-size: 14px; font-weight: normal;")
+        
+        self._apply_theme_style()
+        try:
+            ThemeEngine.instance().themeChanged.connect(self._apply_theme_style)
+        except Exception:
+            pass
         
         self.title_layout.addWidget(self.icon_label)
         self.title_layout.addWidget(self.text_label)
@@ -212,23 +277,45 @@ class MkSubMenu(QWidget):
         self.content_widget.setVisible(False)
         self._layout.addWidget(self.content_widget)
 
+    def _apply_theme_style(self, theme_name=None):
+        fg = ThemeEngine.get("--fg", "#303133")
+        hover_bg = ThemeEngine.get("--sidebar-hover-bg", "rgba(255, 255, 255, 0.06)" if ThemeEngine.is_dark() else "rgba(0, 0, 0, 0.04)")
+        self.title_btn.setStyleSheet(f"""
+            QPushButton {{
+                border: none;
+                background-color: transparent;
+                border-radius: 8px;
+                margin: 2px 10px;
+                padding: 0px 8px;
+            }}
+            QPushButton:hover {{
+                background-color: {hover_bg};
+                border-radius: 8px;
+            }}
+        """)
+        self.text_label.setStyleSheet(f"color: {fg}; font-size: 14px; font-weight: 500;")
+        if self._icon_str:
+            pm = _resolve_icon_pixmap(self._icon_str, fg, 18)
+            if pm:
+                self.icon_label.setPixmap(pm)
+            else:
+                self.icon_label.setText(str(self._icon_str))
+
     def eventFilter(self, obj, event):
         if obj == self.title_btn:
+            active_fg = ThemeEngine.get("--sidebar-active-fg", "#FFFFFF" if ThemeEngine.is_dark() else "#0F172A")
+            fg = ThemeEngine.get("--fg", "#303133")
             if event.type() == event.Type.Enter:
-                self.text_label.setStyleSheet("color: #409eff; font-size: 14px; font-weight: normal;")
-                self.icon_label.setStyleSheet("color: #409eff; font-size: 16px;")
-                if hasattr(self._icon_str, "pixmap"):
-                    self.icon_label.setPixmap(self._icon_str.pixmap(size=18, color="#409eff"))
-                elif self._icon_str and isinstance(self._icon_str, str) and self._icon_str in PHOSPHOR_ICONS:
-                    self.icon_label.setPixmap(MkPhosphorIcon.get_pixmap(self._icon_str, "#409eff", 18))
+                pm = _resolve_icon_pixmap(self._icon_str, active_fg, 18)
+                if pm:
+                    self.icon_label.setPixmap(pm)
+                self.text_label.setStyleSheet(f"color: {active_fg}; font-size: 14px; font-weight: 500;")
             elif event.type() == event.Type.Leave:
-                self.text_label.setStyleSheet("color: #303133; font-size: 14px; font-weight: normal;")
-                self.icon_label.setStyleSheet("color: #303133; font-size: 16px;")
-                if hasattr(self._icon_str, "pixmap"):
-                    color = getattr(self, "_icon_color", "#303133")
-                    self.icon_label.setPixmap(self._icon_str.pixmap(size=18, color=color))
-                elif self._icon_str and isinstance(self._icon_str, str) and self._icon_str in PHOSPHOR_ICONS:
-                    self.icon_label.setPixmap(MkPhosphorIcon.get_pixmap(self._icon_str, "#303133", 18))
+                pm = _resolve_icon_pixmap(self._icon_str, fg, 18)
+                if pm:
+                    self.icon_label.setPixmap(pm)
+                self.text_label.setStyleSheet(f"color: {fg}; font-size: 14px; font-weight: 500;")
+        return super().eventFilter(obj, event)
         return super().eventFilter(obj, event)
 
     def add_item(self, item: MkMenuItem):
@@ -266,7 +353,7 @@ class MkSubMenu(QWidget):
         for item in self._items:
             item.set_collapsed(is_collapsed)
 
-class MkMenu(QWidget):
+class MkMenu(MkQWidget):
     """
     Element Plus 风格的侧边栏 (ElMenu)
     支持多级折叠 (SubMenu)、菜单项 (MenuItem) 和顶部标题区，
@@ -290,23 +377,20 @@ class MkMenu(QWidget):
             self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.main_layout.setSpacing(0)
         
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        
         # 带有右边框的内部框架
         self.inner_frame = QFrame(self)
         self.inner_frame.setObjectName("SidebarInnerFrame")
-        self.inner_frame.setStyleSheet("""
-            QFrame {
-                background-color: #ffffff;
-                border-right: 1px solid #dcdfe6;
-            }
-        """)
+        self.inner_frame.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.inner_layout = QVBoxLayout(self.inner_frame)
         self.inner_layout.setContentsMargins(0, 0, 0, 0)
         self.inner_layout.setSpacing(0)
         
         # --- 1. 顶部标题区域 ---
         self.title_area = QWidget()
+        self.title_area.setObjectName("SidebarTitleArea")
         self.title_area.setFixedHeight(60)
-        self.title_area.setStyleSheet("border: none;")
         self.title_layout = QHBoxLayout(self.title_area)
         self.title_layout.setContentsMargins(0, 0, 0, 0)
         self.title_layout.setSpacing(0) # Remove default spacing
@@ -324,9 +408,10 @@ class MkMenu(QWidget):
                 color: #606266;
                 padding: 0px;
                 margin: 0px;
+                border-radius: 6px;
             }
             QPushButton:hover {
-                color: #409eff;
+                background-color: rgba(0, 0, 0, 0.04);
             }
         """)
         self.hamburger_btn.clicked.connect(self.toggle_collapse)
@@ -361,10 +446,14 @@ class MkMenu(QWidget):
             self.title_layout.addWidget(self.hamburger_btn)
             # 汉堡包模式下，如果仍有图标，放到汉堡包后面
             if self._icon:
-                self.icon_label = QLabel(self._icon)
+                self.icon_label = QLabel()
                 self.icon_label.setFixedWidth(24)
                 self.icon_label.setAlignment(Qt.AlignCenter)
-                self.icon_label.setStyleSheet("font-size: 18px;")
+                pm = _resolve_icon_pixmap(self._icon, "#303133", 20)
+                if pm:
+                    self.icon_label.setPixmap(pm)
+                else:
+                    self.icon_label.setText(str(self._icon))
                 self.title_layout.addWidget(self.icon_label)
                 self.title_layout.addSpacing(8) # 图标与文字的间距
             else:
@@ -376,12 +465,12 @@ class MkMenu(QWidget):
             self.icon_label = QLabel()
             self.icon_label.setFixedWidth(24)
             self.icon_label.setAlignment(Qt.AlignCenter)
-            self.icon_label.setStyleSheet("font-size: 18px;")
             if self._icon:
-                if self._icon in PHOSPHOR_ICONS:
-                    self.icon_label.setPixmap(MkPhosphorIcon.get_pixmap(self._icon, "#303133", 20))
+                pm = _resolve_icon_pixmap(self._icon, "#303133", 20)
+                if pm:
+                    self.icon_label.setPixmap(pm)
                 else:
-                    self.icon_label.setText(self._icon)
+                    self.icon_label.setText(str(self._icon))
                 self.title_layout.addWidget(self.icon_label)
                 self.title_layout.addSpacing(12)
             else:
@@ -394,18 +483,18 @@ class MkMenu(QWidget):
             self.icon_label = QLabel()
             self.icon_label.setFixedWidth(24) # Match MkMenuItem icon width
             self.icon_label.setAlignment(Qt.AlignCenter)
-            self.icon_label.setStyleSheet("font-size: 18px;")
             if self._icon:
-                if self._icon in PHOSPHOR_ICONS:
-                    self.icon_label.setPixmap(MkPhosphorIcon.get_pixmap(self._icon, "#303133", 20))
+                pm = _resolve_icon_pixmap(self._icon, "#303133", 20)
+                if pm:
+                    self.icon_label.setPixmap(pm)
                 else:
-                    self.icon_label.setText(self._icon)
+                    self.icon_label.setText(str(self._icon))
             self.title_layout.addWidget(self.icon_label)
             self.title_layout.addSpacing(20) # 20 + 24 + 20 = 64
             
         # 标题文本
         self.title_label = QLabel(self._title)
-        self.title_label.setStyleSheet("font-size: 16px; font-weight: bold; color: #303133;")
+        self.title_label.setObjectName("SidebarTitleLabel")
         title_font = self.title_label.font()
         title_font.setBold(True)
         self.title_label.setFont(title_font)
@@ -419,6 +508,12 @@ class MkMenu(QWidget):
             self.title_layout.addWidget(self.header_collapse_btn)
             
         self.inner_layout.addWidget(self.title_area)
+        
+        self._apply_theme_style()
+        try:
+            ThemeEngine.instance().themeChanged.connect(self._apply_theme_style)
+        except Exception:
+            pass
         
         # --- 2. 核心滚动区域 ---
         self.scroll_area = QScrollArea()
@@ -486,14 +581,58 @@ class MkMenu(QWidget):
                 padding-bottom: 2px;
             }
             QPushButton:hover {
-                color: #409eff;
-                border-color: #c6e2ff;
-                background-color: #ecf5ff;
+                background-color: #f5f7fa;
             }
         """)
         self.collapse_btn.clicked.connect(self.toggle_collapse)
         if self._collapse_mode in ("hamburger", "header"):
             self.collapse_btn.hide()
+
+    def _apply_theme_style(self, theme_name=None):
+        fg = ThemeEngine.get("--fg", "#303133")
+        active_fg = ThemeEngine.get("--sidebar-active-fg", "#FFFFFF" if ThemeEngine.is_dark() else "#0F172A")
+        hover_bg = ThemeEngine.get("--sidebar-hover-bg", "rgba(255, 255, 255, 0.06)" if ThemeEngine.is_dark() else "rgba(0, 0, 0, 0.04)")
+        border = ThemeEngine.get("--border", "#E2E8F0")
+        surface = ThemeEngine.get("--surface", "#FFFFFF")
+        if hasattr(self, "title_label"):
+            self.title_label.setStyleSheet(f"color: {fg}; font-size: 15px; font-weight: bold;")
+        if hasattr(self, "hamburger_btn"):
+            self.hamburger_btn.setStyleSheet(f"""
+                QPushButton {{
+                    border: none;
+                    background: transparent;
+                    font-size: 20px;
+                    color: {fg};
+                    padding: 0px;
+                    margin: 0px;
+                    border-radius: 6px;
+                }}
+                QPushButton:hover {{
+                    color: {active_fg};
+                    background-color: {hover_bg};
+                }}
+            """)
+        if hasattr(self, "collapse_btn"):
+            self.collapse_btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {surface};
+                    border: 1px solid {border};
+                    border-radius: 12px;
+                    color: {fg};
+                    font-size: 12px;
+                    font-weight: bold;
+                    padding-bottom: 2px;
+                }}
+                QPushButton:hover {{
+                    color: {active_fg};
+                    border-color: {active_fg};
+                    background-color: {hover_bg};
+                }}
+            """)
+        if hasattr(self, "icon_label") and getattr(self, "_icon", None):
+            pm = _resolve_icon_pixmap(self._icon, fg, 20)
+            if pm:
+                self.icon_label.setPixmap(pm)
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -509,12 +648,13 @@ class MkMenu(QWidget):
     def set_border_right(self, border_style: str):
         """设置右侧边框样式，例如 'none' 或者 '1px solid #dcdfe6'"""
         self._border_right_style = border_style
-        self.inner_frame.setStyleSheet(f"""
-            QFrame {{
-                background-color: #ffffff;
-                border-right: {border_style};
-            }}
-        """)
+        if border_style == "none":
+            self.inner_frame.setProperty("border_right_none", "true")
+        else:
+            self.inner_frame.setProperty("border_right_none", "false")
+        self.inner_frame.style().unpolish(self.inner_frame)
+        self.inner_frame.style().polish(self.inner_frame)
+        self.inner_frame.update()
 
     def add_item(self, item_id: str, text: str, icon=None) -> MkMenuItem:
         """添加一级菜单项"""
@@ -534,6 +674,7 @@ class MkMenu(QWidget):
     def add_submenu_item(self, submenu: MkSubMenu, item_id: str, text: str, icon=None) -> MkMenuItem:
         """向子菜单中添加项"""
         item = MkMenuItem(item_id, text, icon, height=self._item_height)
+        item._parent_submenu = submenu
         item.set_left_margin(40) # 子菜单项缩进
         self._register_item(item)
         submenu.add_item(item)
@@ -556,7 +697,9 @@ class MkMenu(QWidget):
         for item in self._all_items:
             if item.item_id == item_id:
                 self._on_item_clicked(item)
-                # 提示：如果该项在 submenu 里，理想情况应该自动展开 submenu
+                parent_sub = getattr(item, "_parent_submenu", None)
+                if parent_sub and not parent_sub._is_expanded:
+                    parent_sub.toggle()
                 break
 
     def toggle_collapse(self):

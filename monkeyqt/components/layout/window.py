@@ -3,18 +3,155 @@
 @File ：window.py
 @Desc ：Custom title bar and frameless window components for MonkeyQt.
 """
+import sys
+
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
     QPushButton, QLineEdit, QGraphicsDropShadowEffect, QFrame,
     QSizePolicy, QSpacerItem
 )
-from PySide6.QtCore import Qt, QPoint, Signal, QEvent, QRect, QSize, QTimer
-from PySide6.QtGui import QFont, QCursor, QColor, QMouseEvent, QIcon
+from PySide6.QtCore import Qt, QPoint, Signal, QEvent, QRect, QRectF, QSize, QTimer
+from PySide6.QtGui import QFont, QCursor, QColor, QMouseEvent, QIcon, QGuiApplication, QPainter, QPainterPath
 
 from monkeyqt.components.navigation import MkAnimatedStackedWidget, MkHistoryNavigation, MkAvatarMenu
 from monkeyqt.core.icons import MkPhosphorIcon
+from .widget import MkQWidget
 
-class MkTitleBar(QWidget):
+class MkTitleBarCloseButton(QPushButton):
+    """
+    Dedicated close button for MkTitleBar.
+    Features:
+    1. Automatic corner radius adaptation matching the host window/system.
+       - Windowed mode: Smooth rounded top-right corner matching window border-radius (default 8px).
+       - Maximized mode: Straight 90-degree right angle (0px) honoring Fitts's Law.
+    2. Pixel-perfect seamless fitting:
+       - Uses QPainter.CompositionMode_Source to eliminate any underlying titlebar/container
+         background fringe or color leak.
+       - High-DPI anti-aliased geometry drawing.
+    """
+    def __init__(self, titlebar, parent=None):
+        super().__init__(parent or titlebar)
+        self._titlebar = titlebar
+        self.setObjectName("TitleBarCloseButton")
+        self._is_hovered = False
+        self._is_pressed = False
+        self._icon_normal = QIcon()
+        self._icon_hover = QIcon()
+        self.setAttribute(Qt.WidgetAttribute.WA_Hover, True)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setStyleSheet(
+            "QPushButton#TitleBarCloseButton { background: transparent; border: none; margin: 0px; padding: 0px; }"
+        )
+
+    def set_icons(self, normal_icon: QIcon, hover_icon: QIcon = None):
+        self._icon_normal = normal_icon
+        self._icon_hover = hover_icon if hover_icon is not None else normal_icon
+        self.update()
+
+    def _is_macos(self) -> bool:
+        if hasattr(self, "_titlebar") and getattr(self._titlebar, "_button_style", "") == "macos":
+            return True
+        return False
+
+    def get_effective_radius(self) -> float:
+        if self._is_macos():
+            return 6.0
+        # Check window maximization state first
+        win = self.window()
+        if win and hasattr(win, "isMaximized") and win.isMaximized():
+            return 0.0
+        p_win = getattr(self._titlebar, "parent_window", None)
+        if p_win:
+            if hasattr(p_win, "isMaximized") and p_win.isMaximized():
+                return 0.0
+            if getattr(p_win, "_current_is_max_state", False):
+                return 0.0
+            if hasattr(p_win, "_border_radius"):
+                return float(p_win._border_radius)
+
+        # Fallback to ThemeEngine token if present
+        try:
+            from monkeyqt.themes.engine import ThemeEngine
+            r_val = ThemeEngine.get("--radius", "8px")
+            if isinstance(r_val, str) and r_val.endswith("px"):
+                return float(r_val[:-2])
+            return float(r_val)
+        except Exception:
+            pass
+        return 8.0
+
+    def enterEvent(self, event):
+        self._is_hovered = True
+        self.update()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        self._is_hovered = False
+        if self.parentWidget():
+            self.parentWidget().update()
+        self.update()
+        super().leaveEvent(event)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._is_pressed = True
+            self.update()
+        super().mousePressEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        self._is_pressed = False
+        self.update()
+        super().mouseReleaseEvent(event)
+
+    def paintEvent(self, event):
+        if self._is_macos():
+            super().paintEvent(event)
+            return
+
+        painter = QPainter(self)
+        w = float(self.width())
+        h = float(self.height())
+        r = self.get_effective_radius()
+
+        if self._is_hovered or self._is_pressed:
+            bg_color = QColor("#c42b1c" if self._is_pressed else "#e81123")
+            # 1. Clear any parent titlebar background using Source mode to prevent edge leak
+            painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
+            painter.fillRect(self.rect(), QColor(0, 0, 0, 0))
+
+            painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceOver)
+            if r <= 0.0:
+                painter.fillRect(self.rect(), bg_color)
+            else:
+                painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+                path = QPainterPath()
+                path.moveTo(0, 0)
+                path.lineTo(w - r, 0)
+                path.arcTo(QRectF(w - 2 * r, 0, 2 * r, 2 * r), 90, -90)
+                path.lineTo(w, h)
+                path.lineTo(0, h)
+                path.closeSubpath()
+                painter.fillPath(path, bg_color)
+
+            # Draw "X" icon in pure white
+            target_icon = self._icon_hover if not self._icon_hover.isNull() else self._icon_normal
+            if not target_icon.isNull():
+                icon_s = 12
+                ix = int((w - icon_s) / 2)
+                iy = int((h - icon_s) / 2)
+                target_icon.paint(painter, QRect(ix, iy, icon_s, icon_s))
+        else:
+            # Normal: transparent background, draw normal icon
+            if not self._icon_normal.isNull():
+                icon_s = 12
+                ix = int((w - icon_s) / 2)
+                iy = int((h - icon_s) / 2)
+                self._icon_normal.paint(painter, QRect(ix, iy, icon_s, icon_s))
+
+        painter.end()
+
+
+class MkTitleBar(MkQWidget):
     """
     Customizable title bar component mimicking modern UI designs.
     Supports presets: 'default', 'shadcn', 'ida', 'sunlogin', 'soda', 'ide'
@@ -63,7 +200,7 @@ class MkTitleBar(QWidget):
         self.btn_min.setObjectName("TitleBarMinButton")
         self.btn_max = QPushButton()
         self.btn_max.setObjectName("TitleBarMaxButton")
-        self.btn_close = QPushButton()
+        self.btn_close = MkTitleBarCloseButton(self)
         self.btn_close.setObjectName("TitleBarCloseButton")
         
         self.btn_min.setFixedSize(28, 28)
@@ -82,6 +219,17 @@ class MkTitleBar(QWidget):
         
         self.apply_preset(preset)
         self.rebuild_layout()
+        
+        # Connect to ThemeEngine for dynamic style reactivity
+        try:
+            from monkeyqt.themes.engine import ThemeEngine
+            ThemeEngine.instance().themeChanged.connect(self._on_theme_changed)
+        except Exception:
+            pass
+
+    def _on_theme_changed(self, theme_name: str = ""):
+        self.apply_theme_colors()
+        self.update()
 
     def set_title(self, title: str):
         self.title_label.setText(title)
@@ -197,32 +345,99 @@ class MkTitleBar(QWidget):
             self._border_bottom = "1px solid #313244"
             
         else:  # "default"
-            self._bg_color = "#ffffff"
-            self._text_color = "#0f172a"
-            self._hover_color = "#f1f5f9"
+            self._bg_color = None
+            self._text_color = None
+            self._hover_color = None
             self._height = 40
             self._button_style = "windows"
             self.title_label.setFont(QFont("Microsoft YaHei", 9))
+            self._border_bottom = ""
             
         self.apply_theme_colors()
 
     def _is_dark_theme(self):
-        # Fallback helper, standard light mode checking
+        try:
+            from monkeyqt.themes.engine import ThemeEngine
+            if ThemeEngine.current_theme():
+                return ThemeEngine.is_dark()
+        except Exception:
+            pass
+        if self._bg_color:
+            try:
+                from monkeyqt.themes.style_utils import luminance
+                return luminance(self._bg_color) < 0.5
+            except Exception:
+                pass
         return False
 
-    def apply_theme_colors(self):
-        # Apply style sheet to titlebar background
-        bg = self._bg_color if self._bg_color else "#ffffff"
-        text = self._text_color if self._text_color else "#000000"
+    def _get_effective_colors(self):
+        """Dynamically resolve background, text, and hover colors based on preset and ThemeEngine."""
+        theme_active = False
+        tokens = {}
+        is_dark = False
+        try:
+            from monkeyqt.themes.engine import ThemeEngine
+            if ThemeEngine.current_theme():
+                theme_active = True
+                tokens = ThemeEngine.current_tokens()
+                is_dark = ThemeEngine.is_dark()
+        except Exception:
+            pass
+
+        # 1. Background color
+        if self._bg_color is not None:
+            bg = self._bg_color
+        elif theme_active:
+            follows_content = bool(self.property("mkContentAlignedTitleBar"))
+            if not follows_content and self.parent_window:
+                follows_content = bool(getattr(self.parent_window, "_sidebar_full_height", False))
+            
+            if follows_content and not ThemeEngine.has_override("--titlebar-bg"):
+                bg = tokens.get("--bg", "#ffffff")
+            else:
+                bg = tokens.get("--chrome-surface", tokens.get("--surface", "#ffffff"))
+        else:
+            bg = "#ffffff"
+
+        # 2. Text color
+        if self._text_color is not None:
+            text = self._text_color
+        elif theme_active:
+            text = tokens.get("--fg", "#F8FAFC" if is_dark else "#0F172A")
+        else:
+            text = "#0f172a"
+
+        # 3. Hover color for min/max buttons
+        if self._hover_color is not None:
+            hover = self._hover_color
+        elif theme_active:
+            hover = "rgba(255, 255, 255, 0.08)" if is_dark else "rgba(0, 0, 0, 0.06)"
+        else:
+            hover = "#f1f5f9"
+
+        return bg, text, hover
+
+    def apply_theme_colors(self, is_max: bool | None = None):
+        bg, text, hover = self._get_effective_colors()
         border_css = f"border-bottom: {self._border_bottom};" if hasattr(self, '_border_bottom') and self._border_bottom else ""
         
         # Calculate parent window's top-left and top-right corner radius to prevent visual overflow
-        window_radius = 8
-        if self.parent_window and hasattr(self.parent_window, "_border_radius"):
+        if is_max is None:
             is_max = False
-            if self.parent_window.window():
-                is_max = self.parent_window.window().isMaximized()
-            window_radius = 0 if is_max else getattr(self.parent_window, "_border_radius", 8)
+            if self.parent_window and hasattr(self.parent_window, "window"):
+                win = self.parent_window.window()
+                if win and hasattr(win, "isMaximized"):
+                    is_max = win.isMaximized()
+            elif self.parent_window and hasattr(self.parent_window, "isMaximized"):
+                is_max = self.parent_window.isMaximized()
+
+        window_radius = 0 if is_max else getattr(self.parent_window, "_border_radius", 8)
+
+        is_sidebar_full = False
+        if self.parent_window and getattr(self.parent_window, "_sidebar_full_height", False):
+            is_sidebar_full = True
+        tl_radius = 0 if is_sidebar_full else window_radius
+        tr_radius = window_radius
 
         self.setObjectName("MkTitleBar")
         self.setStyleSheet(f"""
@@ -230,8 +445,8 @@ class MkTitleBar(QWidget):
                 background-color: {bg};
                 color: {text};
                 {border_css}
-                border-top-left-radius: {window_radius}px;
-                border-top-right-radius: {window_radius}px;
+                border-top-left-radius: {tl_radius}px;
+                border-top-right-radius: {tr_radius}px;
             }}
             QLabel {{
                 color: {text};
@@ -240,28 +455,99 @@ class MkTitleBar(QWidget):
         """)
         
         # Style buttons based on style choice
-        self.update_buttons()
+        self.update_buttons(is_max=is_max)
 
-    def update_buttons(self):
-        text_color = self._text_color if self._text_color else "#000000"
-        hover_color = self._hover_color if self._hover_color else "rgba(0,0,0,0.1)"
+    def _get_close_btn_stylesheet(self, window_radius: int) -> str:
+        return f"""
+            QPushButton {{ 
+                background-color: transparent; 
+                border: none; 
+                border-top-right-radius: {window_radius}px;
+                border-top-left-radius: 0px;
+                border-bottom-right-radius: 0px;
+                border-bottom-left-radius: 0px;
+                margin: 0px;
+                padding: 0px;
+            }}
+            QPushButton:hover {{ 
+                background-color: #e81123; 
+                color: #ffffff; 
+                border-top-right-radius: {window_radius}px;
+                border-top-left-radius: 0px;
+                border-bottom-right-radius: 0px;
+                border-bottom-left-radius: 0px;
+                margin: 0px;
+                padding: 0px;
+            }}
+            QPushButton:pressed {{ 
+                background-color: #c42b1c; 
+                color: #ffffff; 
+                border-top-right-radius: {window_radius}px;
+                border-top-left-radius: 0px;
+                border-bottom-right-radius: 0px;
+                border-bottom-left-radius: 0px;
+                margin: 0px;
+                padding: 0px;
+            }}
+        """
+
+    def set_maximized_state(self, is_max: bool):
+        """Instantaneous, synchronous update of maximize button icon, titlebar radius, and close button radius."""
+        if not hasattr(self, "_icon_max_restore") or not hasattr(self, "_icon_max_square"):
+            self.update_buttons(is_max=is_max)
+            return
+
+        self.btn_max.setIcon(self._icon_max_restore if is_max else self._icon_max_square)
+        self.btn_max.setToolTip("还原" if is_max else "最大化")
+
+        window_radius = 0 if is_max else (getattr(self.parent_window, "_border_radius", 8) if self.parent_window else 8)
+        if self._button_style != "macos":
+            self.btn_close.update()
+
+        bg, text, _ = self._get_effective_colors()
+        border_css = f"border-bottom: {self._border_bottom};" if hasattr(self, '_border_bottom') and self._border_bottom else ""
+        is_sidebar_full = False
+        if self.parent_window and getattr(self.parent_window, "_sidebar_full_height", False):
+            is_sidebar_full = True
+        tl_radius = 0 if is_sidebar_full else window_radius
+        tr_radius = window_radius
+        self.setStyleSheet(f"""
+            QWidget#MkTitleBar {{
+                background-color: {bg};
+                color: {text};
+                {border_css}
+                border-top-left-radius: {tl_radius}px;
+                border-top-right-radius: {tr_radius}px;
+            }}
+            QLabel {{
+                color: {text};
+                background: transparent;
+            }}
+        """)
+
+    def update_buttons(self, is_max: bool | None = None):
+        bg, text_color, hover_color = self._get_effective_colors()
         
-        # Get icons (render at higher resolution for High-DPI crispness)
-        icon_min = MkPhosphorIcon.get_icon("minus", text_color, text_color, 12)
-        icon_close = MkPhosphorIcon.get_icon("x", text_color, "#ffffff" if self._preset != "soda" else text_color, 12)
+        # High contrast icons with pre-cached references for zero-delay switching
+        self._icon_min = MkPhosphorIcon.get_icon("minus", text_color, text_color, 12)
+        self._icon_close = MkPhosphorIcon.get_icon("x", text_color, "#ffffff" if self._preset != "soda" else text_color, 12)
+        self._icon_close_hover = MkPhosphorIcon.get_icon("x", "#ffffff", "#ffffff", 12)
+        self._icon_max_square = MkPhosphorIcon.get_icon("square", text_color, text_color, 12)
+        self._icon_max_restore = MkPhosphorIcon.get_icon("restore", text_color, text_color, 12)
         
-        is_max = False
-        if self.parent_window and self.parent_window.window():
-            is_max = self.parent_window.window().isMaximized()
-        icon_max = MkPhosphorIcon.get_icon("restore" if is_max else "square", text_color, text_color, 12)
+        if is_max is None:
+            is_max = False
+            if self.parent_window:
+                win = self.parent_window.window() if hasattr(self.parent_window, "window") else self.parent_window
+                is_max = win.isMaximized() if (win and hasattr(win, "isMaximized")) else False
         
-        self.btn_min.setIcon(icon_min)
-        self.btn_max.setIcon(icon_max)
-        self.btn_close.setIcon(icon_close)
+        self.btn_min.setIcon(self._icon_min)
+        self.btn_max.setIcon(self._icon_max_restore if is_max else self._icon_max_square)
+        self.btn_close.setIcon(self._icon_close)
+        self.btn_max.setToolTip("还原" if is_max else "最大化")
         
         if self._button_style == "macos":
             # Traffic Light style for macOS
-            # Close: Red, Min: Yellow, Max: Green
             self.btn_close.setIcon(QIcon())
             self.btn_min.setIcon(QIcon())
             self.btn_max.setIcon(QIcon())
@@ -296,34 +582,25 @@ class MkTitleBar(QWidget):
             self.btn_max.setIconSize(QSize(12, 12))
             self.btn_close.setIconSize(QSize(12, 12))
 
-            # Calculate parent window's top-right corner radius to prevent visual overflow
-            window_radius = 8
-            if self.parent_window and hasattr(self.parent_window, "_border_radius"):
-                is_max = False
-                if self.parent_window.window():
-                    is_max = self.parent_window.window().isMaximized()
-                window_radius = 0 if is_max else getattr(self.parent_window, "_border_radius", 8)
+            window_radius = 0 if is_max else (getattr(self.parent_window, "_border_radius", 8) if self.parent_window else 8)
+            pressed_color = "rgba(255, 255, 255, 0.14)" if self._is_dark_theme() else "rgba(0, 0, 0, 0.12)"
             
             self.btn_min.setStyleSheet(f"""
-                QPushButton {{ background-color: transparent; border: none; border-radius: 0px; }}
+                QPushButton {{ background-color: transparent; border: none; border-radius: 0px; margin: 0px; padding: 0px; }}
                 QPushButton:hover {{ background-color: {hover_color}; }}
+                QPushButton:pressed {{ background-color: {pressed_color}; }}
             """)
             self.btn_max.setStyleSheet(f"""
-                QPushButton {{ background-color: transparent; border: none; border-radius: 0px; }}
+                QPushButton {{ background-color: transparent; border: none; border-radius: 0px; margin: 0px; padding: 0px; }}
                 QPushButton:hover {{ background-color: {hover_color}; }}
+                QPushButton:pressed {{ background-color: {pressed_color}; }}
             """)
-            self.btn_close.setStyleSheet(f"""
-                QPushButton {{ 
-                    background-color: transparent; 
-                    border: none; 
-                    border-radius: 0px; 
-                }}
-                QPushButton:hover {{ 
-                    background-color: #e81123; 
-                    color: #ffffff; 
-                    border-radius: 0px; 
-                }}
-            """)
+            if isinstance(self.btn_close, MkTitleBarCloseButton):
+                self.btn_close.set_icons(self._icon_close, self._icon_close_hover)
+                self.btn_close.setStyleSheet("QPushButton#TitleBarCloseButton { background-color: transparent; border: none; margin: 0px; padding: 0px; }")
+                self.btn_close.update()
+            else:
+                self.btn_close.setStyleSheet(self._get_close_btn_stylesheet(window_radius))
 
     def rebuild_layout(self):
         # Remove all items first — handle both widgets and sub-layouts
@@ -380,14 +657,21 @@ class MkTitleBar(QWidget):
             if window.isMaximized():
                 # If moving a maximized window, restore it first
                 # Calculate proper ratio so it doesn't jump
-                normal_width = window.normalGeometry().width()
-                click_x_ratio = event.position().x() / self.width()
+                normal_geom = getattr(window, "_normal_geometry", None)
+                if normal_geom and normal_geom.isValid():
+                    normal_width = normal_geom.width()
+                else:
+                    normal_width = window.normalGeometry().width()
+                click_x_ratio = event.position().x() / max(1, self.width())
                 
                 window.showNormal()
                 
                 # Move window under mouse cursor
                 new_x = event.globalPosition().toPoint().x() - int(normal_width * click_x_ratio)
                 new_y = event.globalPosition().toPoint().y() - event.position().y()
+                if hasattr(window, "_get_safe_normal_geometry"):
+                    safe = window._get_safe_normal_geometry(QRect(new_x, new_y, window.width(), window.height()))
+                    new_x, new_y = safe.x(), safe.y()
                 window.move(new_x, new_y)
             else:
                 window.move(window.pos() + delta)
@@ -432,6 +716,20 @@ RESIZE_RIGHT = 2
 RESIZE_TOP = 4
 RESIZE_BOTTOM = 8
 
+if sys.platform == "win32":
+    import ctypes
+    from ctypes import wintypes
+
+    class _MSG(ctypes.Structure):
+        _fields_ = [
+            ("hwnd", wintypes.HWND),
+            ("message", wintypes.UINT),
+            ("wParam", wintypes.WPARAM),
+            ("lParam", wintypes.LPARAM),
+            ("time", wintypes.DWORD),
+            ("pt", wintypes.POINT),
+        ]
+
 class MkWindow(QMainWindow):
     """
     Standard window class for MonkeyQt supporting native frames or custom title bars
@@ -452,6 +750,7 @@ class MkWindow(QMainWindow):
         self._close_behavior = "close"  # "close" or "hide"
         self._border_radius = 8
         self._normal_geometry = None
+        self._is_maximizing = False
         
         # Resizing states
         self._resize_margin = 8
@@ -484,6 +783,19 @@ class MkWindow(QMainWindow):
         else:
             self.init_native_frame()
 
+        # Connect to ThemeEngine for dynamic style updates
+        try:
+            from monkeyqt.themes.engine import ThemeEngine
+            ThemeEngine.instance().themeChanged.connect(self._on_theme_changed)
+        except Exception:
+            pass
+
+    def _on_theme_changed(self, theme_name: str = ""):
+        self.update_style()
+        if self.titlebar:
+            self.titlebar.apply_theme_colors()
+            self.titlebar.update_buttons()
+
     def init_native_frame(self):
         # Standard QMainWindow behavior
         self.setWindowFlags(Qt.WindowType.Window)
@@ -498,14 +810,16 @@ class MkWindow(QMainWindow):
         self._root_widget = QWidget(self)
         self._root_widget.setMouseTracking(True)
         self.shadow_layout = QVBoxLayout(self._root_widget)
-        # Margin of 10px gives space for the shadow to draw
-        self.shadow_layout.setContentsMargins(10, 10, 10, 10)
+        # Default to 0px margins to eliminate the 10px white gap and achieve flush titlebar/buttons
+        self._use_zero_margins = True
+        margin = 0 if self._use_zero_margins else 10
+        self.shadow_layout.setContentsMargins(margin, margin, margin, margin)
         self.shadow_layout.setSpacing(0)
         
         # 2. Main container widget that has styling (border, radius, background)
-        self.container_frame = QFrame(self._root_widget)
+        self.container_frame = QWidget(self._root_widget)
         self.container_frame.setObjectName("MkWindowContainer")
-        self.container_frame.setFrameShape(QFrame.Shape.NoFrame)
+        self.container_frame.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.container_frame.setMouseTracking(True)
         
         self.container_layout = QVBoxLayout(self.container_frame)
@@ -523,6 +837,7 @@ class MkWindow(QMainWindow):
 
         self._sidebar_host = QWidget(self._desktop_shell)
         self._sidebar_host.setObjectName("MkWindowSidebarHost")
+        self._sidebar_host.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self._sidebar_host.setProperty("mkSidebarHost", True)
         self._sidebar_host.setSizePolicy(
             QSizePolicy.Policy.Fixed,
@@ -548,12 +863,15 @@ class MkWindow(QMainWindow):
         self._desktop_shell_layout.addWidget(self._content_host, stretch=1)
         self.container_layout.addWidget(self._desktop_shell, stretch=1)
         
-        # Apply Shadow Effect
+        # Apply Shadow Effect (only if margins > 0, otherwise rely on OS/DWM shadow)
         self._shadow_effect = QGraphicsDropShadowEffect(self)
         self._shadow_effect.setBlurRadius(15)
         self._shadow_effect.setColor(QColor(0, 0, 0, 45))
         self._shadow_effect.setOffset(0, 4)
-        self.container_frame.setGraphicsEffect(self._shadow_effect)
+        if margin > 0:
+            self.container_frame.setGraphicsEffect(self._shadow_effect)
+        else:
+            self._shadow_effect.setEnabled(False)
         
         # 3. Create Title Bar
         self.titlebar = MkTitleBar(self, preset=self._preset)
@@ -606,32 +924,140 @@ class MkWindow(QMainWindow):
         style.polish(self.titlebar)
         self.titlebar.update()
 
-    def update_style(self):
+    def update_style(self, is_max: bool | None = None):
         if not self.use_custom_title_bar:
             return
             
-        radius = 0 if self.isMaximized() else self._border_radius
-        bg_color = self.titlebar._bg_color if self.titlebar._bg_color else "#ffffff"
+        if is_max is None:
+            is_max = self.isMaximized()
+            
+        self._current_is_max_state = is_max
+        radius = 0 if is_max else self._border_radius
         
-        # When maximized, frameless window should not have any border
-        if self.isMaximized():
+        from monkeyqt.themes.engine import ThemeEngine
+        theme_active = bool(ThemeEngine.current_theme())
+        tokens = ThemeEngine.current_tokens() if theme_active else {}
+        is_dark = ThemeEngine.is_dark() if theme_active else (self._preset in ["ida", "sunlogin", "soda", "ide"])
+
+        # Determine window background
+        if theme_active:
+            window_bg = tokens.get("--bg", "#ffffff")
+        elif self._preset in ["ida", "sunlogin", "soda", "ide"]:
+            window_bg = "#1e1e2e" if self._preset == "ide" else "#1e1f22" if self._preset == "sunlogin" else "#121212" if self._preset == "soda" else "#1a1a1a"
+        elif self._preset == "shadcn":
+            window_bg = "#ffffff"
+        else:
+            window_bg = "#f8fafc"
+
+        # Determine border rule (no border when maximized, theme-aware border when windowed)
+        if is_max:
             border_rule = "none"
         else:
-            border_color = "#e4e4e7" if self._preset == "shadcn" else "#3f3f3f" if self._preset == "ida" else "#313244" if self._preset == "ide" else "#e2e8f0"
+            if theme_active:
+                border_color = tokens.get("--border", "#303030" if is_dark else "#e2e8f0")
+            elif self._preset == "shadcn":
+                border_color = "#e4e4e7"
+            elif self._preset == "ida":
+                border_color = "#3f3f3f"
+            elif self._preset == "ide":
+                border_color = "#313244"
+            else:
+                border_color = "#e2e8f0"
             border_rule = f"1px solid {border_color}"
-        
-        # Dark/Light presets backgrounds
-        window_bg = "#ffffff" if self._preset == "shadcn" else "#f8fafc"
-        if self._preset in ["ida", "sunlogin", "soda", "ide"]:
-            window_bg = "#1e1e2e" if self._preset == "ide" else "#1e1f22" if self._preset == "sunlogin" else "#121212" if self._preset == "soda" else "#1a1a1a"
-            
-        self.container_frame.setStyleSheet(f"""
-            QFrame#MkWindowContainer {{
-                background-color: {window_bg};
-                border: {border_rule};
-                border-radius: {radius}px;
-            }}
-        """)
+
+        if self.container_frame:
+            self.container_frame.setStyleSheet(f"""
+                QWidget#MkWindowContainer, QFrame#MkWindowContainer {{
+                    background-color: {window_bg};
+                    border: {border_rule};
+                    border-radius: {radius}px;
+                }}
+                QWidget#MkWindowContainer[mk_maximized="true"], QFrame#MkWindowContainer[mk_maximized="true"] {{
+                    border: none;
+                    border-radius: 0px;
+                }}
+            """)
+            self.container_frame.setProperty("mk_maximized", "true" if is_max else "false")
+
+        # Eliminate sharp dead corners by coordinating outer boundary widget radii
+        if self._sidebar_host is not None:
+            self._sidebar_host.setStyleSheet(f"""
+                QWidget#MkWindowSidebarHost {{
+                    border-top-left-radius: {radius}px;
+                    border-bottom-left-radius: {radius}px;
+                    border-top-right-radius: 0px;
+                    border-bottom-right-radius: 0px;
+                }}
+                QWidget#MkWindowSidebarHost[mk_maximized="true"] {{
+                    border-top-left-radius: 0px;
+                    border-bottom-left-radius: 0px;
+                }}
+            """)
+            self._sidebar_host.setProperty("mk_maximized", "true" if is_max else "false")
+
+        if self._content_host is not None:
+            is_sidebar_full = bool(getattr(self, "_sidebar_full_height", False))
+            bl_r = 0 if is_sidebar_full else radius
+            self._content_host.setStyleSheet(f"""
+                QWidget#MkWindowContentHost {{
+                    border-bottom-right-radius: {radius}px;
+                    border-bottom-left-radius: {bl_r}px;
+                }}
+                QWidget#MkWindowContentHost[mk_maximized="true"] {{
+                    border-bottom-right-radius: 0px;
+                    border-bottom-left-radius: 0px;
+                }}
+            """)
+            self._content_host.setProperty("mk_maximized", "true" if is_max else "false")
+
+        if self._desktop_shell is not None:
+            self._desktop_shell.setStyleSheet(f"""
+                QWidget#MkWindowDesktopShell {{
+                    border-radius: {radius}px;
+                }}
+                QWidget#MkWindowDesktopShell[mk_maximized="true"] {{
+                    border-radius: 0px;
+                }}
+            """)
+            self._desktop_shell.setProperty("mk_maximized", "true" if is_max else "false")
+
+        candidate_sidebar = self._promoted_sidebar
+        if candidate_sidebar is None and self.user_central_widget is not None:
+            info = self._find_sidebar_candidate(self.user_central_widget)
+            if info:
+                candidate_sidebar = info[0]
+
+        if candidate_sidebar is not None:
+            candidate_sidebar.setProperty("mk_maximized", "true" if is_max else "false")
+            tl_r = radius if self._sidebar_full_height else 0
+            if hasattr(candidate_sidebar, "inner_frame"):
+                sb_bg = tokens.get("--sidebar-surface", tokens.get("--surface", "#f1f5f9")) if theme_active else "#f1f5f9"
+                sb_border_right = f"1px solid {tokens.get('--border', '#e2e8f0')}" if theme_active else "none"
+                if hasattr(candidate_sidebar, "_border_right_style") and candidate_sidebar._border_right_style:
+                    sb_border_right = candidate_sidebar._border_right_style
+                elif getattr(candidate_sidebar, "_border_right", None) == "none":
+                    sb_border_right = "none"
+
+                candidate_sidebar.inner_frame.setStyleSheet(f"""
+                    QFrame#SidebarInnerFrame {{
+                        background-color: {sb_bg};
+                        border: none;
+                        border-right: {sb_border_right};
+                        border-top-left-radius: {tl_r}px;
+                        border-bottom-left-radius: {radius}px;
+                        border-top-right-radius: 0px;
+                        border-bottom-right-radius: 0px;
+                    }}
+                    QFrame#SidebarInnerFrame[mk_maximized="true"] {{
+                        border-top-left-radius: 0px;
+                        border-bottom-left-radius: 0px;
+                    }}
+                """)
+                candidate_sidebar.inner_frame.setProperty("mk_maximized", "true" if is_max else "false")
+
+        if self.titlebar:
+            self.titlebar.apply_theme_colors()
+            self.titlebar.update_buttons(is_max=is_max)
 
     def setCentralWidget(self, widget: QWidget):
         if not self.use_custom_title_bar:
@@ -652,6 +1078,7 @@ class MkWindow(QMainWindow):
             self._content_host_layout.addWidget(widget, stretch=1)
             self._apply_sidebar_layout()
             self._auto_detect_and_name_right_widget()
+            self.update_style()
 
     def _apply_sidebar_layout(self):
         if not self.use_custom_title_bar or not self.user_central_widget:
@@ -682,6 +1109,7 @@ class MkWindow(QMainWindow):
         sidebar.show()
         self._sidebar_host.updateGeometry()
         self._desktop_shell.updateGeometry()
+        self.update_style()
 
     def _restore_promoted_sidebar(self):
         sidebar = self._promoted_sidebar
@@ -957,39 +1385,221 @@ class MkWindow(QMainWindow):
                 return page_id
         return None
 
+    def _enable_native_corners(self, is_max: bool | None = None):
+        import sys
+        if sys.platform == "win32":
+            try:
+                import ctypes
+                hwnd = getattr(self, "_mk_cached_hwnd", None)
+                if hwnd is None:
+                    hwnd = int(self.winId())
+                    self._mk_cached_hwnd = hwnd
+                if is_max is None:
+                    is_max = self.isMaximized()
+                # Windows 11 DWMWA_WINDOW_CORNER_PREFERENCE (33):
+                # 1 = DWMWCP_DONOTROUND (Straight right angles, fills screen without rounding)
+                # 2 = DWMWCP_ROUND (Standard Windows 11 rounded corners)
+                # 3 = DWMWCP_ROUNDSMALL (Restrained Windows 11 rounded corners)
+                pref = ctypes.c_int(1 if is_max else 2)
+                ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, 33, ctypes.byref(pref), ctypes.sizeof(pref))
+
+                border_color = ctypes.c_uint(0xFFFFFFFE)  # DWMWA_COLOR_NONE
+                ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                    hwnd,
+                    34,  # DWMWA_BORDER_COLOR
+                    ctypes.byref(border_color),
+                    ctypes.sizeof(border_color),
+                )
+            except Exception:
+                pass
+
+    def _apply_window_state_immediate(self, is_max: bool, force: bool = False):
+        try:
+            if not force and getattr(self, "_current_is_max_state", None) == is_max:
+                return
+            self._current_is_max_state = is_max
+            if self.use_custom_title_bar:
+                margin = 0 if (is_max or getattr(self, "_use_zero_margins", True) or sys.platform == "win32") else 10
+                if self.shadow_layout:
+                    self.shadow_layout.setContentsMargins(margin, margin, margin, margin)
+                if self.container_frame and self.container_frame.graphicsEffect():
+                    self.container_frame.graphicsEffect().setEnabled(not is_max and margin > 0)
+                if self._root_widget and self._root_widget.layout():
+                    self._root_widget.layout().activate()
+
+            # Fast dynamic property update: use 'mk_maximized'
+            max_str = "true" if is_max else "false"
+            for target in (
+                self.container_frame,
+                self._sidebar_host,
+                getattr(self, "_content_host", None),
+                getattr(self, "_desktop_shell", None),
+            ):
+                if target is not None:
+                    target.setProperty("mk_maximized", max_str)
+                    st = target.style()
+                    st.unpolish(target)
+                    st.polish(target)
+
+            candidate_sidebar = self._promoted_sidebar
+            if candidate_sidebar is None and self.user_central_widget is not None:
+                info = self._find_sidebar_candidate(self.user_central_widget)
+                if info:
+                    candidate_sidebar = info[0]
+
+            if candidate_sidebar is not None:
+                candidate_sidebar.setProperty("mk_maximized", max_str)
+                st = candidate_sidebar.style()
+                st.unpolish(candidate_sidebar)
+                st.polish(candidate_sidebar)
+                if hasattr(candidate_sidebar, "inner_frame"):
+                    candidate_sidebar.inner_frame.setProperty("mk_maximized", max_str)
+                    st2 = candidate_sidebar.inner_frame.style()
+                    st2.unpolish(candidate_sidebar.inner_frame)
+                    st2.polish(candidate_sidebar.inner_frame)
+
+            if self.titlebar:
+                self.titlebar.set_maximized_state(is_max)
+
+            self.update_style(is_max)
+            self._enable_native_corners(is_max)
+        except RuntimeError:
+            pass
+
+    def _get_safe_normal_geometry(self, geom=None) -> QRect:
+        """
+        Calculate a safe normal geometry that fits entirely within the screen availableGeometry.
+        - Automatically centers if unpositioned ((0, 0) or unmapped).
+        - Clamps dimensions to avoid exceeding screen work area.
+        - Keeps all 4 window edges strictly inside the available area.
+        """
+        screen = self.screen() or QGuiApplication.primaryScreen()
+        if not screen:
+            return geom if (geom and geom.isValid()) else self.geometry()
+
+        avail = screen.availableGeometry()
+        if geom is None or not geom.isValid():
+            geom = self.geometry()
+
+        # Clamp width and height to available screen size
+        w = min(geom.width(), int(avail.width() * 0.96))
+        h = min(geom.height(), int(avail.height() * 0.92))
+
+        # Check if unpositioned (e.g. at (0, 0) before being shown) or outside available area
+        if (geom.x() == 0 and geom.y() == 0) or not avail.contains(geom.topLeft()):
+            x = avail.x() + (avail.width() - w) // 2
+            y = avail.y() + (avail.height() - h) // 2
+        else:
+            x = geom.x()
+            y = geom.y()
+            if x + w > avail.right():
+                x = max(avail.left(), avail.right() - w)
+            if y + h > avail.bottom():
+                y = max(avail.top(), avail.bottom() - h)
+            if x < avail.left():
+                x = avail.left()
+            if y < avail.top():
+                y = avail.top()
+
+        return QRect(x, y, w, h)
+
+    def showMaximized(self):
+        if not self.isMaximized():
+            self._normal_geometry = self._get_safe_normal_geometry(self.geometry())
+        self._is_maximizing = True
+        self._apply_window_state_immediate(True, force=True)
+        super().showMaximized()
+        self._is_maximizing = False
+        self._apply_window_state_immediate(True, force=True)
+
+    def showNormal(self):
+        self._apply_window_state_immediate(False, force=True)
+        super().showNormal()
+        safe_geo = self._get_safe_normal_geometry(self._normal_geometry)
+        self.setGeometry(safe_geo)
+        self._normal_geometry = safe_geo
+        self._apply_window_state_immediate(False, force=True)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        if not self.isMaximized():
+            if self._normal_geometry is None or not self._normal_geometry.isValid():
+                self._normal_geometry = self._get_safe_normal_geometry(self.geometry())
+        is_max = True if getattr(self, "_is_maximizing", False) else self.isMaximized()
+        self._apply_window_state_immediate(is_max, force=True)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if self.use_custom_title_bar:
+            is_max = True if getattr(self, "_is_maximizing", False) else self.isMaximized()
+            if getattr(self, "_current_is_max_state", None) != is_max:
+                self._apply_window_state_immediate(is_max, force=True)
+            if not is_max and not getattr(self, "_is_maximizing", False):
+                self._normal_geometry = self.geometry()
+
+    def moveEvent(self, event):
+        super().moveEvent(event)
+        if not self.isMaximized() and not getattr(self, "_is_maximizing", False):
+            self._normal_geometry = self.geometry()
+
+    def nativeEvent(self, eventType, message):
+        if sys.platform == "win32" and eventType == b"windows_generic_MSG" and self.use_custom_title_bar:
+            try:
+                msg = _MSG.from_address(int(message))
+                if msg.message == 0x0084:  # WM_NCHITTEST
+                    if self.isMaximized():
+                        return super().nativeEvent(eventType, message)
+
+                    rect = wintypes.RECT()
+                    ctypes.windll.user32.GetWindowRect(msg.hwnd, ctypes.byref(rect))
+
+                    x = wintypes.SHORT(msg.lParam & 0xFFFF).value
+                    y = wintypes.SHORT((msg.lParam >> 16) & 0xFFFF).value
+
+                    win_x = x - rect.left
+                    win_y = y - rect.top
+                    win_w = rect.right - rect.left
+                    win_h = rect.bottom - rect.top
+
+                    dpr = max(1.0, float(self.devicePixelRatio()))
+                    margin = int(self._resize_margin * dpr)
+
+                    # Check 4 corners first (corners take priority over borders)
+                    if win_x <= margin and win_y <= margin:
+                        return True, 13  # HTTOPLEFT
+                    elif win_x >= win_w - margin and win_y <= margin:
+                        return True, 14  # HTTOPRIGHT
+                    elif win_x <= margin and win_y >= win_h - margin:
+                        return True, 16  # HTBOTTOMLEFT
+                    elif win_x >= win_w - margin and win_y >= win_h - margin:
+                        return True, 17  # HTBOTTOMRIGHT
+
+                    # Check 4 edges
+                    elif win_x <= margin:
+                        return True, 10  # HTLEFT
+                    elif win_x >= win_w - margin:
+                        return True, 11  # HTRIGHT
+                    elif win_y <= margin:
+                        return True, 12  # HTTOP
+                    elif win_y >= win_h - margin:
+                        return True, 15  # HTBOTTOM
+            except Exception:
+                pass
+
+        try:
+            return super().nativeEvent(eventType, message)
+        except Exception:
+            return False, 0
+
     def changeEvent(self, event: QEvent):
         super().changeEvent(event)
         if event.type() == QEvent.Type.WindowStateChange:
-            QTimer.singleShot(0, self._handle_window_state_change)
+            is_max = self.isMaximized()
+            if getattr(self, "_current_is_max_state", None) != is_max:
+                self._apply_window_state_immediate(is_max)
 
     def _handle_window_state_change(self):
-        try:
-            if self.titlebar:
-                self.titlebar.apply_theme_colors()
-                style = self.titlebar.style()
-                style.unpolish(self.titlebar)
-                style.polish(self.titlebar)
-                self.titlebar.update()
-                self.titlebar.update_buttons()
-
-            if self.use_custom_title_bar:
-                uses_native_corners = bool(getattr(self, "_mk_theme_uses_native_corners", False))
-                if self.isMaximized():
-                    self.shadow_layout.setContentsMargins(0, 0, 0, 0)
-                    if self.container_frame.graphicsEffect():
-                        self.container_frame.graphicsEffect().setEnabled(False)
-                else:
-                    if uses_native_corners:
-                        self.shadow_layout.setContentsMargins(0, 0, 0, 0)
-                        if self.container_frame.graphicsEffect():
-                            self.container_frame.graphicsEffect().setEnabled(False)
-                    else:
-                        self.shadow_layout.setContentsMargins(10, 10, 10, 10)
-                        if self.container_frame.graphicsEffect():
-                            self.container_frame.graphicsEffect().setEnabled(True)
-                self.update_style()
-        except RuntimeError:
-            pass
+        self._apply_window_state_immediate(self.isMaximized())
 
     def closeEvent(self, event):
         if self._close_behavior == "hide":
@@ -1067,15 +1677,16 @@ class MkWindow(QMainWindow):
         w = self.width()
         h = self.height()
         margin = self._resize_margin
+        offset = self.shadow_layout.contentsMargins().left() if self.shadow_layout else 0
 
-        if pos.x() < margin + 10:
+        if pos.x() < margin + offset:
             direction |= RESIZE_LEFT
-        elif pos.x() > w - margin - 10:
+        elif pos.x() > w - margin - offset:
             direction |= RESIZE_RIGHT
 
-        if pos.y() < margin + 10:
+        if pos.y() < margin + offset:
             direction |= RESIZE_TOP
-        elif pos.y() > h - margin - 10:
+        elif pos.y() > h - margin - offset:
             direction |= RESIZE_BOTTOM
 
         return direction

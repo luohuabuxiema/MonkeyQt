@@ -8,8 +8,11 @@ from PySide6.QtWidgets import QFrame, QVBoxLayout, QHBoxLayout, QScrollArea, QWi
 from PySide6.QtCore import Qt, Signal, QPoint, QEvent
 from PySide6.QtGui import QPainter, QPen, QColor
 from monkeyqt import MkCheckBox
+from monkeyqt.components.layout.widget import MkQWidget
+from monkeyqt.themes.engine import ThemeEngine
+from monkeyqt.themes.style_utils import parse_px
 
-class MkMultiComboItem(QWidget):
+class MkMultiComboItem(MkQWidget):
     """Container widget representing a single item in the checklist dropdown."""
     def __init__(self, checkbox, parent=None):
         super().__init__(parent)
@@ -22,14 +25,22 @@ class MkMultiComboItem(QWidget):
         layout.addWidget(self.checkbox)
         
         self.setAttribute(Qt.WidgetAttribute.WA_Hover, True)
-        self.setStyleSheet("""
-            QWidget {
+        self.update_theme_style()
+
+    def on_theme_changed(self, theme_name: str = ""):
+        self.update_theme_style()
+
+    def update_theme_style(self):
+        t = ThemeEngine
+        hover_bg = t.get('--surface-muted', '#f1f5f9') if not t.is_dark() else 'rgba(255, 255, 255, 0.08)'
+        self.setStyleSheet(f"""
+            QWidget {{
                 background-color: transparent;
                 border-radius: 4px;
-            }
-            QWidget:hover {
-                background-color: #f1f5f9;
-            }
+            }}
+            QWidget:hover {{
+                background-color: {hover_bg};
+            }}
         """)
 
     def mousePressEvent(self, event):
@@ -44,15 +55,9 @@ class MkMultiComboPopup(QFrame):
     def __init__(self, parent_combo):
         super().__init__(None, Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint)
         self.parent_combo = parent_combo
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         
         self.setObjectName("popup_frame")
-        self.setStyleSheet("""
-            QFrame#popup_frame {
-                background-color: #ffffff;
-                border: 1px solid #cbd5e1;
-                border-radius: 6px;
-            }
-        """)
         
         layout = QVBoxLayout(self)
         layout.setContentsMargins(4, 4, 4, 4)
@@ -62,31 +67,6 @@ class MkMultiComboPopup(QFrame):
         self.scroll_area.setObjectName("MultiComboPopupScrollArea")
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
-        self.scroll_area.setStyleSheet("""
-            QScrollArea {
-                background: transparent;
-                border: none;
-            }
-            QScrollBar:vertical {
-                background: #f1f5f9;
-                width: 10px;
-                margin: 4px 2px 4px 2px;
-                border-radius: 5px;
-            }
-            QScrollBar::handle:vertical {
-                background: #cbd5e1;
-                min-height: 20px;
-                border-radius: 5px;
-            }
-            QScrollBar::handle:vertical:hover {
-                background: #94a3b8;
-            }
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
-                background: none;
-                border: none;
-                height: 0px;
-            }
-        """)
         
         self.scroll_widget = QWidget(self.scroll_area)
         self.scroll_widget.setObjectName("scroll_widget")
@@ -101,6 +81,42 @@ class MkMultiComboPopup(QFrame):
         layout.addWidget(self.scroll_area)
         
         self.items = []
+        self.update_theme_style()
+
+    def update_theme_style(self):
+        t = ThemeEngine
+        surface = t.get("--surface", "#FFFFFF")
+        border = t.get("--border", "#E2E8F0")
+        radius = parse_px(t.get("--radius", "6px"), 6, 0, 20)
+        muted = t.get("--text-muted", "#94A3B8")
+
+        self.setStyleSheet(f"""
+            QFrame#popup_frame {{
+                background-color: {surface};
+                border: 1px solid {border};
+                border-radius: {radius}px;
+            }}
+        """)
+        self.scroll_area.setStyleSheet(f"""
+            QScrollArea {{
+                background: transparent;
+                border: none;
+            }}
+            QScrollBar:vertical {{
+                background: transparent;
+                width: 8px;
+                margin: 2px;
+                border-radius: 4px;
+            }}
+            QScrollBar::handle:vertical {{
+                background: {muted};
+                min-height: 20px;
+                border-radius: 4px;
+            }}
+        """)
+        for data, text, chk, item_widget in getattr(self, "items", []):
+            if hasattr(item_widget, "update_theme_style"):
+                item_widget.update_theme_style()
         
     def add_item(self, text, data):
         chk = MkCheckBox(text, self.scroll_widget)
@@ -226,27 +242,41 @@ class MkMultiComboBox(QFrame):
         # Setup popup
         self.popup = MkMultiComboPopup(self)
         
-        # QFrame Stylesheet matching Element Plus Select border colors
-        self.setStyleSheet("""
-            QFrame#combo_frame {
-                background-color: #ffffff;
-                border: 1px solid #e2e8f0;
-                border-radius: 6px;
-                min-height: 32px;
-                max-height: 32px;
-            }
-            QFrame#combo_frame:hover {
-                border-color: #cbd5e1;
-            }
-            QFrame#combo_frame[focused="true"] {
-                border-color: #3b82f6;
-            }
-        """)
+        ThemeEngine.instance().themeChanged.connect(self.update_theme_style)
+        self.update_theme_style()
         
         # Install event filters to handle clicks on child components
         self.scroll_area.installEventFilter(self)
         self.scroll_area.viewport().installEventFilter(self)
         self.text_label.installEventFilter(self)
+
+    def update_theme_style(self, style_name: str = None):
+        t = ThemeEngine
+        is_dark = t.is_dark()
+        surface = t.get("--surface", "#FFFFFF")
+        border = t.get("--border", "#E2E8F0")
+        radius = parse_px(t.get("--radius", "6px"), 6, 0, 20)
+        focus_border = t.get("--input-focus-border", "#FFFFFF" if is_dark else "#0F172A")
+        hover_border = t.get("--input-hover-border", "rgba(255, 255, 255, 0.40)" if is_dark else "#94A3B8")
+
+        self.setStyleSheet(f"""
+            QFrame#combo_frame {{
+                background-color: {surface};
+                border: 1px solid {border};
+                border-radius: {radius}px;
+                min-height: 32px;
+                max-height: 32px;
+            }}
+            QFrame#combo_frame:hover {{
+                border-color: {hover_border};
+            }}
+            QFrame#combo_frame[focused="true"] {{
+                border-color: {focus_border};
+            }}
+        """)
+        self._update_text()
+        if hasattr(self, "popup") and hasattr(self.popup, "update_theme_style"):
+            self.popup.update_theme_style()
 
     def eventFilter(self, obj, event):
         if event.type() == QEvent.Type.MouseButtonPress:

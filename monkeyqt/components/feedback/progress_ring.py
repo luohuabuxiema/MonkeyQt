@@ -3,9 +3,10 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QSizePolicy
 from PySide6.QtCore import Qt, Property, Signal, QRectF
 from PySide6.QtGui import QColor, QPainter, QPen
 
+from monkeyqt.components.layout.widget import MkQWidget
 from ...core.theme import ThemeManager
 
-class MkProgressRing(QWidget):
+class MkProgressRing(MkQWidget):
     """
     进度环 (Progress Ring) 组件
     支持不同的状态、线宽。
@@ -36,19 +37,28 @@ class MkProgressRing(QWidget):
 
         self._update_style()
 
+    def on_theme_changed(self, theme_name: str = ""):
+        self._update_style()
+
     def _get_color(self):
+        from monkeyqt.themes.engine import ThemeEngine
+        t = ThemeEngine
+        normal = t.get("--primary", "#0F172A" if not t.is_dark() else "#FFFFFF")
         colors = {
-            "normal": "#409eff",
-            "success": "#67c23a",
-            "warning": "#e6a23c",
-            "exception": "#f56c6c"
+            "normal": normal,
+            "success": "#22c55e",
+            "warning": "#f59e0b",
+            "exception": "#ef4444"
         }
         return colors.get(self._status, colors["normal"])
 
     def _update_style(self):
+        from monkeyqt.themes.engine import ThemeEngine
+        t = ThemeEngine
+        fg = t.get("--fg", "#606266" if not t.is_dark() else "#F8FAFC")
         self.text_label.setStyleSheet(f"""
             QLabel {{
-                color: #606266;
+                color: {fg};
                 font-size: {max(12, int(self._ring_width * 0.15))}px;
             }}
         """)
@@ -65,8 +75,10 @@ class MkProgressRing(QWidget):
             self.height() - self._stroke_width
         )
 
+        from monkeyqt.themes.engine import ThemeEngine
+        track_bg = ThemeEngine.get("--surface-muted", "#ebeef5" if not ThemeEngine.is_dark() else "#27272A")
         # Draw background track
-        pen_bg = QPen(QColor("#ebeef5"))
+        pen_bg = QPen(QColor(track_bg))
         pen_bg.setWidth(self._stroke_width)
         pen_bg.setCapStyle(Qt.RoundCap)
         painter.setPen(pen_bg)

@@ -9,9 +9,10 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTextEd
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QTextCursor, QIcon
 from monkeyqt.core.icons import MkPhosphorIcon
+from monkeyqt.components.layout.widget import MkQWidget
 
 
-class MkConsole(QWidget):
+class MkConsole(MkQWidget):
     """
     一个美观且功能丰富的控制台日志输出组件。
     支持 68 种主题适配、自动滚动、行数限制、一键清空和多级日志高亮。
@@ -33,8 +34,9 @@ class MkConsole(QWidget):
         }
 
         self._init_ui(title)
-        from monkeyqt.themes.engine import ThemeEngine
-        ThemeEngine.instance().themeChanged.connect(self.apply_theme_colors)
+        self.apply_theme_colors()
+
+    def on_theme_changed(self, theme_name: str = ""):
         self.apply_theme_colors()
 
     def _init_ui(self, title):
@@ -125,62 +127,44 @@ class MkConsole(QWidget):
             "debug": text_muted
         }
 
-        # 刷新背景与文字
-        self.title_icon.setStyleSheet("background: transparent;")
-        self.title_label.setStyleSheet(f"color: {fg}; background: transparent;")
-        self.badge_widget.setStyleSheet("background: transparent;")
-
-        # 刷新计数指示面板文字颜色与背景
-        self.lbl_info_count.setStyleSheet(f"color: {self._level_colors['info']}; background: transparent;")
-        self.lbl_success_count.setStyleSheet(f"color: {self._level_colors['success']}; background: transparent;")
-        self.lbl_warn_count.setStyleSheet(f"color: {self._level_colors['warning']}; background: transparent;")
-        self.lbl_err_count.setStyleSheet(f"color: {self._level_colors['error']}; background: transparent;")
-
-        # 应用 QSS 样式表
+        # 刷新整体与子部件样式
         self.setStyleSheet(f"""
+            MkConsole {{
+                background-color: {bg};
+                border: 1px solid {border};
+                border-radius: 8px;
+            }}
+        """)
+        self.header_widget.setStyleSheet(f"""
             QWidget#ConsoleHeader {{
                 background-color: {header_bg};
+                border-top-left-radius: 8px;
+                border-top-right-radius: 8px;
                 border-bottom: 1px solid {border};
-                border-top-left-radius: 6px;
-                border-top-right-radius: 6px;
             }}
+        """)
+        self.title_label.setStyleSheet(f"color: {fg}; background: transparent; border: none;")
+        self.text_edit.setStyleSheet(f"""
             QTextEdit {{
                 background-color: {bg};
                 color: {fg};
-                border: 1px solid {border};
-                border-top: none;
-                border-bottom-left-radius: 6px;
-                border-bottom-right-radius: 6px;
+                border: none;
+                border-bottom-left-radius: 8px;
+                border-bottom-right-radius: 8px;
+                padding: 8px 10px;
             }}
         """)
-        
-        # 刷新清除按钮样式与图标
-        btn_press_bg = t._darken_hex(primary, 0.1) if (t and hasattr(t, "_darken_hex") and primary.startswith("#")) else "#E0E7FF"
-        self.btn_clear.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {header_bg};
-                color: {fg};
-                border: 1px solid {border};
-                border-radius: 4px;
-                padding: 4px 10px;
-                font-weight: bold;
-                font-size: 11px;
-            }}
-            QPushButton:hover {{
-                background-color: {primary};
-                color: #FFFFFF;
-                border-color: {primary};
-            }}
-            QPushButton:pressed {{
-                background-color: {btn_press_bg};
-                color: #FFFFFF;
-                border-color: {btn_press_bg};
-            }}
-        """)
-        
+
+        # 刷新计数指示面板文字颜色与背景
+        self.lbl_info_count.setStyleSheet(f"color: {self._level_colors['info']}; background: transparent; border: none;")
+        self.lbl_success_count.setStyleSheet(f"color: {self._level_colors['success']}; background: transparent; border: none;")
+        self.lbl_warn_count.setStyleSheet(f"color: {self._level_colors['warning']}; background: transparent; border: none;")
+        self.lbl_err_count.setStyleSheet(f"color: {self._level_colors['error']}; background: transparent; border: none;")
+
         self.title_icon.setPixmap(MkPhosphorIcon.get_pixmap("terminal-window", text_muted, 16))
         self.btn_clear.setIcon(MkPhosphorIcon.get_icon("trash", fg, hover_color="#FFFFFF", size=14))
         self.btn_clear.update()
+        self.update()
 
     def log(self, text: str, level: str = "info", timestamp: bool = True):
         """

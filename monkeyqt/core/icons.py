@@ -155,6 +155,14 @@ PHOSPHOR_ICONS = {
         <rect width="256" height="256" fill="none"/>
         <rect x="40" y="40" width="176" height="176" rx="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
         <line x1="96" y1="40" x2="96" y2="216" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+    </svg>""",
+    
+    "folder": """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+        <path fill="currentColor" d="M216,72H130.67L102.93,44.27A8,8,0,0,0,97.27,42H40A16,16,0,0,0,24,58V198a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V88A16,16,0,0,0,216,72ZM40,58H93.94l24,24H40ZM216,198H40V98H216V198Z"/>
+    </svg>""",
+    
+    "database": """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+        <path fill="currentColor" d="M128,24C75,24,32,43.7,32,68v120c0,24.3,43,44,96,44s96-19.7,96-44V68C224,43.7,181,24,128,24Zm80,164c0,12.72-33.15,28-80,28s-80-15.28-80-28V151.75C64.08,161.42,93.63,168,128,168s63.92-6.58,80-16.25Zm0-52c0,12.72-33.15,28-80,28s-80-15.28-80-28V99.75C64.08,109.42,93.63,116,128,116s63.92-6.58,80-16.25Zm0-52c-8.76,6.72-38.64,20-80,20s-71.24-13.28-80-20c8.76-6.72,38.64-20,80-20S199.24,71.28,208,84Z"/>
     </svg>"""
 }
 

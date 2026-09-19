@@ -4,8 +4,9 @@ from PySide6.QtCore import Qt, Property, Signal
 from PySide6.QtGui import QIcon, QPixmap, QPainter
 
 from ...core.theme import ThemeManager
+from ..layout.widget import MkQWidget
 
-class MkAlert(QWidget):
+class MkAlert(MkQWidget):
     """
     信息条 (Alert) 组件
     用于页面中展示重要的提示信息。
@@ -34,6 +35,9 @@ class MkAlert(QWidget):
         self._show_icon = show_icon
 
         self._setup_ui()
+        self._update_style()
+
+    def on_theme_changed(self, theme_name: str = ""):
         self._update_style()
 
     def _setup_ui(self):
@@ -94,44 +98,75 @@ class MkAlert(QWidget):
         self.icon_label.setText(icons.get(self._mk_type, "ℹ"))
         self.icon_label.setObjectName(f"alert-icon-{self._mk_type}")
 
-    def _update_style(self):
-        # Base colors from Element Plus for Alerts
-        colors = {
-            "info": {"bg": "#f4f4f5", "text": "#909399", "border": "#e9e9eb", "icon": "#909399"},
-            "success": {"bg": "#f0f9eb", "text": "#67c23a", "border": "#e1f3d8", "icon": "#67c23a"},
-            "warning": {"bg": "#fdf6ec", "text": "#e6a23c", "border": "#faecd8", "icon": "#e6a23c"},
-            "error": {"bg": "#fef0f0", "text": "#f56c6c", "border": "#fde2e2", "icon": "#f56c6c"}
-        }
+    def _update_style(self, theme_name: str = None):
+        try:
+            from monkeyqt.themes.engine import ThemeEngine
+            t = ThemeEngine
+            is_dark = t.is_dark()
+            fg = t.get("--fg", "#0F172A")
+            muted = t.get("--text-muted", "#64748B")
+            radius = t.get("--radius", "6px")
+        except Exception:
+            is_dark = False
+            fg = "#0F172A"
+            muted = "#64748B"
+            radius = "6px"
+
+        if is_dark:
+            colors = {
+                "info": {"bg": "rgba(148, 163, 184, 0.12)", "text": "#E2E8F0", "border": "rgba(148, 163, 184, 0.25)", "icon": "#94A3B8"},
+                "success": {"bg": "rgba(16, 185, 129, 0.15)", "text": "#34D399", "border": "rgba(16, 185, 129, 0.30)", "icon": "#10B981"},
+                "warning": {"bg": "rgba(245, 158, 11, 0.15)", "text": "#FBBF24", "border": "rgba(245, 158, 11, 0.30)", "icon": "#F59E0B"},
+                "error": {"bg": "rgba(239, 68, 68, 0.15)", "text": "#F87171", "border": "rgba(239, 68, 68, 0.30)", "icon": "#EF4444"}
+            }
+            title_color = fg if self._description else None
+            desc_color = muted
+            close_color = muted
+            close_hover = fg
+        else:
+            colors = {
+                "info": {"bg": "#f4f4f5", "text": "#64748b", "border": "#e2e8f0", "icon": "#64748b"},
+                "success": {"bg": "#ecfdf5", "text": "#059669", "border": "#a7f3d0", "icon": "#10b981"},
+                "warning": {"bg": "#fffbeb", "text": "#d97706", "border": "#fde68a", "icon": "#f59e0b"},
+                "error": {"bg": "#fef2f2", "text": "#dc2626", "border": "#fecaca", "icon": "#ef4444"}
+            }
+            title_color = "#0F172A" if self._description else None
+            desc_color = "#475569"
+            close_color = "#94A3B8"
+            close_hover = "#0F172A"
         
         c = colors.get(self._mk_type, colors["info"])
+        actual_title_color = title_color or c['text']
         
         qss = f"""
             MkAlert {{
                 background-color: {c['bg']};
-                border-radius: 4px;
-                border: 1px solid {c['bg']}; /* Default without border, but can be customized */
+                border-radius: {radius};
+                border: 1px solid {c['border']};
             }}
             QLabel {{
                 background-color: transparent;
             }}
             #alert-title {{
-                color: {c['text'] if not self._description else '#303133'};
+                color: {actual_title_color};
                 font-size: 13px;
                 font-weight: {'bold' if self._description else 'normal'};
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif;
             }}
             #alert-desc {{
-                color: #606266;
+                color: {desc_color};
                 font-size: 12px;
                 margin-top: 4px;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif;
             }}
             #alert-close-btn {{
                 background: transparent;
                 border: none;
-                color: #c0c4cc;
+                color: {close_color};
                 font-size: 12px;
             }}
             #alert-close-btn:hover {{
-                color: #909399;
+                color: {close_hover};
             }}
             QLabel[objectName^="alert-icon-"] {{
                 color: {c['icon']};

@@ -47,7 +47,10 @@ def _set_windows_corner_preference(widget: QWidget, rounded: bool) -> bool:
     if sys.platform != "win32":
         return False
     try:
-        hwnd = int(widget.winId())
+        hwnd = getattr(widget, "_mk_cached_hwnd", None)
+        if hwnd is None:
+            hwnd = int(widget.winId())
+            widget._mk_cached_hwnd = hwnd
         # ROUND_SMALL matches the restrained Windows 11/Codex window radius.
         preference = ctypes.c_int(3 if rounded else 1)  # ROUND_SMALL / DO_NOT_ROUND
         result = ctypes.windll.dwmapi.DwmSetWindowAttribute(
@@ -89,7 +92,8 @@ def _apply_native_window_corners(widget: QWidget, p: dict[str, str | int | bool]
             "shadow_enabled": shadow.isEnabled() if shadow is not None else None,
         }
 
-    rounded = int(p["radius_px"]) > 0 and not bool(p["flat"])
+    is_max = hasattr(widget, "isMaximized") and widget.isMaximized()
+    rounded = (not is_max) and int(p["radius_px"]) > 0 and not bool(p["flat"])
     widget.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
     if getattr(widget, "shadow_layout", None) is not None:
         widget.shadow_layout.setContentsMargins(0, 0, 0, 0)
@@ -263,7 +267,7 @@ _SUPPORTED_THEME_CLASSES = {
     "MkSubMenu", "MkTopbar", "MkTopbarItem", "MkTabs", "MkTabButton",
     "MkPagination", "MkBreadcrumbItem", "MkTable", "MkDataTable", "MkUpload",
     "MkCaptchaWidget", "MkAuthScreen", "MkMessage", "MkAvatar", "MkTitleBar",
-    "MkWindow", "YoloDashboardWidget", "MkConsole",
+    "MkWindow", "YoloDashboardWidget", "MkConsole", "MkQWidget", "MkWidget",
     
     # Native PySide6 widgets
     "QLabel", "QPushButton", "QCommandLinkButton", "QToolButton", "QLineEdit",
@@ -290,21 +294,33 @@ def _theme_class_name(widget: QWidget) -> str:
 def apply_monkeyqt_theme(
     root: QWidget | None = None,
     *,
-    skip_self_managed: bool = False,
+    skip_self_managed: bool = True,
+    force_traverse: bool = False,
 ) -> None:
     """Apply token styling to the supported components below *root*.
-
-    ``skip_self_managed`` is used by the global manager immediately after the
-    ``themeChanged`` signal. Components exposing ``set_theme_style`` have
-    already handled that signal, so invoking the same method again would only
-    repeat their QSS work. Direct and automatic subtree applications keep the
-    default so newly-created widgets are still initialized correctly.
+    Core styling is handled natively by Qt C++ tree cascade via ThemeEngine._build_global_qss.
     """
-    widgets = list(_iter_widgets(root))
-
-
     palette = _palette()
     _apply_date_picker_theme(palette)
+
+    if root is None:
+        app = QApplication.instance()
+        if app is not None:
+            for w in app.topLevelWidgets():
+                if w.isWindow():
+                    _apply_native_window_corners(w, palette)
+        return
+
+    # If root is a top-level window
+    if hasattr(root, "isWindow") and root.isWindow():
+        _apply_native_window_corners(root, palette)
+
+    # When Qt native C++ tree cascade is active (default), skip heavy Python traversal
+    if not force_traverse or skip_self_managed:
+        return
+
+    widgets = [root]
+    widgets.extend(root.findChildren(QWidget))
     for widget in widgets:
         if _should_skip(widget) or not _is_theme_supported(widget):
             continue
@@ -712,8 +728,32 @@ def _palette() -> dict[str, str | int | bool]:
     chrome_surface = tokens.get("--titlebar-bg", chrome_surface)
     sidebar_text = readable_text(sidebar_surface)
     chrome_text = readable_text(chrome_surface)
-    sidebar_muted = _readable_muted(sidebar_surface)
-    sidebar_accent = "#E5E5E5" if _theme_name_has("dark mode", "oled") else primary
+    sidebar_active_bg = tokens.get("--sidebar-active-bg", "rgba(255, 255, 255, 0.12)" if t.is_dark() else "rgba(0, 0, 0, 0.08)")
+    sidebar_active_fg = tokens.get("--sidebar-active-fg", "#FFFFFF" if t.is_dark() else "#0F172A")
+    sidebar_hover_bg = tokens.get("--sidebar-hover-bg", "rgba(255, 255, 255, 0.06)" if t.is_dark() else "rgba(0, 0, 0, 0.04)")
+    sidebar_muted = tokens.get("--sidebar-text-muted", _readable_muted(sidebar_surface))
+    sidebar_accent = sidebar_active_fg
+    input_focus_border = tokens.get("--input-focus-border", "#FFFFFF" if t.is_dark() else "#0F172A")
+    input_hover_border = tokens.get("--input-hover-border", "rgba(255, 255, 255, 0.40)" if t.is_dark() else "#94A3B8")
+
+    if t.is_glow() or t.is_brutal() or t.is_pixel():
+        pagination_active_bg = primary
+        pagination_active_fg = readable_text(primary)
+        pagination_active_border = primary
+        pagination_hover_bg = str(surface_muted)
+        pagination_hover_fg = primary
+    elif t.is_dark():
+        pagination_active_bg = "#FFFFFF"
+        pagination_active_fg = "#0F172A"
+        pagination_active_border = "#FFFFFF"
+        pagination_hover_bg = "rgba(255, 255, 255, 0.10)"
+        pagination_hover_fg = "#FFFFFF"
+    else:
+        pagination_active_bg = "#0F172A"
+        pagination_active_fg = "#FFFFFF"
+        pagination_active_border = "#0F172A"
+        pagination_hover_bg = "rgba(0, 0, 0, 0.05)"
+        pagination_hover_fg = "#0F172A"
 
     flat = t.is_brutal() or t.is_pixel()
     radius_px = 0 if flat else parse_px(tokens.get("--radius", "6px"), 6, 0, 32)
@@ -741,6 +781,16 @@ def _palette() -> dict[str, str | int | bool]:
         "chrome_text": chrome_text,
         "sidebar_muted": sidebar_muted,
         "sidebar_accent": sidebar_accent,
+        "sidebar_active_bg": sidebar_active_bg,
+        "sidebar_active_fg": sidebar_active_fg,
+        "sidebar_hover_bg": sidebar_hover_bg,
+        "input_focus_border": input_focus_border,
+        "input_hover_border": input_hover_border,
+        "pagination_active_bg": pagination_active_bg,
+        "pagination_active_fg": pagination_active_fg,
+        "pagination_active_border": pagination_active_border,
+        "pagination_hover_bg": pagination_hover_bg,
+        "pagination_hover_fg": pagination_hover_fg,
         "surface_muted": surface_muted,
         "radius": f"{radius_px}px",
         "radius_px": radius_px,
@@ -847,6 +897,8 @@ def _apply_widget(
     elif name == "MkConsole":
         if hasattr(widget, "_update_style"):
             widget._update_style()
+    elif name in ("MkQWidget", "MkWidget"):
+        widget.update()
     elif name == "MkWindow":
         _apply_window(widget, p)
     elif name == "MkTitleBar":
@@ -1982,12 +2034,21 @@ def _apply_window(widget: QWidget, p: dict[str, str | int | bool]) -> None:
     if not hasattr(widget, "_mk_theme_original_update_style") and hasattr(widget, "update_style"):
         widget._mk_theme_original_update_style = widget.update_style
 
-        def _theme_update_style(self):
-            result = self._mk_theme_original_update_style()
+        def _theme_update_style(self, is_max: bool | None = None):
+            result = self._mk_theme_original_update_style(is_max)
             palette = _palette()
             _apply_window(self, palette)
             if getattr(self, "container_frame", None) is not None:
                 _apply_window_container(self.container_frame, palette)
+            candidate_sidebar = getattr(self, "_promoted_sidebar", None)
+            if candidate_sidebar is None and getattr(self, "user_central_widget", None) is not None:
+                info = self._find_sidebar_candidate(self.user_central_widget)
+                if info:
+                    candidate_sidebar = info[0]
+            if candidate_sidebar is not None:
+                _apply_menu(candidate_sidebar, palette)
+            if getattr(self, "titlebar", None) is not None:
+                _force_titlebar_theme(self.titlebar, palette)
             return result
 
         widget.update_style = types.MethodType(_theme_update_style, widget)
@@ -2031,10 +2092,14 @@ def _apply_window_container(widget: QWidget, p: dict[str, str | int | bool]) -> 
     surface = _control_surface(p, floating=True) if p["glass"] else str(p["chrome_surface"] if p["dark"] else p["bg"])
     widget.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
     widget.setStyleSheet(f"""
-        QFrame#MkWindowContainer {{
+        QWidget#MkWindowContainer, QFrame#MkWindowContainer {{
             background-color: {surface};
             border: {border_rule};
             border-radius: {radius}px;
+        }}
+        QWidget#MkWindowContainer[mk_maximized="true"], QFrame#MkWindowContainer[mk_maximized="true"] {{
+            border: none;
+            border-radius: 0px;
         }}
     """)
     if native_corners or is_maximized:
@@ -2047,6 +2112,8 @@ def _apply_window_container(widget: QWidget, p: dict[str, str | int | bool]) -> 
         try:
             shadow.setColor(QColor(0, 0, 0, 90 if p["dark"] else 45))
             shadow.setBlurRadius(22 if p["glass"] else 15)
+            if is_maximized:
+                shadow.setEnabled(False)
         except RuntimeError:
             pass
 
@@ -2054,10 +2121,19 @@ def _apply_window_container(widget: QWidget, p: dict[str, str | int | bool]) -> 
     if content_host is not None:
         _save_widget(content_host)
         content_host.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        is_sidebar_full = bool(getattr(window, "_sidebar_full_height", False))
+        ch_radius = 0 if is_maximized else radius
+        bl_radius = 0 if (is_sidebar_full or is_maximized) else ch_radius
         content_host.setStyleSheet(f"""
             QWidget#MkWindowContentHost {{
                 background-color: {p['bg']};
                 border: none;
+                border-bottom-right-radius: {ch_radius}px;
+                border-bottom-left-radius: {bl_radius}px;
+            }}
+            QWidget#MkWindowContentHost[mk_maximized="true"] {{
+                border-bottom-right-radius: 0px;
+                border-bottom-left-radius: 0px;
             }}
         """)
 
@@ -2065,10 +2141,15 @@ def _apply_window_container(widget: QWidget, p: dict[str, str | int | bool]) -> 
     if desktop_shell is not None:
         _save_widget(desktop_shell)
         desktop_shell.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        ds_radius = 0 if is_maximized else radius
         desktop_shell.setStyleSheet(f"""
             QWidget#MkWindowDesktopShell {{
-                background-color: {p['bg']};
+                background-color: transparent;
                 border: none;
+                border-radius: {ds_radius}px;
+            }}
+            QWidget#MkWindowDesktopShell[mk_maximized="true"] {{
+                border-radius: 0px;
             }}
         """)
 
@@ -2076,10 +2157,17 @@ def _apply_window_container(widget: QWidget, p: dict[str, str | int | bool]) -> 
     if sidebar_host is not None:
         _save_widget(sidebar_host)
         sidebar_host.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        sb_radius = 0 if is_maximized else (getattr(window, "_border_radius", 8) if not native_corners else 0)
         sidebar_host.setStyleSheet(f"""
             QWidget#MkWindowSidebarHost {{
                 background-color: {p['sidebar_surface']};
                 border: none;
+                border-top-left-radius: {sb_radius}px;
+                border-bottom-left-radius: {sb_radius}px;
+            }}
+            QWidget#MkWindowSidebarHost[mk_maximized="true"] {{
+                border-top-left-radius: 0px;
+                border-bottom-left-radius: 0px;
             }}
         """)
 
@@ -2122,9 +2210,35 @@ def _apply_titlebar(widget: QWidget, p: dict[str, str | int | bool]) -> None:
             palette = _palette()
             surface = _titlebar_surface(self, palette)
 
+            window = self.window()
+            is_max = hasattr(window, "isMaximized") and window.isMaximized()
+            radius = 0 if is_max else getattr(window, "_border_radius", 8)
+            follows_content = bool(self.property("mkContentAlignedTitleBar"))
+            if not follows_content:
+                follows_content = bool(getattr(window, "_sidebar_full_height", False))
+
+            tl_r = 0 if follows_content else radius
+            tr_r = radius
+
             painter = QPainter(self)
-            painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
-            painter.fillRect(self.rect(), QColor(surface))
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(QColor(surface))
+            if tl_r == 0 and tr_r == 0:
+                painter.drawRect(self.rect())
+            else:
+                path = QPainterPath()
+                rect = QRectF(self.rect())
+                path.moveTo(rect.bottomLeft())
+                path.lineTo(rect.left(), rect.top() + tl_r)
+                if tl_r > 0:
+                    path.arcTo(rect.left(), rect.top(), tl_r * 2, tl_r * 2, 180, -90)
+                path.lineTo(rect.right() - tr_r, rect.top())
+                if tr_r > 0:
+                    path.arcTo(rect.right() - tr_r * 2, rect.top(), tr_r * 2, tr_r * 2, 90, -90)
+                path.lineTo(rect.bottomRight())
+                path.closeSubpath()
+                painter.drawPath(path)
             painter.end()
 
         widget.paintEvent = types.MethodType(_theme_paint_event, widget)
@@ -2136,6 +2250,15 @@ def _force_titlebar_theme(widget: QWidget, p: dict[str, str | int | bool]) -> No
     surface = _titlebar_surface(widget, p)
     hover = _control_muted_surface(p) if p["glass"] else str(p["surface_muted"])
     text = readable_text(surface)
+
+    window = widget.window()
+    is_max = hasattr(window, "isMaximized") and window.isMaximized()
+    radius = 0 if is_max else getattr(window, "_border_radius", 8)
+    follows_content = bool(widget.property("mkContentAlignedTitleBar"))
+    if not follows_content:
+        follows_content = bool(getattr(window, "_sidebar_full_height", False))
+    tl_radius = 0 if follows_content else radius
+    tr_radius = radius
 
     widget._bg_color = surface
     widget._text_color = text
@@ -2154,6 +2277,8 @@ def _force_titlebar_theme(widget: QWidget, p: dict[str, str | int | bool]) -> No
             background-color: {surface};
             color: {text};
             border: none;
+            border-top-left-radius: {tl_radius}px;
+            border-top-right-radius: {tr_radius}px;
         }}
         QWidget#MkTitleBar QLabel {{
             color: {text};
@@ -2189,18 +2314,81 @@ def _force_titlebar_theme(widget: QWidget, p: dict[str, str | int | bool]) -> No
             if btn is None:
                 continue
             _save_widget(btn)
-            btn.setStyleSheet(f"""
-                QPushButton {{
-                    background-color: transparent;
-                    border: none;
-                    border-radius: 0px;
-                    color: {text};
-                }}
-                QPushButton:hover {{
-                    background-color: {'#E81123' if is_close else hover};
-                    color: {'#FFFFFF' if is_close else text};
-                }}
-            """)
+            if is_close:
+                from monkeyqt.components.layout.window import MkTitleBarCloseButton
+                if isinstance(btn, MkTitleBarCloseButton):
+                    btn.setStyleSheet(f"""
+                        QPushButton {{
+                            background-color: transparent;
+                            border: none;
+                            margin: 0px;
+                            padding: 0px;
+                            color: {text};
+                        }}
+                    """)
+                    btn.update()
+                    continue
+                btn.setStyleSheet(f"""
+                    QPushButton {{
+                        background-color: transparent;
+                        border: none;
+                        border-top-right-radius: {tr_radius}px;
+                        border-top-left-radius: 0px;
+                        border-bottom-right-radius: 0px;
+                        border-bottom-left-radius: 0px;
+                        margin: 0px;
+                        padding: 0px;
+                        color: {text};
+                    }}
+                    QPushButton[mk_maximized="true"] {{
+                        border-top-right-radius: 0px;
+                    }}
+                    QPushButton:hover {{
+                        background-color: #E81123;
+                        color: #FFFFFF;
+                        border-top-right-radius: {tr_radius}px;
+                        border-top-left-radius: 0px;
+                        border-bottom-right-radius: 0px;
+                        border-bottom-left-radius: 0px;
+                        margin: 0px;
+                        padding: 0px;
+                    }}
+                    QPushButton[mk_maximized="true"]:hover {{
+                        border-top-right-radius: 0px;
+                    }}
+                    QPushButton:pressed {{
+                        background-color: #C42B1C;
+                        color: #FFFFFF;
+                        border-top-right-radius: {tr_radius}px;
+                        border-top-left-radius: 0px;
+                        border-bottom-right-radius: 0px;
+                        border-bottom-left-radius: 0px;
+                        margin: 0px;
+                        padding: 0px;
+                    }}
+                    QPushButton[mk_maximized="true"]:pressed {{
+                        border-top-right-radius: 0px;
+                    }}
+                """)
+            else:
+                btn.setStyleSheet(f"""
+                    QPushButton {{
+                        background-color: transparent;
+                        border: none;
+                        border-radius: 0px;
+                        margin: 0px;
+                        padding: 0px;
+                        color: {text};
+                    }}
+                    QPushButton:hover {{
+                        background-color: {hover};
+                        color: {text};
+                    }}
+                    QPushButton:pressed {{
+                        background-color: {hover};
+                        color: {text};
+                    }}
+                """)
 
 
 def _restore_titlebar(widget: QWidget) -> None:
@@ -2412,10 +2600,10 @@ def _input_qss(p: dict[str, str | int | bool]) -> str:
             selection-color: {p['primary_text']};
         }}
         QLineEdit:hover, MkInput:hover, MkDatePicker:hover {{
-            border-color: {primary};
+            border-color: {p['input_hover_border']};
         }}
         QLineEdit:focus, MkInput:focus, MkDatePicker:focus {{
-            border-color: {primary};
+            border-color: {p['input_focus_border']};
             background-color: {focus_surface};
         }}
         QLineEdit:disabled, MkInput:disabled, MkDatePicker:disabled {{
@@ -2447,10 +2635,10 @@ def _combobox_qss(p: dict[str, str | int | bool]) -> str:
             font-size: 13px;
         }}
         QComboBox:hover, MkComboBox:hover {{
-            border-color: {primary};
+            border-color: {p['input_hover_border']};
         }}
         QComboBox:on, QComboBox:focus, MkComboBox:on, MkComboBox:focus {{
-            border-color: {primary};
+            border-color: {p['input_focus_border']};
             background-color: {focus_surface};
         }}
         QComboBox::drop-down {{
@@ -2527,6 +2715,9 @@ def _apply_combobox_view(widget: QWidget, p: dict[str, str | int | bool]) -> Non
         if container is not None and container is not widget:
             _save_widget(container)
             container.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+            container.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+            if container.window() is not None:
+                container.window().setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
             container.setStyleSheet(f"""
                 QFrame {{
                     background-color: {popup_surface};
@@ -3375,11 +3566,24 @@ def _apply_progress(widget: QWidget, p: dict[str, str | int | bool]) -> None:
     widget.update()
 
 def _apply_menu(widget: QWidget, p: dict[str, str | int | bool]) -> None:
+    window = widget.window()
+    is_max = hasattr(window, "isMaximized") and window.isMaximized()
+    win_radius = 0 if is_max else getattr(window, "_border_radius", 8)
+    sidebar_full = getattr(window, "_sidebar_full_height", False)
+    tl_r = win_radius if sidebar_full else 0
+    bl_r = win_radius
+
     widget.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
     widget.setStyleSheet(f"""
         MkMenu {{
             background-color: transparent;
             border: none;
+            border-top-left-radius: {tl_r}px;
+            border-bottom-left-radius: {bl_r}px;
+        }}
+        MkMenu[mk_maximized="true"] {{
+            border-top-left-radius: 0px;
+            border-bottom-left-radius: 0px;
         }}
     """)
     if hasattr(widget, "inner_frame"):
@@ -3390,7 +3594,14 @@ def _apply_menu(widget: QWidget, p: dict[str, str | int | bool]) -> None:
                 background-color: {p['sidebar_surface']};
                 border: none;
                 border-right: {border_right};
-                border-radius: 0px;
+                border-top-left-radius: {tl_r}px;
+                border-bottom-left-radius: {bl_r}px;
+                border-top-right-radius: 0px;
+                border-bottom-right-radius: 0px;
+            }}
+            QFrame#SidebarInnerFrame[mk_maximized="true"] {{
+                border-top-left-radius: 0px;
+                border-bottom-left-radius: 0px;
             }}
         """)
     if hasattr(widget, "hamburger_btn"):
@@ -3519,20 +3730,28 @@ def _apply_menu_item(widget: QWidget, p: dict[str, str | int | bool]) -> None:
             widget._label_hover_style,
         )
 
-    widget._base_style = """
-        MkMenuItem {
+    widget._base_style = f"""
+        MkMenuItem {{
             border: none;
-            background: transparent;
-            padding: 0px;
-            margin: 0px;
-        }
-        MkMenuItem:hover { background-color: transparent; }
-        MkMenuItem:checked { background-color: transparent; }
+            background-color: transparent;
+            border-radius: 8px;
+            margin: 2px 10px;
+            padding: 0px 8px;
+        }}
+        MkMenuItem:hover {{
+            background-color: {p['sidebar_hover_bg']};
+            border-radius: 8px;
+        }}
+        MkMenuItem:checked {{
+            background-color: {p['sidebar_active_bg']};
+            border-radius: 8px;
+        }}
     """
     widget._label_style = f"""
         QLabel {{
             color: {p['sidebar_muted']};
             font-size: 14px;
+            font-weight: 500;
             font-family: {p['font']};
             border: none;
             background: transparent;
@@ -3540,9 +3759,9 @@ def _apply_menu_item(widget: QWidget, p: dict[str, str | int | bool]) -> None:
     """
     widget._label_checked_style = f"""
         QLabel {{
-            color: {p['sidebar_accent']};
+            color: {p['sidebar_active_fg']};
             font-size: 14px;
-            font-weight: 800;
+            font-weight: 600;
             font-family: {p['font']};
             border: none;
             background: transparent;
@@ -3550,8 +3769,9 @@ def _apply_menu_item(widget: QWidget, p: dict[str, str | int | bool]) -> None:
     """
     widget._label_hover_style = f"""
         QLabel {{
-            color: {p['sidebar_accent']};
+            color: {p['sidebar_active_fg']};
             font-size: 14px;
+            font-weight: 500;
             font-family: {p['font']};
             border: none;
             background: transparent;
@@ -3572,13 +3792,13 @@ def _apply_menu_item(widget: QWidget, p: dict[str, str | int | bool]) -> None:
 
     def _themed_update_label_styles(self):
         palette = _palette()
-        primary_color = str(palette["sidebar_accent"])
+        active_fg = str(palette["sidebar_active_fg"])
         muted_color = str(palette["sidebar_muted"])
 
         if self.isChecked():
             self.icon_label.setStyleSheet(self._label_checked_style)
             self.text_label.setStyleSheet(self._label_checked_style)
-            self._update_icon_color(primary_color)
+            self._update_icon_color(active_fg)
         else:
             self.icon_label.setStyleSheet(self._label_style)
             self.text_label.setStyleSheet(self._label_style)
@@ -3590,10 +3810,10 @@ def _apply_menu_item(widget: QWidget, p: dict[str, str | int | bool]) -> None:
 
         if not self.isChecked():
             palette = _palette()
-            primary_color = str(palette["sidebar_accent"])
+            active_fg = str(palette["sidebar_active_fg"])
             self.icon_label.setStyleSheet(self._label_hover_style)
             self.text_label.setStyleSheet(self._label_hover_style)
-            self._update_icon_color(primary_color)
+            self._update_icon_color(active_fg)
 
     def _themed_leave_event(self, event):
         from PySide6.QtWidgets import QPushButton
@@ -3616,34 +3836,36 @@ def _apply_submenu(widget: QWidget, p: dict[str, str | int | bool]) -> None:
         widget.title_btn.setStyleSheet(f"""
             QPushButton {{
                 border: none;
-                background: transparent;
-                padding: 0px;
-                margin: 0px;
+                background-color: transparent;
+                border-radius: 8px;
+                margin: 2px 10px;
+                padding: 0px 8px;
                 min-height: {item_height}px;
                 max-height: {item_height}px;
             }}
             QPushButton:hover {{
-                background: transparent;
+                background-color: {p['sidebar_hover_bg']};
+                border-radius: 8px;
             }}
         """)
-    normal_text_style = f"color: {p['text']}; font-size: 14px; font-weight: 800; font-family: {p['font']}; background: transparent; border: none;"
-    normal_icon_style = f"color: {p['text']}; font-size: 16px; background: transparent; border: none;"
-    hover_text_style = f"color: {p['primary']}; font-size: 14px; font-weight: 800; font-family: {p['font']}; background: transparent; border: none;"
-    hover_icon_style = f"color: {p['primary']}; font-size: 16px; background: transparent; border: none;"
+    normal_text_style = f"color: {p['sidebar_text']}; font-size: 14px; font-weight: 500; font-family: {p['font']}; background: transparent; border: none;"
+    normal_icon_style = f"color: {p['sidebar_text']}; font-size: 16px; background: transparent; border: none;"
+    hover_text_style = f"color: {p['sidebar_active_fg']}; font-size: 14px; font-weight: 500; font-family: {p['font']}; background: transparent; border: none;"
+    hover_icon_style = f"color: {p['sidebar_active_fg']}; font-size: 16px; background: transparent; border: none;"
 
     if hasattr(widget, "text_label"):
         _style_label(widget.text_label, normal_text_style)
     if hasattr(widget, "icon_label"):
         _style_label(widget.icon_label, normal_icon_style)
         if hasattr(getattr(widget, "_icon_str", None), "pixmap"):
-            widget.icon_label.setPixmap(widget._icon_str.pixmap(size=18, color=str(p["text"])))
+            widget.icon_label.setPixmap(widget._icon_str.pixmap(size=18, color=str(p["sidebar_text"])))
 
     widget._mk_theme_submenu_normal_text_style = normal_text_style
     widget._mk_theme_submenu_normal_icon_style = normal_icon_style
     widget._mk_theme_submenu_hover_text_style = hover_text_style
     widget._mk_theme_submenu_hover_icon_style = hover_icon_style
-    widget._mk_theme_submenu_primary = str(p["primary"])
-    widget._mk_theme_submenu_text = str(p["text"])
+    widget._mk_theme_submenu_hover_fg = str(p["sidebar_active_fg"])
+    widget._mk_theme_submenu_text = str(p["sidebar_text"])
 
     if not hasattr(widget, "_mk_theme_original_event_filter"):
         try:
@@ -3662,9 +3884,9 @@ def _apply_submenu(widget: QWidget, p: dict[str, str | int | bool]) -> None:
                     if hasattr(self, "icon_label"):
                         self.icon_label.setStyleSheet(self._mk_theme_submenu_hover_icon_style)
                     if hasattr(getattr(self, "_icon_str", None), "pixmap"):
-                        self.icon_label.setPixmap(self._icon_str.pixmap(size=18, color=self._mk_theme_submenu_primary))
+                        self.icon_label.setPixmap(self._icon_str.pixmap(size=18, color=self._mk_theme_submenu_hover_fg))
                     elif MkPhosphorIcon is not None and getattr(self, "_icon_str", None) and self._icon_str in PHOSPHOR_ICONS:
-                        self.icon_label.setPixmap(MkPhosphorIcon.get_pixmap(self._icon_str, self._mk_theme_submenu_primary, 18))
+                        self.icon_label.setPixmap(MkPhosphorIcon.get_pixmap(self._icon_str, self._mk_theme_submenu_hover_fg, 18))
                     return False
                 if event.type() == event.Type.Leave:
                     if hasattr(self, "text_label"):
@@ -3749,9 +3971,9 @@ def _pagination_qss(p: dict[str, str | int | bool]) -> str:
 def _pagination_button_qss(widget: QWidget, p: dict[str, str | int | bool]) -> str:
     active = str(widget.property("class") or "") == "active"
     radius = 0 if p["flat"] else min(6, _control_radius_px(p))
-    background = str(p["primary"]) if active else "transparent"
-    foreground = str(p["primary_text"]) if active else str(p["text"])
-    border = str(p["primary"]) if active else "transparent"
+    background = str(p["pagination_active_bg"]) if active else "transparent"
+    foreground = str(p["pagination_active_fg"]) if active else str(p["text"])
+    border = str(p["pagination_active_border"]) if active else "transparent"
     return f"""
         QPushButton {{
             border: 1px solid {border};
@@ -3766,8 +3988,8 @@ def _pagination_button_qss(widget: QWidget, p: dict[str, str | int | bool]) -> s
             outline: none;
         }}
         QPushButton:hover {{
-            color: {p['primary']};
-            background-color: {_soft_hover(p, str(p['surface_muted']))};
+            color: {p['pagination_hover_fg']};
+            background-color: {p['pagination_hover_bg']};
             border-color: transparent;
         }}
         QPushButton:disabled {{
@@ -3805,7 +4027,7 @@ def _pagination_input_qss(p: dict[str, str | int | bool]) -> str:
             selection-background-color: {p['primary']};
         }}
         QLineEdit:focus {{
-            border-color: {p['primary']};
+            border-color: {p['input_focus_border']};
         }}
     """
 
@@ -4260,7 +4482,9 @@ def _apply_date_picker_theme(p: dict[str, str | int | bool]) -> None:
     except Exception:
         return
 
-    theme = date_picker.Theme
+    theme = getattr(date_picker, "Theme", None)
+    if theme is None or type(theme).__name__ == "ThemeMeta":
+        return
     if _DATE_THEME_ORIGINALS is None:
         _DATE_THEME_ORIGINALS = {
             "BG_COLOR": theme.BG_COLOR,

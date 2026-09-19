@@ -122,10 +122,10 @@ class MkButton(QPushButton):
 
         if self._btn_type == "primary":
             btn_bg = primary
-            btn_fg = "#FFFFFF"
+            btn_fg = readable_text(qcolor(primary))
             btn_border = primary
-            btn_hover_bg = hover_primary
-            btn_press_bg = press_primary
+            btn_hover_bg = hover_primary if primary.upper() != "#FFFFFF" else "#E2E8F0"
+            btn_press_bg = press_primary if primary.upper() != "#FFFFFF" else "#CBD5E1"
         elif self._btn_type == "danger":
             btn_bg = "#EF4444"
             btn_fg = "#FFFFFF"
@@ -148,8 +148,12 @@ class MkButton(QPushButton):
             btn_bg = "transparent"
             btn_fg = primary
             btn_border = primary
-            btn_hover_bg = t._lighten_hex(primary, 0.9) if primary.startswith("#") else "#F0F4FF"
-            btn_press_bg = t._lighten_hex(primary, 0.8) if primary.startswith("#") else "#E0E7FF"
+            if t.is_dark():
+                btn_hover_bg = "rgba(255, 255, 255, 0.12)"
+                btn_press_bg = "rgba(255, 255, 255, 0.20)"
+            else:
+                btn_hover_bg = t._lighten_hex(primary, 0.9) if primary.startswith("#") else "#F0F4FF"
+                btn_press_bg = t._lighten_hex(primary, 0.8) if primary.startswith("#") else "#E0E7FF"
         else:
             neutral = self._neutral_palette()
             btn_bg = neutral["background"]
@@ -235,9 +239,8 @@ class MkButton(QPushButton):
                     else darken(background, 0.045)
                 )
             pressed_background = darken(background, 0.08)
-
         disabled_background = darken(surface_muted, 0.14 if dark_theme else 0.03)
-        hover_border = border if is_info else primary
+        hover_border = border if is_info else t.get("--input-hover-border", border)
 
         return {
             "background": qss_color(background, bg),
@@ -497,16 +500,25 @@ class MkButton(QPushButton):
     def set_theme_style(self, style_name: str = None):
         if getattr(self, "_ph_icon_spec", None):
             try:
-
                 spec = dict(self._ph_icon_spec)
                 orig_color = spec.get("color")
                 if orig_color in (None, "auto", "default", "fg", "foreground", "currentcolor"):
                     spec["color"] = self._get_button_text_color()
                 new_icon = Ph.icon(**spec)
                 super().setIcon(new_icon)
-            except Exception as e:
+            except Exception:
                 pass
-        self._update_style()
+        t = ThemeEngine
+        if t.is_liquid_glass():
+            if not hasattr(self, "_liquid_timer"):
+                from PySide6.QtCore import QTimer
+                self._liquid_timer = QTimer(self)
+                self._liquid_timer.timeout.connect(self._on_liquid_timeout)
+            if not self._liquid_timer.isActive():
+                self._liquid_timer.start(33)
+        else:
+            if hasattr(self, "_liquid_timer") and self._liquid_timer.isActive():
+                self._liquid_timer.stop()
         self.update()
 
     @Property(str)

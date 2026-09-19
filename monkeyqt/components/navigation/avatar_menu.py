@@ -69,13 +69,15 @@ class MkAvatarMenu(MkAvatar):
 
     def show_menu(self) -> None:
         menu = QMenu(self)
-        palette = self.palette()
-        base = palette.color(QPalette.ColorRole.Base).name()
-        text = palette.color(QPalette.ColorRole.Text).name()
-        border = palette.color(QPalette.ColorRole.Mid).name()
-        hover = palette.color(QPalette.ColorRole.Highlight).name()
-        hover_text = palette.color(QPalette.ColorRole.HighlightedText).name()
-        muted = palette.color(QPalette.ColorRole.PlaceholderText).name()
+        from monkeyqt.themes.engine import ThemeEngine
+        t = ThemeEngine
+        is_dark = t.is_dark()
+        base = t.get("--surface", "#FFFFFF")
+        text = t.get("--fg", "#1E293B")
+        border = t.get("--border", "#E2E8F0")
+        hover = "rgba(255, 255, 255, 0.10)" if is_dark else t.get("--surface-muted", "#F1F5F9")
+        hover_text = "#FFFFFF" if is_dark else t.get("--fg", "#1E293B")
+        muted = t.get("--text-muted", "#64748B")
         menu.setStyleSheet(
             f"""
             QMenu {{

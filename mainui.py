@@ -56,6 +56,7 @@ class QuickStartApp(MkWindow):
         # 使用 QHBoxLayout（水平布局）
         # 左侧放侧边栏(MkMenu)，右侧放内容区(QStackedWidget)
         self.central_widget = QWidget()
+        self.central_widget.setObjectName("MainCentralWidget")
         self.main_layout = QHBoxLayout(self.central_widget)
         self.main_layout.setContentsMargins(0, 0, 0, 0)  # 去掉窗口周围的空白边距
         self.main_layout.setSpacing(0)                  # 去掉组件之间的空隙
@@ -75,6 +76,7 @@ class QuickStartApp(MkWindow):
 
         # --- 3. 创建右侧整体容器（上下结构） ---
         self.right_widget = QWidget()
+        self.right_widget.setObjectName("MainRightWidget")
         self.right_layout = QVBoxLayout(self.right_widget)
         self.right_layout.setContentsMargins(20, 20, 20, 20) # 给右侧内容留出舒服的边距
         self.right_layout.setSpacing(20)
@@ -535,7 +537,8 @@ class QuickStartApp(MkWindow):
 
 if __name__ == "__main__": 
     app = QApplication(sys.argv) 
-    use_theme("新拟物化")
-    window = QuickStartApp() 
-    window.show() 
+    use_theme("暗黑")
+    window = QuickStartApp()
+    window.showMaximized()
+    # window.show()
     sys.exit(app.exec()) 

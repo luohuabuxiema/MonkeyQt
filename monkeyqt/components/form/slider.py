@@ -1,8 +1,8 @@
-# -*- coding: utf-8 -*-
 from PySide6.QtCore import Property, QEvent, Qt, Signal
 from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QSlider, QSizePolicy, QToolTip, QVBoxLayout, QWidget
 
+from monkeyqt.components.layout.widget import MkQWidget
 from monkeyqt.themes.engine import ThemeEngine
 from monkeyqt.themes.style_utils import darken, lighten, parse_px, readable_text
 
@@ -17,7 +17,7 @@ class MkBaseSlider(QSlider):
         else:
             event.ignore()
 
-class MkSlider(QWidget):
+class MkSlider(MkQWidget):
     """
     MkSlider 组件 - 完美实现滑动条在所有内置 68 种主题风格中的 3D 浮雕与毛玻璃特效，
     内置当前数值提示标签与高精度气泡提示。
@@ -56,13 +56,15 @@ class MkSlider(QWidget):
             self._layout.addWidget(self.slider, 1)
             self._layout.addWidget(self.value_label)
 
-        ThemeEngine.instance().themeChanged.connect(self.set_theme_style)
         self.set_theme_style()
 
     def eventFilter(self, obj, event):
         if obj == self.slider and event.type() in (QEvent.Type.HoverEnter, QEvent.Type.HoverLeave, QEvent.Type.HoverMove):
             self.slider.update()
         return super().eventFilter(obj, event)
+
+    def on_theme_changed(self, theme_name: str = ""):
+        self.set_theme_style(theme_name)
 
     def set_theme_style(self, style_name: str = None):
         t = ThemeEngine
@@ -94,8 +96,13 @@ class MkSlider(QWidget):
             handle_hover = 18
         else:
             groove = t.get("--surface-muted", "#E5E7EB")
-            handle = primary
-            handle_border = "#FFFFFF"
+            is_dark = t.is_dark()
+            if is_dark and primary == "#FFFFFF":
+                handle = "#FFFFFF"
+                handle_border = "#0F172A"
+            else:
+                handle = primary
+                handle_border = "#FFFFFF"
 
         label_color = t.get("--glass-text", fg) if t.is_glass() else fg
         self.value_label.setStyleSheet(f"""

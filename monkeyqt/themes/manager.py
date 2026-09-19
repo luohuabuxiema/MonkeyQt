@@ -251,17 +251,18 @@ class _ThemeAutoApplier(QObject):
     def _mark_applied(self, root: QWidget | None) -> None:
         theme = ThemeEngine.current_theme()
         if root is not None:
-            widgets = [root]
-            widgets.extend(root.findChildren(QWidget))
-        else:
-            app = QApplication.instance()
-            widgets = app.allWidgets() if app is not None else []
-
-        for widget in widgets:
             try:
-                widget.setProperty(_AUTO_THEME_MARK_PROP, theme)
+                root.setProperty(_AUTO_THEME_MARK_PROP, theme)
             except RuntimeError:
                 pass
+        else:
+            app = QApplication.instance()
+            if app is not None:
+                for w in app.topLevelWidgets():
+                    try:
+                        w.setProperty(_AUTO_THEME_MARK_PROP, theme)
+                    except RuntimeError:
+                        pass
 
 
 _auto_applier: _ThemeAutoApplier | None = None

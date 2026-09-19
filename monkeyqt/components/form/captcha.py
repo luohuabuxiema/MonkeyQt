@@ -4,7 +4,9 @@ from PySide6.QtWidgets import QWidget, QHBoxLayout, QPushButton, QLineEdit
 from PySide6.QtCore import Qt, QSize, QTimer, Signal
 from PySide6.QtGui import QPainter, QColor, QFont, QPen, QFontMetrics, QPainterPath
 
-class MkCaptchaWidget(QWidget):
+from ..layout.widget import MkQWidget
+
+class MkCaptchaWidget(MkQWidget):
     """
     MkCaptchaWidget - Self-contained graphical security captcha.
     Generates a 4-letter random code and draws skewed characters, lines, and noise dots.
@@ -124,7 +126,7 @@ class MkCaptchaWidget(QWidget):
 
 
 # SMS CAPTCHA COUNTDOWN WIDGET
-class MkSmsCodeWidget(QWidget):
+class MkSmsCodeWidget(MkQWidget):
     """
     MkSmsCodeWidget - Dual horizontal field containing text entry and a countdown button.
     Includes built-in 60s sending throttling.

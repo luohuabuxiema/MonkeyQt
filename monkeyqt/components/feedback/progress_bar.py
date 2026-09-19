@@ -3,7 +3,10 @@ from PySide6.QtWidgets import QWidget, QSizePolicy
 from PySide6.QtCore import Qt, Property, QRectF
 from PySide6.QtGui import QPainter, QPainterPath, QColor
 
-class MkProgressBar(QWidget):
+from monkeyqt.components.layout.widget import MkQWidget
+from monkeyqt.themes.engine import ThemeEngine
+
+class MkProgressBar(MkQWidget):
     """
     进度条 (Progress Bar) 组件
     使用 paintEvent 绘制，确保像素级完美和抗锯齿。
@@ -21,11 +24,14 @@ class MkProgressBar(QWidget):
         self.setMinimumHeight(max(16, self._stroke_width))
 
     def _get_color(self):
+        from monkeyqt.themes.engine import ThemeEngine
+        t = ThemeEngine
+        normal = t.get("--primary", "#0F172A" if not t.is_dark() else "#FFFFFF")
         colors = {
-            "normal": "#409eff",
-            "success": "#67c23a",
-            "warning": "#e6a23c",
-            "exception": "#f56c6c"
+            "normal": normal,
+            "success": "#22c55e",
+            "warning": "#f59e0b",
+            "exception": "#ef4444"
         }
         return colors.get(self._status, colors["normal"])
 
@@ -55,7 +61,8 @@ class MkProgressBar(QWidget):
         # 绘制背景底轨
         bg_path = QPainterPath()
         bg_path.addRoundedRect(track_x, track_y, track_width, stroke, stroke / 2, stroke / 2)
-        painter.fillPath(bg_path, QColor("#ebeef5"))
+        track_bg = ThemeEngine.get("--surface-muted", "#ebeef5" if not ThemeEngine.is_dark() else "#27272A")
+        painter.fillPath(bg_path, QColor(track_bg))
         
         # 绘制前景进度轨
         if self._percentage > 0:
@@ -64,16 +71,15 @@ class MkProgressBar(QWidget):
             fg_path.addRoundedRect(track_x, track_y, fg_width, stroke, stroke / 2, stroke / 2)
             painter.fillPath(fg_path, QColor(self._get_color()))
             
-        # 绘制文本
+        # 绘制百分比文字
         if self._show_text:
             if self._text_inside:
-                # 仅在内部宽度足够时绘制文本
-                if fg_width > text_width + 10:
-                    painter.setPen(Qt.white)
-                    text_rect = QRectF(track_x, track_y, fg_width - 6, stroke)
-                    painter.drawText(text_rect, Qt.AlignRight | Qt.AlignVCenter, text)
+                painter.setPen(QColor("#ffffff"))
+                text_rect = QRectF(track_x, track_y, fg_width if self._percentage > 0 else 0, stroke)
+                painter.drawText(text_rect, Qt.AlignRight | Qt.AlignVCenter, f"{text} ")
             else:
-                painter.setPen(QColor("#606266"))
+                text_fg = ThemeEngine.get("--fg", "#606266" if not ThemeEngine.is_dark() else "#F8FAFC")
+                painter.setPen(QColor(text_fg))
                 text_rect = QRectF(track_width + 8, 0, text_width + 4, height)
                 painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignVCenter, text)
 

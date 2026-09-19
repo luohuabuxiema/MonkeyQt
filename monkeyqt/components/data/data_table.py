@@ -5,18 +5,21 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, Signal, QSize, QRect, QPoint, QRectF
 from PySide6.QtGui import QPainter, QColor, QPixmap, QCursor, QFont, QPen
+from monkeyqt.components.layout.widget import MkQWidget
 from monkeyqt.components.basic.checkbox import MkCheckBox
 from monkeyqt.components.navigation.pagination import MkPagination
 from monkeyqt.components.data.preview_dialogs import MkLightboxDialog, MkVideoPlayerDialog
+from monkeyqt.components.data.table import MkTableHeaderView
 from monkeyqt.core.icons import MkPhosphorIcon
+from monkeyqt.themes.engine import ThemeEngine
 
 
-class CheckBoxHeader(QHeaderView):
+class CheckBoxHeader(MkTableHeaderView):
     """Custom table header view with a clickable selection checkbox in the first column."""
     stateChanged = Signal(bool)
 
-    def __init__(self, parent=None):
-        super().__init__(Qt.Orientation.Horizontal, parent)
+    def __init__(self, radius=8.0, bg_color="#f8fafc", border_color="#e2e8f0", parent=None):
+        super().__init__(Qt.Orientation.Horizontal, radius=radius, bg_color=bg_color, border_color=border_color, parent=parent)
         self._checked = False
         self._checkbox_palette = None
         self.setSectionsClickable(True)
@@ -34,11 +37,14 @@ class CheckBoxHeader(QHeaderView):
             self._paint_checkbox(painter, rect)
 
     def _paint_checkbox(self, painter, rect):
+        t = ThemeEngine
+        is_dark = t.is_dark()
+        active_color = t.get("--primary", "#409EFF") if (t.is_glow() or t.is_brutal() or t.is_pixel()) else ("#FFFFFF" if is_dark else "#0F172A")
         palette = self._checkbox_palette or {
-            "surface": "#ffffff",
-            "border": "#dcdfe6",
-            "primary": "#409eff",
-            "check": "#ffffff",
+            "surface": t.get("--surface", "#ffffff"),
+            "border": t.get("--border", "#dcdfe6"),
+            "primary": active_color,
+            "check": "#0F172A" if (is_dark and active_color == "#FFFFFF") else "#ffffff",
             "radius": 4,
             "border_width": 1.0,
         }
@@ -85,7 +91,7 @@ class CheckBoxHeader(QHeaderView):
             self.viewport().update()
 
 
-class MkImageCellWidget(QWidget):
+class MkImageCellWidget(MkQWidget):
     """Custom hover-active thumbnail container for image columns."""
     clicked = Signal(str)
 
@@ -156,7 +162,7 @@ class MkImageCellWidget(QWidget):
         painter.end()
 
 
-class MkVideoCellWidget(QWidget):
+class MkVideoCellWidget(MkQWidget):
     """Custom hoverable cell displaying a video thumbnail preview with inline play overlay."""
     clicked = Signal(str)
 
@@ -212,7 +218,7 @@ class MkVideoCellWidget(QWidget):
         painter.end()
 
 
-class MkDataTable(QWidget):
+class MkDataTable(MkQWidget):
     """
     MkDataTable - Declarative shadcn-ui styled data table.
     Integrates pagination, multi-select check boxes, Phosphor actions, and lightboxes.
@@ -258,9 +264,10 @@ class MkDataTable(QWidget):
         self.selection_enabled = selection_enabled
         
         # Multi-page selection memory
-        self._selected_keys = set()  # set of unique row keys/indices
-        
+        self._selected_keys = set()
         self._setup_ui()
+        ThemeEngine.instance().themeChanged.connect(self.set_theme_style)
+        self.set_theme_style()
         self.refresh_table()
 
     def _setup_ui(self):
@@ -314,23 +321,28 @@ class MkDataTable(QWidget):
         
         # Set up custom header view if checkboxes enabled
         if self.selection_enabled:
-            self.header_view = CheckBoxHeader(self.table_widget)
+            self.header_view = CheckBoxHeader(radius=8.0, bg_color="#f8fafc", border_color="#e2e8f0", parent=self.table_widget)
             self.header_view.stateChanged.connect(self._on_header_checkbox_toggled)
         else:
-            self.header_view = QHeaderView(Qt.Orientation.Horizontal, self.table_widget)
+            self.header_view = MkTableHeaderView(Qt.Orientation.Horizontal, radius=8.0, bg_color="#f8fafc", border_color="#e2e8f0", parent=self.table_widget)
             self.header_view.setDefaultSectionSize(40)
             
         self.table_widget.setHorizontalHeader(self.header_view)
         
         # Style header view
         self.header_view.setStyleSheet("""
+            QHeaderView {
+                background-color: transparent;
+                background: transparent;
+                border: none;
+            }
             QHeaderView::section {
-                background-color: #f8fafc;
+                background-color: transparent;
+                background: transparent;
                 color: #64748b;
                 font-weight: 600;
                 font-size: 12px;
                 border: none;
-                border-bottom: 1px solid #e2e8f0;
                 padding: 10px 10px;
                 text-align: left;
             }
@@ -351,6 +363,76 @@ class MkDataTable(QWidget):
         pager_layout.addWidget(self.pagination)
         
         self.main_layout.addWidget(pager_container)
+
+    def set_theme_style(self, style_name: str = None):
+        t = ThemeEngine
+        is_dark = t.is_dark()
+        surface = t.get("--surface", "#FFFFFF")
+        border = t.get("--border", "#E2E8F0")
+        fg = t.get("--fg", "#1E293B")
+        muted = t.get("--text-muted", "#64748B")
+        surface_muted = t.get("--surface-muted", "#F8FAFC")
+        radius = "0px" if t.is_brutal() or t.is_pixel() else t.get("--radius", "8px")
+        border_rule = "2px solid #000000" if t.is_brutal() or t.is_pixel() else f"1px solid {border}"
+        grid_rule = "#000000" if t.is_brutal() or t.is_pixel() else border
+
+        self.table_card.setStyleSheet(f"""
+            QFrame#TableCard {{
+                background-color: {surface};
+                border: {border_rule};
+                border-radius: {radius};
+            }}
+        """)
+
+        self.table_widget.setStyleSheet(f"""
+            QTableWidget {{
+                background-color: transparent;
+                border: none;
+                gridline-color: transparent;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                font-size: 13px;
+                color: {fg};
+            }}
+            QTableWidget::item {{
+                border-bottom: 1px solid {grid_rule};
+                padding: 12px 10px;
+            }}
+            QTableWidget::item:hover {{
+                background-color: {surface_muted};
+            }}
+        """)
+
+        self.header_view.setStyleSheet(f"""
+            QHeaderView {{
+                background-color: transparent;
+                background: transparent;
+                border: none;
+            }}
+            QHeaderView::section {{
+                background-color: transparent;
+                background: transparent;
+                color: {muted};
+                font-weight: 600;
+                font-size: 12px;
+                border: none;
+                padding: 10px 10px;
+                text-align: left;
+            }}
+        """)
+
+        if hasattr(self, "header_view") and self.header_view is not None:
+            if hasattr(self.header_view, "set_bg_color"):
+                self.header_view.set_bg_color(surface_muted)
+            if hasattr(self.header_view, "set_border_color"):
+                self.header_view.set_border_color(grid_rule)
+            if hasattr(self.header_view, "set_radius"):
+                try:
+                    self.header_view.set_radius(float(str(radius).replace("px", "")))
+                except Exception:
+                    pass
+
+        if hasattr(self, "pagination") and hasattr(self.pagination, "set_theme_style"):
+            self.pagination.set_theme_style()
 
     def set_data(self, data: list):
         """Sets new dataset and refreshes table from page 1."""
@@ -485,21 +567,28 @@ class MkDataTable(QWidget):
                     actions_layout.setSpacing(8)
                     actions_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
                     
+                    t = ThemeEngine
+                    is_dark = t.is_dark()
+                    action_border = t.get("--border", "#cbd5e1")
+                    action_hover_border = t.get("--input-focus-border", "#FFFFFF" if is_dark else "#0F172A")
+                    action_hover_bg = "rgba(255, 255, 255, 0.08)" if is_dark else "#f1f5f9"
+                    action_muted = t.get("--text-muted", "#64748b")
+
                     edit_btn = QPushButton(actions_widget)
                     edit_btn.setFixedSize(28, 28)
                     edit_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-                    edit_btn.setIcon(MkPhosphorIcon.get_icon("pencil", "#475569", "#3b82f6", 14))
+                    edit_btn.setIcon(MkPhosphorIcon.get_icon("pencil", action_muted, action_hover_border, 14))
                     edit_btn.setToolTip("编辑行记录")
-                    edit_btn.setStyleSheet("""
-                        QPushButton {
+                    edit_btn.setStyleSheet(f"""
+                        QPushButton {{
                             background-color: transparent;
-                            border: 1px solid #cbd5e1;
+                            border: 1px solid {action_border};
                             border-radius: 4px;
-                        }
-                        QPushButton:hover {
-                            background-color: #f1f5f9;
-                            border-color: #3b82f6;
-                        }
+                        }}
+                        QPushButton:hover {{
+                            background-color: {action_hover_bg};
+                            border-color: {action_hover_border};
+                        }}
                     """)
                     # Connect absolute index pass closures
                     edit_btn.clicked.connect(
@@ -510,18 +599,18 @@ class MkDataTable(QWidget):
                     del_btn = QPushButton(actions_widget)
                     del_btn.setFixedSize(28, 28)
                     del_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-                    del_btn.setIcon(MkPhosphorIcon.get_icon("trash", "#64748b", "#ef4444", 14))
+                    del_btn.setIcon(MkPhosphorIcon.get_icon("trash", action_muted, "#ef4444", 14))
                     del_btn.setToolTip("删除行记录")
-                    del_btn.setStyleSheet("""
-                        QPushButton {
+                    del_btn.setStyleSheet(f"""
+                        QPushButton {{
                             background-color: transparent;
-                            border: 1px solid #cbd5e1;
+                            border: 1px solid {action_border};
                             border-radius: 4px;
-                        }
-                        QPushButton:hover {
+                        }}
+                        QPushButton:hover {{
                             background-color: #fef2f2;
                             border-color: #ef4444;
-                        }
+                        }}
                     """)
                     del_btn.clicked.connect(
                         lambda *args, a_idx=abs_row_idx, r_val=row_dict: self.deleteRequested.emit(a_idx, r_val)

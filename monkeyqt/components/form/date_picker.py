@@ -9,24 +9,41 @@ from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
                                QTableView, QStyle)
 
 
-class Theme:
-    BG_COLOR = "#FFFFFF"
-    TEXT_PRIMARY = "#333333"
-    TEXT_SECONDARY = "#888888"
-    ACCENT_COLOR = "#3B82F6"  # 选中时，蓝色
-    ACCENT_HOVER = "#2563EB"
-    HOVER_BG = "#F3F4F6"  # 悬停时，浅灰
-    BORDER_COLOR = "#E5E7EB"
+from monkeyqt.themes.engine import ThemeEngine
+
+class ThemeMeta(type):
+    @property
+    def BG_COLOR(cls):
+        return ThemeEngine.get("--surface", "#FFFFFF")
+    @property
+    def TEXT_PRIMARY(cls):
+        return ThemeEngine.get("--fg", "#1E293B")
+    @property
+    def TEXT_SECONDARY(cls):
+        return ThemeEngine.get("--text-muted", "#64748B")
+    @property
+    def ACCENT_COLOR(cls):
+        t = ThemeEngine
+        if t.is_glow() or t.is_brutal() or t.is_pixel():
+            return t.get("--primary", "#409EFF")
+        return "#FFFFFF" if t.is_dark() else "#0F172A"
+    @property
+    def ACCENT_HOVER(cls):
+        return cls.ACCENT_COLOR
+    @property
+    def HOVER_BG(cls):
+        return "rgba(255, 255, 255, 0.12)" if ThemeEngine.is_dark() else ThemeEngine.get("--surface-muted", "#F3F4F6")
+    @property
+    def BORDER_COLOR(cls):
+        return ThemeEngine.get("--border", "#E5E7EB")
+
+class Theme(metaclass=ThemeMeta):
+    pass
 
 
 class CalendarDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.hover_brush = QBrush(QColor(Theme.HOVER_BG))
-        self.selected_brush = QBrush(QColor(Theme.ACCENT_COLOR))
-        self.text_pen_normal = QPen(QColor(Theme.TEXT_PRIMARY))
-        self.text_pen_selected = QPen(QColor("#FFFFFF"))
-        self.text_pen_sub = QPen(QColor(Theme.TEXT_SECONDARY))
 
     def paint(self, painter, option, index):
         painter.save()
@@ -43,25 +60,31 @@ class CalendarDelegate(QStyledItemDelegate):
         is_hovered = option.state & QStyle.State_MouseOver
         is_enabled = option.state & QStyle.State_Enabled
 
+        hover_brush = QBrush(QColor(Theme.HOVER_BG))
+        selected_brush = QBrush(QColor(Theme.ACCENT_COLOR))
+        text_pen_normal = QPen(QColor(Theme.TEXT_PRIMARY))
+        text_pen_selected = QPen(QColor("#0F172A" if ThemeEngine.is_dark() and Theme.ACCENT_COLOR == "#FFFFFF" else "#FFFFFF"))
+        text_pen_sub = QPen(QColor(Theme.TEXT_SECONDARY))
+
         if is_selected:
-            painter.setBrush(self.selected_brush)
+            painter.setBrush(selected_brush)
             painter.setPen(Qt.NoPen)
             painter.drawEllipse(center_rect)
         elif is_hovered and is_enabled:
-            painter.setBrush(self.hover_brush)
+            painter.setBrush(hover_brush)
             painter.setPen(Qt.NoPen)
             painter.drawEllipse(center_rect)
 
         text = str(index.data(Qt.DisplayRole))
         if is_selected:
-            painter.setPen(self.text_pen_selected)
+            painter.setPen(text_pen_selected)
             font = painter.font()
             font.setBold(True)
             painter.setFont(font)
         elif not is_enabled:
-            painter.setPen(self.text_pen_sub)
+            painter.setPen(text_pen_sub)
         else:
-            painter.setPen(self.text_pen_normal)
+            painter.setPen(text_pen_normal)
 
         painter.drawText(rect, Qt.AlignCenter, text)
         painter.restore()
@@ -408,25 +431,35 @@ class MkDatePicker(QLineEdit):
         self.setReadOnly(True)
         self.setPlaceholderText("选择时间")
         self.setCursor(Qt.PointingHandCursor)
+        ThemeEngine.instance().themeChanged.connect(self.update_theme_style)
+        self.update_theme_style()
+        self.current_dt = QDateTime.currentDateTime()
+
+    def update_theme_style(self, style_name: str = None):
+        t = ThemeEngine
+        is_dark = t.is_dark()
+        focus_border = t.get("--input-focus-border", "#FFFFFF" if is_dark else "#0F172A")
+        hover_border = t.get("--input-hover-border", "rgba(255, 255, 255, 0.40)" if is_dark else "#94A3B8")
+
         self.setStyleSheet(f"""
             QLineEdit {{
                 border: 1px solid {Theme.BORDER_COLOR};
-                border-radius: 4px;
+                border-radius: 6px;
                 padding: 5px 15px;
                 background-color: {Theme.BG_COLOR};
                 color: {Theme.TEXT_PRIMARY};
                 min-width: 150px;
                 min-height: 28px;
                 font-size: 13px;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif;
             }}
             QLineEdit:hover {{
-                border-color: #c0c4cc;
+                border-color: {hover_border};
             }}
             QLineEdit:focus {{
-                border-color: {Theme.ACCENT_COLOR};
+                border-color: {focus_border};
             }}
         """)
-        self.current_dt = QDateTime.currentDateTime()
 
     def mousePressEvent(self, event):
         super().mousePressEvent(event)
