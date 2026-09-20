@@ -39,6 +39,8 @@ class MkPagination(MkQWidget):
         muted = t.get("--text-muted", "#64748B")
         primary = t.get("--primary", "#409EFF")
 
+        disabled_fg = t.get("--text-disabled", "#52525B" if is_dark else "#A1A1AA")
+
         if t.is_glow() or t.is_brutal() or t.is_pixel():
             active_bg = primary
             active_fg = readable_text(primary)
@@ -46,11 +48,11 @@ class MkPagination(MkQWidget):
             hover_fg = primary
             hover_bg = surface_muted
         elif is_dark:
-            active_bg = "#FFFFFF"
-            active_fg = "#0F172A"
-            active_border = "#FFFFFF"
+            active_bg = "#27272A"
+            active_fg = "#FFFFFF"
+            active_border = "rgba(255, 255, 255, 0.12)"
             hover_fg = "#FFFFFF"
-            hover_bg = "rgba(255, 255, 255, 0.10)"
+            hover_bg = "rgba(255, 255, 255, 0.08)"
         else:
             active_bg = "#0F172A"
             active_fg = "#FFFFFF"
@@ -70,7 +72,7 @@ class MkPagination(MkQWidget):
                 min-height: 32px;
                 border-radius: 6px;
                 font-size: 13px;
-                font-weight: 600;
+                font-weight: 500;
                 outline: none;
             }}
             QPushButton:hover {{
@@ -78,22 +80,22 @@ class MkPagination(MkQWidget):
                 background-color: {hover_bg};
             }}
             QPushButton:disabled {{
-                color: {muted};
+                color: {disabled_fg};
                 background-color: transparent;
-                opacity: 0.5;
+                border: 1px solid transparent;
             }}
             QPushButton[class="active"] {{
                 background-color: {active_bg};
                 color: {active_fg};
                 border: 1px solid {active_border};
-                font-weight: 700;
+                font-weight: 600;
             }}
             QPushButton[class="active"]:hover {{
                 background-color: {active_bg};
                 color: {active_fg};
             }}
             QLabel {{
-                color: {muted};
+                color: {disabled_fg};
                 font-size: 13px;
                 margin: 0 4px;
                 background: transparent;

@@ -163,6 +163,47 @@ PHOSPHOR_ICONS = {
     
     "database": """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
         <path fill="currentColor" d="M128,24C75,24,32,43.7,32,68v120c0,24.3,43,44,96,44s96-19.7,96-44V68C224,43.7,181,24,128,24Zm80,164c0,12.72-33.15,28-80,28s-80-15.28-80-28V151.75C64.08,161.42,93.63,168,128,168s63.92-6.58,80-16.25Zm0-52c0,12.72-33.15,28-80,28s-80-15.28-80-28V99.75C64.08,109.42,93.63,116,128,116s63.92-6.58,80-16.25Zm0-52c-8.76,6.72-38.64,20-80,20s-71.24-13.28-80-20c8.76-6.72,38.64-20,80-20S199.24,71.28,208,84Z"/>
+    </svg>""",
+
+    "terminal-window": """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+        <rect width="256" height="256" fill="none"/>
+        <rect x="32" y="48" width="192" height="160" rx="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+        <line x1="32" y1="96" x2="224" y2="96" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+        <circle cx="68" cy="72" r="8" fill="currentColor"/>
+        <circle cx="96" cy="72" r="8" fill="currentColor"/>
+        <polyline points="80 128 104 152 80 176" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+        <line x1="120" y1="176" x2="160" y2="176" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+    </svg>""",
+
+    "copy": """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+        <rect width="256" height="256" fill="none"/>
+        <polyline points="216 168 216 40 88 40" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+        <rect x="40" y="88" width="128" height="128" rx="8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+    </svg>""",
+
+    "arrow-down-line": """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+        <rect width="256" height="256" fill="none"/>
+        <line x1="128" y1="32" x2="128" y2="184" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+        <polyline points="64 120 128 184 192 120" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+        <line x1="40" y1="224" x2="216" y2="224" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+    </svg>""",
+
+    "text-align-left": """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+        <rect width="256" height="256" fill="none"/>
+        <line x1="40" y1="64" x2="216" y2="64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+        <line x1="40" y1="112" x2="168" y2="112" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+        <line x1="40" y1="160" x2="200" y2="160" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+        <line x1="40" y1="208" x2="144" y2="208" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+    </svg>""",
+
+    "sparkle": """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+        <rect width="256" height="256" fill="none"/>
+        <path d="M128,24l16,64,64,16-64,16-16,64-16-64L48,104l64-16Z" fill="currentColor"/>
+    </svg>""",
+
+    "funnel": """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+        <rect width="256" height="256" fill="none"/>
+        <polygon points="32 40 224 40 144 144 144 216 112 200 112 144 32 40" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
     </svg>"""
 }
 

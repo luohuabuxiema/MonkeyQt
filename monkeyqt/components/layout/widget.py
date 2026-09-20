@@ -344,10 +344,17 @@ class MkQWidget(QWidget):
     @property
     def is_dark(self) -> bool:
         """检查当前主题是否为暗色模式"""
+        if hasattr(self, "_is_dark_override") and self._is_dark_override is not None:
+            return self._is_dark_override
         try:
             return ThemeEngine.is_dark()
         except Exception:
             return False
+
+    @is_dark.setter
+    def is_dark(self, value: Optional[bool]):
+        self._is_dark_override = bool(value) if value is not None else None
+
 
     @property
     def tokens(self) -> dict:

@@ -3,18 +3,22 @@ import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QStackedWidget, QFrame, QComboBox, QCheckBox, QPushButton, QLineEdit, QSlider
+from PySide6.QtWidgets import (
+    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
+    QStackedWidget, QFrame, QGridLayout
+)
 from PySide6.QtGui import QFont, QPixmap, QIcon
 from PySide6.QtCore import Qt, QEvent
 from monkeyqt import (
     MkButton, MkCheckBox, MkMenu, MkTopbar, MkBreadcrumb, MkTabs,
+    MkSegmented, MkSegmentedTabs,
     MkAlert, MkProgressBar, MkProgressRing,
     MkTooltip, MkInfoIcon, create_field_header, create_input_field, create_switch_field,
     MkPagination, MkDropdown, MkSwitch, MkSlider, MkDatePicker, MkForm,
     MkInput, MkCaptchaWidget, MkAuthScreen, MkMessage,
     MkAvatar, MkProTable, MkImageCompare, MkImageSplit,
     MkTitleBar, MkWindow, MkUpload, MkComboBox, MkMultiComboBox,
-    MkConsole, MkQWidget, MkWidget,
+    MkConsole, MkQWidget, MkWidget, MkScrollArea, MkStackedWidget,
     ThemeEngine, MkThemeSelector, apply_monkeyqt_theme, use_theme
 )
 
@@ -196,7 +200,50 @@ class NavMiscGallery(MkQWidget):
         
         layout.addWidget(self.tabs)
         
-        # 3. 分页器
+        # 3. 分段任务栏与胶囊导航 (MkSegmented & MkSegmentedTabs)
+        label_seg = QLabel("分段任务栏与胶囊导航 (Segmented Tabs & Controls)")
+        label_seg.setFont(title_font)
+        layout.addWidget(label_seg)
+
+        # 3.1 独立胶囊开关 (7天/30天与视图切换)
+        seg_switches_layout = QHBoxLayout()
+        self.seg_pill = MkSegmented(items=["7 天", "30 天"], size="default", pill=True)
+        self.seg_pill.set_current_index(1)
+        seg_switches_layout.addWidget(self.seg_pill)
+
+        self.seg_radius = MkSegmented(items=["日视图", "周视图", "月视图", "季度"], radius=8, pill=False, size="default")
+        seg_switches_layout.addWidget(self.seg_radius)
+
+        self.seg_small = MkSegmented(items=["全部", "运行中", "已归档"], size="small", pill=True)
+        seg_switches_layout.addWidget(self.seg_small)
+        seg_switches_layout.addStretch()
+        layout.addLayout(seg_switches_layout)
+
+        # 3.2 一体化分段页面容器 (带徽标与内容自适应)
+        self.seg_tabs = MkSegmentedTabs(size="large", radius=12, pill=False, tab_align="left")
+
+        tab_p1 = MkQWidget(role="transparent")
+        p1_l = QVBoxLayout(tab_p1)
+        p1_l.setContentsMargins(12, 12, 12, 12)
+        p1_l.addWidget(QLabel("概览页面：训练用时 26s，GPU RTX PRO 6000，计算成本 $0.02"))
+
+        tab_p2 = MkQWidget(role="transparent")
+        p2_l = QVBoxLayout(tab_p2)
+        p2_l.setContentsMargins(12, 12, 12, 12)
+        p2_l.addWidget(QLabel("训练指标页面：precision 0.762，recall 0.512，mAP50-95 0.472"))
+
+        tab_p3 = MkQWidget(role="transparent")
+        p3_l = QVBoxLayout(tab_p3)
+        p3_l.setContentsMargins(12, 12, 12, 12)
+        p3_l.addWidget(QLabel("模型导出页面：支持一键导出 ONNX, TensorRT, OpenVINO, CoreML"))
+
+        self.seg_tabs.add_tab("overview", "概览", tab_p1)
+        self.seg_tabs.add_tab("train", "训练指标", tab_p2)
+        self.seg_tabs.add_tab("export", "模型导出", tab_p3, badge="1")
+        self.seg_tabs.add_tab("deploy", "服务部署", QLabel("云端一键部署已就绪"))
+        layout.addWidget(self.seg_tabs)
+        
+        # 4. 分页器
         label_pagination = QLabel("分页器 (Pagination)")
         label_pagination.setFont(title_font)
         layout.addWidget(label_pagination)
@@ -204,7 +251,7 @@ class NavMiscGallery(MkQWidget):
         self.pagination = MkPagination(total=200, page_size=10, current=1)
         layout.addWidget(self.pagination)
 
-        # 4. 下拉菜单
+        # 5. 下拉菜单
         label_dropdown = QLabel("下拉菜单 (Dropdown)")
         label_dropdown.setFont(title_font)
         layout.addWidget(label_dropdown)
@@ -251,10 +298,8 @@ class FeedbackGallery(MkQWidget):
         layout.addLayout(attach_box)
 
         # 1.2 现代化 AI 训练参数卡片展示（参考 LabelPaw & Ultralytics HUB）
-        card_train = QFrame()
-        card_train.setStyleSheet("border: 1px solid rgba(128, 128, 128, 0.18); border-radius: 8px; padding: 12px;")
-        card_lay = QVBoxLayout(card_train)
-        card_lay.setSpacing(10)
+        card_train = MkQWidget(layout="v", role="card", radius=8, border=True, margins=12, spacing=10)
+        card_lay = card_train.inner_layout
 
         header_row = QHBoxLayout()
         header_row.addWidget(create_field_header(
@@ -267,7 +312,6 @@ class FeedbackGallery(MkQWidget):
         ))
         card_lay.addLayout(header_row)
 
-        from PySide6.QtWidgets import QGridLayout
         grid = QGridLayout()
         grid.setHorizontalSpacing(16)
         grid.setVerticalSpacing(8)
@@ -906,26 +950,26 @@ class WindowGallery(MkQWidget):
         
         # 2. Custom Background Color override
         control_layout.addWidget(QLabel("自定义背景色 (Hex/RGBA)"))
-        self.bg_color_input = QLineEdit()
-        self.bg_color_input.setPlaceholderText("留空则使用预设默认色")
+        self.bg_color_input = MkInput(placeholder="留空则使用预设默认色")
         control_layout.addWidget(self.bg_color_input)
         
         # 3. Custom Text Color override
         control_layout.addWidget(QLabel("自定义文字色 (Hex)"))
-        self.text_color_input = QLineEdit()
-        self.text_color_input.setPlaceholderText("留空则使用预设默认色")
+        self.text_color_input = MkInput(placeholder="留空则使用预设默认色")
         control_layout.addWidget(self.text_color_input)
         
         # 4. Height override
         control_layout.addWidget(QLabel("标题栏高度 (30 - 70 px)"))
-        self.height_slider = QSlider(Qt.Horizontal)
+        self.height_slider = MkSlider(Qt.Horizontal)
+        self.height_slider.show_value = False
         self.height_slider.setRange(30, 70)
         self.height_slider.setValue(40)
         control_layout.addWidget(self.height_slider)
         
         # 5. Radius override
         control_layout.addWidget(QLabel("窗口圆角半径 (0 - 20 px)"))
-        self.radius_slider = QSlider(Qt.Horizontal)
+        self.radius_slider = MkSlider(Qt.Horizontal)
+        self.radius_slider.show_value = False
         self.radius_slider.setRange(0, 20)
         self.radius_slider.setValue(8)
         control_layout.addWidget(self.radius_slider)
@@ -961,13 +1005,6 @@ class WindowGallery(MkQWidget):
         self.mock_win_frame = QFrame()
         self.mock_win_frame.setObjectName("MockWindowFrame")
         self.mock_win_frame.setFrameShape(QFrame.Shape.NoFrame)
-        self.mock_win_frame.setStyleSheet("""
-            QFrame#MockWindowFrame {
-                background-color: #ffffff;
-                border: 1px solid #e2e8f0;
-                border-radius: 8px;
-            }
-        """)
         mock_win_layout = QVBoxLayout(self.mock_win_frame)
         mock_win_layout.setContentsMargins(0, 0, 0, 0)
         mock_win_layout.setSpacing(0)
@@ -990,7 +1027,6 @@ class WindowGallery(MkQWidget):
         self.mock_client_layout.setContentsMargins(20, 40, 20, 40)
         
         self.mock_desc = QLabel("这里是子页面的模拟客户端区域。\n选择左侧的预设风格或滑动高度/圆角，以直接观察此处的实时变化。")
-        self.mock_desc.setStyleSheet("color: #94a3b8; font-size: 12px; line-height: 18px;")
         self.mock_desc.setAlignment(Qt.AlignCenter)
         self.mock_client_layout.addWidget(self.mock_desc)
         
@@ -1250,8 +1286,8 @@ class MainGallery(MkWindow):
         self.right_widget.setObjectName("MainRightWidget")
         self.right_layout = self.right_widget.inner_layout
         
-        # 主体内容区 (QStackedWidget)
-        self.content_area = QStackedWidget()
+        # 主体内容区 (MkStackedWidget)
+        self.content_area = MkStackedWidget()
         self.content_area.setObjectName("MainContentArea")
         
         # 页面按需惰性工厂
@@ -1315,12 +1351,14 @@ class MainGallery(MkWindow):
             self._pages[item_id] = page
             setattr(self, attribute, page)
             self.content_area.addWidget(page)
+            if ThemeEngine.current_theme():
+                apply_monkeyqt_theme(page)
 
         self.content_area.setCurrentWidget(page)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    use_theme("亮色")
     window = MainGallery()
-    use_theme("亮色", window)
     window.show()
     sys.exit(app.exec())

@@ -152,58 +152,21 @@ def build_button_qss(p: Dict[str, Any]) -> str:
 
 def build_console_qss(p: Dict[str, Any]) -> str:
     """Build QSS rules for MkConsole, ensuring crisp scoped styling without border leaks."""
-    bg = "#090d16" if p["dark"] else "#f8fafc"
-    header_bg = "#0f172a" if p["dark"] else "#f1f5f9"
-    border = "#1e293b" if p["dark"] else "#e2e8f0"
-    fg = "#f1f5f9" if p["dark"] else "#0f172a"
-    radius = str(p["radius"])
-
-    return f"""
-        /* ── MkConsole Terminal Styling ── */
-        QWidget#ConsoleHeader {{
-            background-color: {header_bg};
-            border: 1px solid {border};
-            border-bottom: 1px solid {border};
-            border-top-left-radius: {radius};
-            border-top-right-radius: {radius};
-        }}
-        QWidget#ConsoleHeader QLabel {{
+    # MkConsole manages its own rich modern styling, custom scrollbars and interactive pills
+    return """
+        /* ── MkConsole Scoped Base ── */
+        QFrame#MkConsoleRoot {
             border: none;
-            background: transparent;
-            color: {fg};
-        }}
-        QWidget#ConsoleHeader QWidget {{
+        }
+        QFrame#MkConsoleHeader {
             border: none;
-            background: transparent;
-        }}
-
-        MkConsole QTextEdit {{
-            background-color: {bg};
-            color: {fg};
-            border: 1px solid {border};
+            border-bottom: none;
+        }
+        QTextEdit#MkConsoleEditor {
+            border: none;
             border-top: none;
-            border-bottom-left-radius: {radius};
-            border-bottom-right-radius: {radius};
-            font-family: 'Consolas', 'Courier New', monospace;
-            font-size: 12px;
-            padding: 6px;
-            selection-background-color: #2563eb;
-            selection-color: #ffffff;
-        }}
-
-        MkConsole QPushButton, QWidget#ConsoleHeader QPushButton {{
-            border: 1px solid {border};
-            border-radius: 4px;
-            padding: 3px 10px;
-            font-size: 12px;
-            background-color: {header_bg};
-            color: {fg};
-        }}
-        MkConsole QPushButton:hover, QWidget#ConsoleHeader QPushButton:hover {{
-            background-color: {p["primary"]};
-            border-color: {p["primary"]};
-            color: #ffffff;
-        }}
+            outline: none;
+        }
     """
 
 

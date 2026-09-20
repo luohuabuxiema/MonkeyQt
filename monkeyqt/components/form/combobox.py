@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import time
-from PySide6.QtCore import Qt, QPoint, QRect, QEvent
-from PySide6.QtGui import QColor, QFont, QPainter, QPen, QBrush, QKeyEvent
+from PySide6.QtCore import Qt, QPoint, QRect, QRectF, QEvent
+from PySide6.QtGui import QColor, QFont, QPainter, QPen, QBrush, QPainterPath, QKeyEvent
 from PySide6.QtWidgets import (
     QComboBox, QFrame, QListView, QWidget, QVBoxLayout,
     QGraphicsDropShadowEffect
@@ -347,24 +347,17 @@ class MkComboBox(QComboBox):
                 QComboBox::down-arrow {{ image: none; width: 0; height: 0; }}
             """)
         else:
-            focus_border = t.get("--input-focus-border", "#FFFFFF" if t.is_dark() else "#0F172A")
-            hover_border = t.get("--input-hover-border", "rgba(255, 255, 255, 0.40)" if t.is_dark() else "#94A3B8")
             self.setStyleSheet(f"""
                 QComboBox {{
-                    background-color: {surface};
-                    border: 1px solid {border};
-                    border-radius: {radius};
+                    background: transparent;
+                    border: none;
                     color: {fg};
                     padding: 7px 34px 7px 12px;
                     font-size: 13px;
                     min-height: 24px;
                 }}
-                QComboBox:hover {{ border-color: {hover_border}; }}
-                QComboBox:focus, QComboBox:on {{ border-color: {focus_border}; }}
                 QComboBox:disabled {{
-                    background-color: {t.get('--surface-muted', '#F1F5F9')};
                     color: {muted};
-                    border-color: {border};
                 }}
                 QComboBox::drop-down {{
                     width: 30px;
@@ -378,9 +371,43 @@ class MkComboBox(QComboBox):
 
         self.update()
 
+    def focusInEvent(self, event):
+        super().focusInEvent(event)
+        self.update()
+
+    def focusOutEvent(self, event):
+        super().focusOutEvent(event)
+        self.update()
+
     def paintEvent(self, event):
         t = ThemeEngine
         if not (t.is_neumorphic() or t.is_glass() or t.is_brutal() or t.is_glow() or t.is_pixel()):
+            painter = QPainter(self)
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+
+            rect = QRectF(self.rect()).adjusted(0.5, 0.5, -0.5, -0.5)
+            radius = parse_px(t.get("--radius", "6px"), 6, 0, 32)
+            path = QPainterPath()
+            path.addRoundedRect(rect, radius, radius)
+
+            if not self.isEnabled():
+                bg_color = qcolor(t.get("--surface-muted", "#F1F5F9"))
+            else:
+                bg_color = qcolor(t.get("--surface", "#FFFFFF"))
+            painter.fillPath(path, bg_color)
+
+            if not self.isEnabled():
+                pen_color = qcolor(t.get("--border", "#E2E8F0"))
+            elif self.hasFocus() or self._pressed:
+                pen_color = qcolor(t.get("--input-focus-border", "#FFFFFF" if t.is_dark() else "#0F172A"))
+            elif self._hovered:
+                pen_color = qcolor(t.get("--input-hover-border", "rgba(255, 255, 255, 0.40)" if t.is_dark() else "#94A3B8"))
+            else:
+                pen_color = qcolor(t.get("--border", "#E2E8F0"))
+
+            painter.strokePath(path, QPen(pen_color, 1.0))
+            painter.end()
+
             super().paintEvent(event)
             self._draw_arrow()
             return

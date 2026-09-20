@@ -30,10 +30,10 @@ class MkProgressRing(MkQWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setAlignment(Qt.AlignCenter)
 
-        self.text_label = QLabel(f"{self._percentage}%")
+        self.text_label = QLabel(f"{self._percentage}%", self)
         self.text_label.setAlignment(Qt.AlignCenter)
-        self.text_label.setVisible(self._show_text)
         self.layout.addWidget(self.text_label)
+        self.text_label.setVisible(self._show_text)
 
         self._update_style()
 

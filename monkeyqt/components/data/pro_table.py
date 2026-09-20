@@ -1705,7 +1705,6 @@ class MkProTable(MkQWidget):
                 ellipsis_lbl = QLabel("...", self.right_pager)
                 ellipsis_lbl.setFixedWidth(24)
                 ellipsis_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                ellipsis_lbl.setStyleSheet("color: #94A3B8;")
                 self.pager_layout.addWidget(ellipsis_lbl)
             else:
                 btn = QPushButton(str(p), self.right_pager)
@@ -1886,36 +1885,78 @@ class MkProTable(MkQWidget):
         self.total_label.setStyleSheet(f"color: {muted}; background: transparent; border: none;")
         self.page_size_label.setStyleSheet(f"color: {muted}; background: transparent; border: none;")
 
-        # 4. 更新翻页按钮组 QSS
+        # 4. 更新翻页按钮组 QSS (严格对齐现代设计规范，参考图2)
         btn_radius = 0 if t.is_brutal() or t.is_pixel() else 6
+        if t.is_brutal():
+            page_fg = "#000000" if not is_dark else "#FFFFFF"
+            disabled_fg = "#9CA3AF" if not is_dark else "#52525B"
+            hover_bg = "#E2E8F0" if not is_dark else "#262626"
+            active_bg = "#FFDE59" if not is_dark else primary
+            active_fg = "#000000" if not is_dark else readable_text(primary)
+            active_bd = "2px solid #000000"
+        elif t.is_glow():
+            page_fg = fg
+            disabled_fg = "#52525B" if is_dark else "#9CA3AF"
+            hover_bg = "rgba(255, 255, 255, 0.10)"
+            active_bg = primary
+            active_fg = readable_text(primary)
+            active_bd = f"1px solid {primary}"
+        elif is_dark:
+            # 暗黑 / OLED 模式：纯中性深灰，彻底消除蓝紫色偏，无生硬外边框（严格参考图2）
+            page_fg = "#F4F4F5"
+            disabled_fg = "#52525B"  # 纯正中性暗灰 (Zinc-600)，彻底消除偏蓝
+            hover_bg = "rgba(255, 255, 255, 0.08)"
+            active_bg = "#27272A"  # 悬浮深灰胶囊卡片（参考图2中的高质感选中状态）
+            active_fg = "#FFFFFF"
+            active_bd = "1px solid rgba(255, 255, 255, 0.12)"
+        else:
+            # 亮色模式
+            page_fg = "#0F172A"
+            disabled_fg = "#A1A1AA"  # 纯正中性浅灰 (Zinc-400)，彻底消除偏蓝
+            hover_bg = "rgba(0, 0, 0, 0.05)"
+            active_bg = "#0F172A"
+            active_fg = "#FFFFFF"
+            active_bd = "1px solid #0F172A"
+
         self.right_pager.setStyleSheet(f"""
             QPushButton {{
                 background-color: transparent;
-                border: 1px solid {border};
+                border: 1px solid transparent;
                 border-radius: {btn_radius}px;
-                color: {fg};
+                color: {page_fg};
                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif;
-                font-size: 12px;
+                font-size: 13px;
+                font-weight: 500;
                 padding: 4px 10px;
-                min-height: 20px;
+                min-height: 24px;
+                outline: none;
             }}
             QPushButton:hover {{
-                background-color: {surface_muted};
-                border-color: {border};
+                background-color: {hover_bg};
+                border: 1px solid transparent;
+                color: {page_fg};
             }}
             QPushButton:disabled {{
-                color: {t.get("--text-disabled", "#94A3B8")};
-                border-color: {border};
+                color: {disabled_fg};
+                border: 1px solid transparent;
                 background-color: transparent;
             }}
             QPushButton#ActivePageBtn {{
-                background-color: {primary};
+                background-color: {active_bg};
                 color: {active_fg};
-                border: 1px solid {primary};
+                border: {active_bd};
                 font-weight: 600;
             }}
             QPushButton#ActivePageBtn:hover {{
-                background-color: {primary};
+                background-color: {active_bg};
+                color: {active_fg};
+            }}
+            QLabel {{
+                color: {disabled_fg};
+                font-size: 13px;
+                font-weight: 600;
+                background: transparent;
+                border: none;
             }}
         """)
 

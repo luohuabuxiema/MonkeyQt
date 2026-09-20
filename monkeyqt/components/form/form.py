@@ -41,15 +41,15 @@ class MkForm(MkQWidget):
         self.main_layout.setSpacing(10)
 
         # 标题与描述
-        self.title_label = QLabel(self._title)
-        self.title_label.setVisible(bool(self._title))
+        self.title_label = QLabel(self._title, self)
         self.title_label.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
         self.main_layout.addWidget(self.title_label)
+        self.title_label.setVisible(bool(self._title))
 
-        self.description_label = QLabel(self._description)
+        self.description_label = QLabel(self._description, self)
         self.description_label.setWordWrap(True)
-        self.description_label.setVisible(bool(self._description))
         self.main_layout.addWidget(self.description_label)
+        self.description_label.setVisible(bool(self._description))
 
         # 表单具体内容容器
         self.form_container = QWidget()

@@ -50,37 +50,37 @@ class MkAlert(MkQWidget):
         self.main_layout.setSpacing(12)
 
         # Icon
-        self.icon_label = QLabel()
+        self.icon_label = QLabel(self)
         self.icon_label.setFixedSize(16, 16)
         self.icon_label.setAlignment(Qt.AlignCenter)
-        self.icon_label.setVisible(self._show_icon)
         self.main_layout.addWidget(self.icon_label, 0, Qt.AlignTop | Qt.AlignLeft)
+        self.icon_label.setVisible(self._show_icon)
 
         # Content layout (Title + Description)
         self.content_layout = QVBoxLayout()
         self.content_layout.setSpacing(4)
         
-        self.title_label = QLabel(self._title)
+        self.title_label = QLabel(self._title, self)
         self.title_label.setWordWrap(True)
         self.title_label.setObjectName("alert-title")
         self.content_layout.addWidget(self.title_label)
 
-        self.desc_label = QLabel(self._description)
+        self.desc_label = QLabel(self._description, self)
         self.desc_label.setWordWrap(True)
         self.desc_label.setObjectName("alert-desc")
-        self.desc_label.setVisible(bool(self._description))
         self.content_layout.addWidget(self.desc_label)
+        self.desc_label.setVisible(bool(self._description))
 
         self.main_layout.addLayout(self.content_layout, 1)
 
         # Close button
-        self.close_btn = QPushButton("✕")
+        self.close_btn = QPushButton("✕", self)
         self.close_btn.setObjectName("alert-close-btn")
         self.close_btn.setFixedSize(16, 16)
         self.close_btn.setCursor(Qt.PointingHandCursor)
         self.close_btn.clicked.connect(self.close_alert)
-        self.close_btn.setVisible(self._closable)
         self.main_layout.addWidget(self.close_btn, 0, Qt.AlignTop | Qt.AlignRight)
+        self.close_btn.setVisible(self._closable)
 
         self._update_icon()
 

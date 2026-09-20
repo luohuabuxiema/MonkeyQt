@@ -810,11 +810,12 @@ def _apply_widget(
     *,
     skip_self_managed: bool = False,
 ) -> None:
-    if hasattr(widget, "set_theme_style"):
+    handler = getattr(widget, "set_theme_style", None) or getattr(widget, "update_theme_style", None)
+    if handler:
         if skip_self_managed:
             return
         try:
-            widget.set_theme_style()
+            handler()
         except Exception:
             pass
         return
@@ -868,11 +869,15 @@ def _apply_widget(
     elif name == "MkSubMenu":
         _apply_submenu(widget, p)
     elif name == "MkTopbar":
-        widget.setStyleSheet(_topbar_qss(p))
-        if hasattr(widget, "logo_label"):
-            _style_label(widget.logo_label, f"color: {p['primary_text']}; font-size: 20px; font-weight: 800; background: transparent;")
+        if hasattr(widget, "update_theme_style"):
+            widget.update_theme_style()
+        else:
+            widget.setStyleSheet(_topbar_qss(p))
     elif name == "MkTopbarItem":
-        widget.setStyleSheet(_topbar_item_qss(p))
+        if hasattr(widget, "update_theme_style"):
+            widget.update_theme_style()
+        else:
+            widget.setStyleSheet(_topbar_item_qss(p))
     elif name == "MkTabs":
         _apply_panel(widget, p)
         if hasattr(widget, "header_widget"):
@@ -933,6 +938,8 @@ def _apply_widget(
             _apply_combobox_view(combo, p)
     elif _is_yolo_plain_helper(widget):
         _apply_yolo_plain_helper(widget)
+    elif _ancestor(widget, "MkConsole") is not None:
+        pass
     elif _is_native_pyside_widget(widget):
         _apply_native_widget(widget, p)
 
@@ -2873,51 +2880,42 @@ def _apply_multicombobox(widget: QWidget, p: dict[str, str | int | bool]) -> Non
         widget.scroll_area.viewport().setStyleSheet(f"background-color: {face_surface}; border: none;")
     if hasattr(widget, "popup"):
         popup = widget.popup
-        if not hasattr(popup, "_mk_theme_original_show_popup") and hasattr(popup, "show_popup"):
-            popup._mk_theme_original_show_popup = popup.show_popup
-
-            def _theme_show_popup(self):
-                _apply_multicombobox(self.parent_combo, _palette())
-                self._mk_theme_original_show_popup()
-                _position_multicombobox_popup(self)
-                _apply_multicombobox(self.parent_combo, _palette())
-                QTimer.singleShot(0, lambda: _position_multicombobox_popup(self))
-
-            popup.show_popup = types.MethodType(_theme_show_popup, popup)
-
-        _save_widget(popup)
-        popup.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        popup.setStyleSheet(f"""
-            QFrame#popup_frame {{
-                background-color: {popup_surface};
-                border: 1px solid {border};
-                border-radius: {popup_radius}px;
-                padding: 0px;
-            }}
-            QWidget#scroll_widget {{
-                background-color: {popup_surface};
-                border: none;
-            }}
-        """)
-        _apply_popup_window_shape(popup, popup_radius)
-        if hasattr(popup, "scroll_area"):
-            _save_widget(popup.scroll_area)
-            popup.scroll_area.setStyleSheet(f"""
-                QScrollArea#MultiComboPopupScrollArea {{
+        if hasattr(popup, "update_theme_style"):
+            popup.update_theme_style()
+        else:
+            _save_widget(popup)
+            popup.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+            popup.setStyleSheet(f"""
+                QFrame#popup_frame {{
+                    background-color: {popup_surface};
+                    border: 1px solid {border};
+                    border-radius: {popup_radius}px;
+                    padding: 0px;
+                }}
+                QWidget#scroll_widget {{
                     background-color: {popup_surface};
                     border: none;
                 }}
-                QScrollArea#MultiComboPopupScrollArea > QWidget {{
-                    background-color: {popup_surface};
-                    border: none;
-                }}
-                {_scroll_qss(p, vertical=True)}
             """)
-            _save_widget(popup.scroll_area.viewport())
-            popup.scroll_area.viewport().setStyleSheet(f"background-color: {popup_surface}; border: none;")
-        if hasattr(popup, "scroll_widget"):
-            _save_widget(popup.scroll_widget)
-            popup.scroll_widget.setStyleSheet(f"QWidget#scroll_widget {{ background-color: {popup_surface}; border: none; }}")
+            _apply_popup_window_shape(popup, popup_radius)
+            if hasattr(popup, "scroll_area"):
+                _save_widget(popup.scroll_area)
+                popup.scroll_area.setStyleSheet(f"""
+                    QScrollArea#MultiComboPopupScrollArea {{
+                        background-color: {popup_surface};
+                        border: none;
+                    }}
+                    QScrollArea#MultiComboPopupScrollArea > QWidget {{
+                        background-color: {popup_surface};
+                        border: none;
+                    }}
+                    {_scroll_qss(p, vertical=True)}
+                """)
+                _save_widget(popup.scroll_area.viewport())
+                popup.scroll_area.viewport().setStyleSheet(f"background-color: {popup_surface}; border: none;")
+            if hasattr(popup, "scroll_widget"):
+                _save_widget(popup.scroll_widget)
+                popup.scroll_widget.setStyleSheet(f"QWidget#scroll_widget {{ background-color: {popup_surface}; border: none; }}")
         for _, _, checkbox, item_widget in getattr(popup, "items", []):
             _save_widget(checkbox)
             checkbox.setStyleSheet(_checkbox_qss(p))
@@ -3904,35 +3902,42 @@ def _apply_submenu(widget: QWidget, p: dict[str, str | int | bool]) -> None:
 
 
 def _topbar_qss(p: dict[str, str | int | bool]) -> str:
-    bg = p["primary"] if not p["dark"] else p["surface"]
+    surface = str(p["surface"])
+    border = str(p["border"])
     return f"""
         #mk-topbar {{
-            background-color: {bg};
-            border: {p['border_rule']};
-            border-radius: {p['radius']};
+            background-color: {surface};
+            border: none;
+            border-bottom: 1px solid {border};
         }}
     """
 
 
 def _topbar_item_qss(p: dict[str, str | int | bool]) -> str:
+    is_dark = bool(p["dark"])
+    muted = str(p["muted"])
+    active_color = str(p["primary"]) if (p["glow"] or p["flat"]) else ("#FFFFFF" if is_dark else "#0F172A")
+    hover_color = "#FFFFFF" if is_dark else "#0F172A"
+    hover_bg = "rgba(255, 255, 255, 0.08)" if is_dark else "rgba(0, 0, 0, 0.04)"
     return f"""
         MkTopbarItem {{
             border: none;
             border-bottom: 2px solid transparent;
             background: transparent;
-            color: {p['muted']};
+            color: {muted};
             font-size: 14px;
             padding: 0 20px;
             font-family: {p['font']};
-            font-weight: 700;
+            font-weight: 500;
         }}
         MkTopbarItem:hover {{
-            color: {p['primary_text']};
-            background-color: rgba(255, 255, 255, 42);
+            color: {hover_color};
+            background-color: {hover_bg};
         }}
         MkTopbarItem:checked {{
-            color: {p['primary_text']};
-            border-bottom: 2px solid {p['primary_text']};
+            color: {active_color};
+            border-bottom: 2px solid {active_color};
+            font-weight: 700;
         }}
     """
 

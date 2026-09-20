@@ -396,7 +396,7 @@ class MkMenu(MkQWidget):
         self.title_layout.setSpacing(0) # Remove default spacing
         
         # 汉堡包按钮 (如果模式为 hamburger)
-        self.hamburger_btn = QPushButton("≡")
+        self.hamburger_btn = QPushButton("≡", self)
         self.hamburger_btn.setObjectName("SidebarHamburgerButton")
         self.hamburger_btn.setFixedSize(64, 60)
         self.hamburger_btn.setCursor(Qt.PointingHandCursor)
@@ -417,7 +417,7 @@ class MkMenu(MkQWidget):
         self.hamburger_btn.clicked.connect(self.toggle_collapse)
         
         # 头部折叠按钮
-        self.header_collapse_btn = QPushButton()
+        self.header_collapse_btn = QPushButton(self)
         self.header_collapse_btn.setObjectName("SidebarHeaderCollapseButton")
         self.header_collapse_btn.setFixedSize(36, 36)
         self.header_collapse_btn.setCursor(Qt.PointingHandCursor)
@@ -446,7 +446,7 @@ class MkMenu(MkQWidget):
             self.title_layout.addWidget(self.hamburger_btn)
             # 汉堡包模式下，如果仍有图标，放到汉堡包后面
             if self._icon:
-                self.icon_label = QLabel()
+                self.icon_label = QLabel(self)
                 self.icon_label.setFixedWidth(24)
                 self.icon_label.setAlignment(Qt.AlignCenter)
                 pm = _resolve_icon_pixmap(self._icon, "#303133", 20)
@@ -457,12 +457,12 @@ class MkMenu(MkQWidget):
                 self.title_layout.addWidget(self.icon_label)
                 self.title_layout.addSpacing(8) # 图标与文字的间距
             else:
-                self.icon_label = QLabel() # placeholder
+                self.icon_label = QLabel(self) # placeholder
                 self.icon_label.hide()
         elif self._collapse_mode == "header":
             self.hamburger_btn.hide()
             self.title_layout.setContentsMargins(20, 0, 16, 0)
-            self.icon_label = QLabel()
+            self.icon_label = QLabel(self)
             self.icon_label.setFixedWidth(24)
             self.icon_label.setAlignment(Qt.AlignCenter)
             if self._icon:

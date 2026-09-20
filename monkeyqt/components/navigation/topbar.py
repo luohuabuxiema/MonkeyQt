@@ -49,6 +49,8 @@ class MkTopbarItem(QPushButton):
             }}
         """)
 
+    set_theme_style = update_theme_style
+
 class MkTopbar(QFrame):
     """
     MkTopbar 顶部导航栏组件
@@ -133,3 +135,5 @@ class MkTopbar(QFrame):
                     padding-right: 24px;
                 }}
             """)
+
+    set_theme_style = update_theme_style

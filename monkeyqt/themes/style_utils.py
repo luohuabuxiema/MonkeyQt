@@ -231,3 +231,67 @@ def draw_liquid_glass(
     painter.drawPath(glint)
 
     return path
+
+
+def modern_scrollbar_qss(
+    is_dark: bool = False,
+    width: int = 7,
+    radius: int = 3,
+    thumb_color: str | None = None,
+    hover_color: str | None = None,
+) -> str:
+    """Generate modern, minimalist web-style rounded capsule scrollbar QSS."""
+    thumb = thumb_color or ("rgba(255, 255, 255, 0.25)" if is_dark else "rgba(0, 0, 0, 0.20)")
+    thumb_h = hover_color or ("rgba(255, 255, 255, 0.42)" if is_dark else "rgba(0, 0, 0, 0.35)")
+    return f"""
+        QScrollBar:vertical {{
+            border: none;
+            background: transparent;
+            width: {width}px;
+            margin: 0px;
+        }}
+        QScrollBar::handle:vertical {{
+            background: {thumb};
+            min-height: 24px;
+            border-radius: {radius}px;
+        }}
+        QScrollBar::handle:vertical:hover {{
+            background: {thumb_h};
+        }}
+        QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+            width: 0px;
+            height: 0px;
+            border: none;
+            background: transparent;
+        }}
+        QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{
+            background: transparent;
+        }}
+
+        QScrollBar:horizontal {{
+            border: none;
+            background: transparent;
+            height: {width}px;
+            margin: 0px;
+        }}
+        QScrollBar::handle:horizontal {{
+            background: {thumb};
+            min-width: 24px;
+            border-radius: {radius}px;
+        }}
+        QScrollBar::handle:horizontal:hover {{
+            background: {thumb_h};
+        }}
+        QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
+            width: 0px;
+            height: 0px;
+            border: none;
+            background: transparent;
+        }}
+        QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {{
+            background: transparent;
+        }}
+        QScrollBar::corner {{
+            background: transparent;
+        }}
+    """

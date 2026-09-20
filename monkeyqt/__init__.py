@@ -6,6 +6,13 @@ from .components.navigation.sidebar import MkMenu
 from .components.navigation.topbar import MkTopbar
 from .components.navigation.breadcrumb import MkBreadcrumb
 from .components.navigation.tabs import MkTabs
+from .components.navigation.segmented import (
+    MkSegmented,
+    MkSegmentedTabs,
+    MkSegmentedControl,
+    MkCapsuleTabs,
+    SegmentedTabBar,
+)
 from .components.navigation.pagination import MkPagination
 from .components.navigation.dropdown import MkDropdown
 from .components.navigation.history import MkAnimatedStackedWidget, MkHistoryNavigation
@@ -50,6 +57,7 @@ from .components.layout.window import MkTitleBar, MkWindow
 from .components.layout.window_shell import MkWindowShell
 from .components.layout.box import MkQVBoxLayout, MkQHBoxLayout, MkVBox, MkHBox
 from .components.layout.widget import MkQWidget, MkWidget
+from .components.layout.scroll_area import MkScrollArea, MkStackedWidget
 
 
 # Themes (68 UI Styles)
@@ -64,6 +72,7 @@ from .themes import (
     exclude_from_theme,
     include_in_theme,
     MkThemeSelector,
+    modern_scrollbar_qss,
 )
 
 __version__ = "0.2.1"
@@ -75,6 +84,11 @@ __all__ = [
     "MkTopbar",
     "MkBreadcrumb",
     "MkTabs",
+    "MkSegmented",
+    "MkSegmentedTabs",
+    "MkSegmentedControl",
+    "MkCapsuleTabs",
+    "SegmentedTabBar",
     "MkPagination",
     "MkDropdown",
     "MkAnimatedStackedWidget",
@@ -116,6 +130,8 @@ __all__ = [
     "MkHBox",
     "MkQWidget",
     "MkWidget",
+    "MkScrollArea",
+    "MkStackedWidget",
     # Theme engine and helpers
     "ThemeEngine",
     "apply_monkeyqt_theme",
@@ -127,4 +143,5 @@ __all__ = [
     "exclude_from_theme",
     "include_in_theme",
     "MkThemeSelector",
+    "modern_scrollbar_qss",
 ]

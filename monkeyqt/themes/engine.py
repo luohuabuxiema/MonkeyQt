@@ -47,6 +47,15 @@ class ThemeEngine(QObject):
             return cls.clear_theme()
 
         if style_name not in THEME_TOKENS:
+            try:
+                from .manager import _normalize_theme_name
+                normalized = _normalize_theme_name(style_name)
+                if normalized in THEME_TOKENS:
+                    style_name = normalized
+            except Exception:
+                pass
+
+        if style_name not in THEME_TOKENS:
             return False
 
         cls._current_name = style_name
@@ -65,14 +74,13 @@ class ThemeEngine(QObject):
         try:
             if app:
                 qss = cls._build_global_qss()
+                app.setStyleSheet(qss)
                 if top_windows:
                     for w in top_windows:
                         try:
                             w.setStyleSheet(qss)
                         except Exception:
                             pass
-                else:
-                    app.setStyleSheet(qss)
 
             # 触发信号
             cls.instance().themeChanged.emit(style_name)
@@ -104,14 +112,13 @@ class ThemeEngine(QObject):
         try:
             if app:
                 qss = cls._build_global_qss()
+                app.setStyleSheet(qss)
                 if top_windows:
                     for w in top_windows:
                         try:
                             w.setStyleSheet(qss)
                         except Exception:
                             pass
-                else:
-                    app.setStyleSheet(qss)
 
             cls.instance().themeChanged.emit(cls.DEFAULT_THEME_NAME)
         finally:
@@ -366,6 +373,10 @@ class ThemeEngine(QObject):
         if not sidebar_text_muted:
             sidebar_text_muted = "#A1A1AA" if is_dark_theme else "#64748B"
 
+        text_disabled = t.get("--text-disabled", "")
+        if not is_color(text_disabled):
+            text_disabled = "#52525B" if is_dark_theme else "#A1A1AA"
+
         t.update({
             "--bg": qss_color(bg, "#FFFFFF"),
             "--fg": qss_color(fg, readable_text(bg)),
@@ -378,6 +389,7 @@ class ThemeEngine(QObject):
             "--surface": qss_color(surface, "#FFFFFF"),
             "--surface-muted": qss_color(surface_muted, "#F1F5F9"),
             "--text-muted": qss_color(text_muted, "#64748B"),
+            "--text-disabled": qss_color(text_disabled, "#52525B" if is_dark_theme else "#A1A1AA"),
             "--focus-ring": qss_color(input_focus_border, "#FFFFFF" if is_dark_theme else "#0F172A"),
             "--hover-primary": qss_color(input_hover_border, "rgba(255, 255, 255, 0.40)" if is_dark_theme else "#94A3B8"),
             "--pressed-primary": qss_color(darken(primary, 0.10) if primary != "#FFFFFF" else "#CBD5E1", "#E2E8F0" if is_dark_theme else "#334155"),
@@ -488,6 +500,8 @@ class ThemeEngine(QObject):
         button_hover = surface_muted
         handle_border = card_bg
         groove_bg = surface_muted
+        scroll_thumb = "rgba(255, 255, 255, 0.25)" if cls.is_dark() else "rgba(0, 0, 0, 0.20)"
+        scroll_thumb_hover = "rgba(255, 255, 255, 0.42)" if cls.is_dark() else "rgba(0, 0, 0, 0.35)"
 
         qss = f"""
             /* ====== MonkeyQt Global Theme: {cls._current_name} ====== */
@@ -773,22 +787,56 @@ class ThemeEngine(QObject):
                 padding: 4px 8px;
             }}
 
+            /* ── Universal Scrollbars ── */
             QScrollBar:vertical {{
+                border: none;
                 background: transparent;
-                width: 10px;
-                margin: 2px;
+                width: 7px;
+                margin: 0px;
             }}
-
             QScrollBar::handle:vertical {{
-                background: {text_muted};
-                border-radius: 5px;
-                min-height: 28px;
+                background: {scroll_thumb};
+                min-height: 24px;
+                border-radius: 3px;
             }}
-
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
+            QScrollBar::handle:vertical:hover {{
+                background: {scroll_thumb_hover};
+            }}
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+                width: 0px;
+                height: 0px;
+                border: none;
+                background: transparent;
+            }}
             QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{
                 background: transparent;
+            }}
+
+            QScrollBar:horizontal {{
                 border: none;
+                background: transparent;
+                height: 7px;
+                margin: 0px;
+            }}
+            QScrollBar::handle:horizontal {{
+                background: {scroll_thumb};
+                min-width: 24px;
+                border-radius: 3px;
+            }}
+            QScrollBar::handle:horizontal:hover {{
+                background: {scroll_thumb_hover};
+            }}
+            QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
+                width: 0px;
+                height: 0px;
+                border: none;
+                background: transparent;
+            }}
+            QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {{
+                background: transparent;
+            }}
+            QScrollBar::corner {{
+                background: transparent;
             }}
 
             QListWidget, QListView, QTreeWidget, QTreeView,

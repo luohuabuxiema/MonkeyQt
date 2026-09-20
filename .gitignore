@@ -51,5 +51,6 @@ core/
 ui/
 docs-site/
 ui-ux-pro-max-skill-main/
+scratch/
 
 mainui.py

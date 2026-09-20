@@ -6,6 +6,16 @@ from .pagination import MkPagination
 from .sidebar import MkMenu
 from .tabs import MkTabs
 from .topbar import MkTopbar
+from .segmented import (
+    MkSegmented,
+    MkSegmentedTabs,
+    MkSegmentedControl,
+    MkCapsuleTabs,
+    SegmentedTabBar,
+    MkSegmentedButton,
+    MkSegmentedBadge,
+    MkSegmentedIndicator,
+)
 
 __all__ = [
     "MkAnimatedStackedWidget",
@@ -17,4 +27,13 @@ __all__ = [
     "MkPagination",
     "MkTabs",
     "MkTopbar",
+    "MkSegmented",
+    "MkSegmentedTabs",
+    "MkSegmentedControl",
+    "MkCapsuleTabs",
+    "SegmentedTabBar",
+    "MkSegmentedButton",
+    "MkSegmentedBadge",
+    "MkSegmentedIndicator",
 ]
+

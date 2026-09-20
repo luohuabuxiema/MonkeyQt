@@ -742,11 +742,15 @@ class MkWindow(QMainWindow):
         preset="default",
         parent=None,
         sidebar_full_height=False,
+        auto_scroll=True,
     ):
         super().__init__(parent)
         self.use_custom_title_bar = use_custom_title_bar
         self._preset = preset
         self._sidebar_full_height = bool(sidebar_full_height)
+        self._auto_scroll = bool(auto_scroll)
+        self.content_scroll_area = None
+        self._auto_content_container = None
         self._close_behavior = "close"  # "close" or "hide"
         self._border_radius = 8
         self._normal_geometry = None
@@ -1068,17 +1072,113 @@ class MkWindow(QMainWindow):
         # column. The sidebar can then be promoted beside this column.
         if self.user_central_widget:
             self._restore_promoted_sidebar()
-            self._content_host_layout.removeWidget(self.user_central_widget)
+            if self.content_scroll_area and self.content_scroll_area.widget() == self.user_central_widget:
+                self.content_scroll_area.takeWidget()
+            else:
+                self._content_host_layout.removeWidget(self.user_central_widget)
             self.user_central_widget.deleteLater()
             
         self.user_central_widget = widget
         if widget:
             widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
             widget.setMouseTracking(True)
-            self._content_host_layout.addWidget(widget, stretch=1)
             self._apply_sidebar_layout()
+            
+            from PySide6.QtWidgets import QAbstractScrollArea
+            if self._auto_scroll and not isinstance(widget, QAbstractScrollArea):
+                from monkeyqt.components.layout.scroll_area import MkScrollArea
+                sidebar_info = self._find_sidebar_candidate(widget)
+                if sidebar_info is not None and not self._sidebar_full_height:
+                    # In non-full-height mode, sidebar is on the left, right widget is on the right.
+                    # Wrap only the right widget in MkScrollArea so the sidebar does not scroll!
+                    sidebar, s_layout, s_idx = sidebar_info
+                    right_child = None
+                    for idx in range(s_layout.count()):
+                        child = s_layout.itemAt(idx).widget()
+                        if child and child != sidebar and not isinstance(child, QAbstractScrollArea):
+                            right_child = child
+                            break
+                    if right_child:
+                        s_layout.removeWidget(right_child)
+                        if self.content_scroll_area is None:
+                            self.content_scroll_area = MkScrollArea(widget)
+                        self.content_scroll_area.setWidget(right_child)
+                        s_layout.addWidget(self.content_scroll_area, stretch=1)
+                    self._content_host_layout.addWidget(widget, stretch=1)
+                else:
+                    if self.content_scroll_area is None:
+                        self.content_scroll_area = MkScrollArea(self._content_host)
+                        self._content_host_layout.addWidget(self.content_scroll_area, stretch=1)
+                    self.content_scroll_area.setWidget(widget)
+                    self.content_scroll_area.show()
+            else:
+                if self.content_scroll_area is not None:
+                    self.content_scroll_area.hide()
+                self._content_host_layout.addWidget(widget, stretch=1)
+
             self._auto_detect_and_name_right_widget()
             self.update_style()
+
+    def set_auto_scroll(self, enabled: bool):
+        """Enable or disable automatic vertical scrolling for the content area."""
+        self._auto_scroll = bool(enabled)
+        if self.user_central_widget:
+            w = self.user_central_widget
+            self.user_central_widget = None
+            self.setCentralWidget(w)
+
+    def get_content_scroll_area(self):
+        """Return the active MkScrollArea for the content area, if any."""
+        return self.content_scroll_area
+
+    def scroll_to_top(self):
+        """Scroll the main content area smoothly to the top."""
+        if self.content_scroll_area:
+            self.content_scroll_area.scroll_to_top()
+
+    def scroll_to_bottom(self):
+        """Scroll the main content area to the bottom."""
+        if self.content_scroll_area:
+            self.content_scroll_area.scroll_to_bottom()
+
+    def scroll_to_widget(self, target: QWidget, x_margin: int = 0, y_margin: int = 0):
+        """Ensure the specified child widget is scrolled into view."""
+        if self.content_scroll_area:
+            self.content_scroll_area.scroll_to_widget(target, x_margin, y_margin)
+
+    def add_widget(self, widget: QWidget, stretch: int = 0):
+        """
+        Directly add a child component/widget to MkWindow's main content area.
+        Automatically sets up an adaptive scrollable container if no central widget exists.
+        """
+        if self._auto_content_container is None:
+            from monkeyqt.components.layout.widget import MkQWidget
+            self._auto_content_container = MkQWidget(role="transparent", layout="v", margins=20, spacing=15)
+            self._auto_content_container.setObjectName("MkAutoContentContainer")
+            self.setCentralWidget(self._auto_content_container)
+
+        layout = self._auto_content_container.layout()
+        if layout:
+            layout.addWidget(widget, stretch)
+
+    def add_stretch(self, stretch: int = 1):
+        """Add stretch space to the automatic content container."""
+        if self._auto_content_container is not None:
+            layout = self._auto_content_container.layout()
+            if layout:
+                layout.addStretch(stretch)
+
+    def add_layout(self, layout):
+        """Add a sub-layout to the automatic content container."""
+        if self._auto_content_container is None:
+            from monkeyqt.components.layout.widget import MkQWidget
+            self._auto_content_container = MkQWidget(role="transparent", layout="v", margins=20, spacing=15)
+            self._auto_content_container.setObjectName("MkAutoContentContainer")
+            self.setCentralWidget(self._auto_content_container)
+
+        main_layout = self._auto_content_container.layout()
+        if main_layout:
+            main_layout.addLayout(layout)
 
     def _apply_sidebar_layout(self):
         if not self.use_custom_title_bar or not self.user_central_widget:

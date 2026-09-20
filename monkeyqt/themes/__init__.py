@@ -14,6 +14,7 @@ from .manager import (
     use_theme,
 )
 from .components.theme_selector import MkThemeSelector
+from .style_utils import modern_scrollbar_qss
 
 __all__ = [
     "ThemeEngine",
@@ -26,4 +27,5 @@ __all__ = [
     "exclude_from_theme",
     "include_in_theme",
     "MkThemeSelector",
+    "modern_scrollbar_qss",
 ]
