@@ -65,6 +65,8 @@ class MkQWidget(QWidget):
         border_width: int = 1,
         border_color: Optional[str] = None,
         radius: int = 0,
+        scrollable: bool = False,
+        scroll_direction: str = "v",
         **kwargs
     ):
         # 兼容原生 QWidget(parent, flags) 构造调用规范
@@ -81,9 +83,32 @@ class MkQWidget(QWidget):
         self._border_width = border_width
         self._custom_border_color = border_color
         self._radius = radius
+        self._scrollable = bool(scrollable)
+        self._scroll_direction = (scroll_direction or "v").lower().strip()
+        self._scroll_area = None
+        self._scroll_content = None
 
         # 确保支持 QSS 样式表背景绘制
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+        # 若开启了自适应滚动条模式，初始化内部现代贴边滚动容器
+        if self._scrollable:
+            from monkeyqt.components.layout.scroll_area import MkScrollArea
+            self._scroll_area = MkScrollArea(
+                self,
+                horizontal=(self._scroll_direction in ("h", "both", "all", "horizontal"))
+            )
+            self._scroll_area.setObjectName("MkWidgetScrollArea")
+            self._root_layout = QVBoxLayout(self)
+            self._root_layout.setContentsMargins(0, 0, 0, 0)
+            self._root_layout.setSpacing(0)
+            self._root_layout.addWidget(self._scroll_area)
+
+            self._scroll_content = QWidget()
+            self._scroll_content.setObjectName("MkWidgetScrollContent")
+            self._scroll_content.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+            self._scroll_content.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+            self._scroll_area.setWidget(self._scroll_content)
 
         # 初始化排版布局
         self._inner_layout: Optional[QLayout] = None
@@ -106,19 +131,20 @@ class MkQWidget(QWidget):
         spacing: Optional[int] = None
     ) -> QLayout:
         """根据简写配置创建并绑定内部布局"""
+        target = self._scroll_content if (self._scrollable and self._scroll_content is not None) else self
         if isinstance(layout_spec, QLayout):
             self._inner_layout = layout_spec
-            self.setLayout(layout_spec)
+            target.setLayout(layout_spec)
         elif isinstance(layout_spec, str):
             ltype = layout_spec.lower().strip()
             if ltype in ("v", "vbox", "vertical", "col", "column"):
-                self._inner_layout = QVBoxLayout(self)
+                self._inner_layout = QVBoxLayout(target)
             elif ltype in ("h", "hbox", "horizontal", "row"):
-                self._inner_layout = QHBoxLayout(self)
+                self._inner_layout = QHBoxLayout(target)
             elif ltype in ("grid", "g"):
-                self._inner_layout = QGridLayout(self)
+                self._inner_layout = QGridLayout(target)
             else:
-                self._inner_layout = QVBoxLayout(self)
+                self._inner_layout = QVBoxLayout(target)
 
         if margins is not None and self._inner_layout:
             l, t, r, b = _parse_margins(margins)
@@ -132,14 +158,48 @@ class MkQWidget(QWidget):
     @property
     def inner_layout(self) -> Optional[QLayout]:
         """获取当前绑定的主布局对象"""
-        return self._inner_layout or self.layout()
+        if self._inner_layout is not None:
+            return self._inner_layout
+        if self._scrollable and self._scroll_content is not None:
+            return self._scroll_content.layout()
+        return self.layout()
 
     @inner_layout.setter
     def inner_layout(self, val: Optional[QLayout]):
         self._inner_layout = val
 
+    def is_scrollable(self) -> bool:
+        """判断当前部件是否配置为带滚动条的页面容器"""
+        return self._scrollable
+
+    def get_scroll_area(self):
+        """获取内部的 MkScrollArea 实例（若开启了 scrollable）"""
+        return self._scroll_area
+
+    def scroll_to_top(self):
+        """平滑滚动至最顶部"""
+        if self._scroll_area:
+            self._scroll_area.scroll_to_top()
+
+    def scroll_to_bottom(self):
+        """平滑滚动至最底部"""
+        if self._scroll_area:
+            self._scroll_area.scroll_to_bottom()
+
+    def scroll_to_widget(self, target: QWidget, x_margin: int = 0, y_margin: int = 0):
+        """确保目标子部件处于可视区域内"""
+        if self._scroll_area:
+            self._scroll_area.scroll_to_widget(target, x_margin, y_margin)
+
     def add_widget(self, widget: QWidget, stretch: int = 0, alignment: Qt.AlignmentFlag = Qt.AlignmentFlag(0)) -> "MkQWidget":
         """向当前布局添加子控件"""
+        # 如果当前处于网页式自适应滚动模式，且子控件为支持 auto_height 的数据表格，自动激活展开模式
+        if self._scrollable and hasattr(widget, "set_auto_height"):
+            try:
+                widget.set_auto_height(True)
+            except Exception:
+                pass
+
         lay = self.inner_layout
         if lay is None:
             lay = self._setup_layout("v")

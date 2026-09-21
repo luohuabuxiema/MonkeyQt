@@ -13,6 +13,7 @@ MonkeyQt Console Component — 现代化前端/终端风格控制台日志组件
 import sys
 import os
 import datetime
+import html
 from typing import Optional, List, Dict, Any, Union
 
 from PySide6.QtWidgets import (
@@ -146,16 +147,39 @@ class MkConsole(MkQWidget):
         title: str = "控制台日志 / Console Logs",
         terminal_mode: str = "adaptive",
         show_divider: bool = False,
+        show_filters: bool = True,
+        show_level_tags: bool = True,
+        show_timestamp: bool = True,
+        show_search: bool = True,
+        show_tools: bool = True,
+        show_header: bool = True,
+        word_wrap: bool = True,
+        autoscroll: bool = True,
+        max_lines: int = 1000,
+        clean_mode: bool = False,
         parent: Optional[QWidget] = None
     ):
         super().__init__(parent)
         self.title_text = title
         self.terminal_mode = terminal_mode  # "adaptive" (默认随全局 68 款主题自适应) 或 "dark" (固定暗黑终端)
         self.show_divider = show_divider    # 顶栏与日志区域之间的分割边框线，默认不显示（严丝合缝无边框线）
-        self._max_lines = 1000
-        self._autoscroll = True
-        self._word_wrap = True
-        self._show_timestamp = True
+
+        if clean_mode:
+            self.show_filters = False
+            self.show_level_tags = False
+            self.show_timestamp = False
+        else:
+            self.show_filters = show_filters          # 是否显示顶部日志级别过滤胶囊（全部/Info/Success/Warn/Error）
+            self.show_level_tags = show_level_tags    # 是否在日志条目首部显示彩色级别微徽标（INFO/SUCCESS/WARN/ERROR）
+            self.show_timestamp = show_timestamp      # 是否显示日志时间戳
+
+        self.show_search = show_search              # 是否显示实时关键字过滤框
+        self.show_tools = show_tools                # 是否显示右侧快捷工具按钮
+        self.show_header = show_header              # 是否显示整个顶部控制栏
+
+        self._max_lines = max_lines
+        self._autoscroll = autoscroll
+        self._word_wrap = word_wrap
         self._current_filter_level = "all"
         self._search_keyword = ""
 
@@ -210,15 +234,15 @@ class MkConsole(MkQWidget):
 
         header_layout.addWidget(self.title_icon)
         header_layout.addWidget(self.title_label)
+        header_layout.addSpacing(6)
 
-        # 1.2 状态指示徽章 (不使用表情符号)
-        self.status_pill = QLabel("就绪", self.header_frame)
-        self.status_pill.setFont(QFont("Segoe UI", 8, QFont.Weight.DemiBold))
-        header_layout.addWidget(self.status_pill)
+        # 1.3 日志级别过滤胶囊容器 (All, Info, Success, Warn, Error)
+        self.filter_container = QWidget(self.header_frame)
+        self.filter_container.setObjectName("MkConsoleFilterContainer")
+        filter_layout = QHBoxLayout(self.filter_container)
+        filter_layout.setContentsMargins(0, 0, 0, 0)
+        filter_layout.setSpacing(6)
 
-        header_layout.addSpacing(8)
-
-        # 1.3 日志级别过滤胶囊 (All, Info, Success, Warn, Error)
         self.filter_pills: Dict[str, _ConsoleFilterPill] = {}
         pill_defs = [
             ("all", "全部", {"fg": "#E2E8F0", "bg": "rgba(255,255,255,0.08)", "border": "rgba(255,255,255,0.15)", "active_bg": "#3B82F6", "active_border": "#3B82F6"}),
@@ -228,12 +252,13 @@ class MkConsole(MkQWidget):
             ("error", "Error", {"fg": "#F87171", "bg": "rgba(239,68,68,0.12)", "border": "rgba(239,68,68,0.25)", "active_bg": "#DC2626", "active_border": "#EF4444"}),
         ]
         for key, lbl, colors in pill_defs:
-            pill = _ConsoleFilterPill(key, lbl, colors, self.header_frame)
+            pill = _ConsoleFilterPill(key, lbl, colors, self.filter_container)
             pill.clicked.connect(lambda checked=False, k=key: self.set_filter_level(k))
             self.filter_pills[key] = pill
-            header_layout.addWidget(pill)
+            filter_layout.addWidget(pill)
 
         self.filter_pills["all"].set_selected(True)
+        header_layout.addWidget(self.filter_container)
         header_layout.addStretch(1)
 
         # 1.4 实时关键字搜索框 (不使用表情符号)
@@ -244,30 +269,44 @@ class MkConsole(MkQWidget):
         self.search_input.textChanged.connect(self._on_search_changed)
         header_layout.addWidget(self.search_input)
 
-        # 1.6 快捷操作工具按钮
-        self.btn_autoscroll = _ConsoleToolButton("arrow-down-line", "自动滚动到底部 (开启/关闭)", self.header_frame)
-        self.btn_autoscroll.is_active_toggle = True
+        # 1.6 快捷操作工具按钮容器
+        self.tools_container = QWidget(self.header_frame)
+        self.tools_container.setObjectName("MkConsoleToolsContainer")
+        tools_layout = QHBoxLayout(self.tools_container)
+        tools_layout.setContentsMargins(0, 0, 0, 0)
+        tools_layout.setSpacing(6)
+
+        self.btn_autoscroll = _ConsoleToolButton("arrow-down-line", "自动滚动到底部 (开启/关闭)", self.tools_container)
+        self.btn_autoscroll.is_active_toggle = self._autoscroll
         self.btn_autoscroll.clicked.connect(self._toggle_autoscroll)
-        header_layout.addWidget(self.btn_autoscroll)
+        tools_layout.addWidget(self.btn_autoscroll)
 
-        self.btn_wrap = _ConsoleToolButton("text-align-left", "自动折行 (开启/关闭)", self.header_frame)
-        self.btn_wrap.is_active_toggle = True
+        self.btn_wrap = _ConsoleToolButton("text-align-left", "自动折行 (开启/关闭)", self.tools_container)
+        self.btn_wrap.is_active_toggle = self._word_wrap
         self.btn_wrap.clicked.connect(self._toggle_wrap)
-        header_layout.addWidget(self.btn_wrap)
+        tools_layout.addWidget(self.btn_wrap)
 
-        self.btn_copy = _ConsoleToolButton("copy", "复制全部过滤日志", self.header_frame)
+        self.btn_copy = _ConsoleToolButton("copy", "复制全部过滤日志", self.tools_container)
         self.btn_copy.clicked.connect(self.copy_all)
-        header_layout.addWidget(self.btn_copy)
+        tools_layout.addWidget(self.btn_copy)
 
-        self.btn_mode = _ConsoleToolButton("sparkle", "切换终端皮肤 (Dark / Adaptive)", self.header_frame)
+        self.btn_mode = _ConsoleToolButton("sparkle", "切换终端皮肤 (Dark / Adaptive)", self.tools_container)
         self.btn_mode.clicked.connect(self._toggle_terminal_mode)
-        header_layout.addWidget(self.btn_mode)
+        tools_layout.addWidget(self.btn_mode)
 
-        self.btn_clear = _ConsoleToolButton("trash", "清空控制台", self.header_frame)
+        self.btn_clear = _ConsoleToolButton("trash", "清空控制台", self.tools_container)
         self.btn_clear.clicked.connect(self.clear)
-        header_layout.addWidget(self.btn_clear)
+        tools_layout.addWidget(self.btn_clear)
+
+        header_layout.addWidget(self.tools_container)
 
         self.main_layout.addWidget(self.header_frame)
+
+        # 应用组件初始可见性设置
+        self.filter_container.setVisible(self.show_filters)
+        self.search_input.setVisible(self.show_search)
+        self.tools_container.setVisible(self.show_tools)
+        self.header_frame.setVisible(self.show_header)
 
         # ── 2. 现代化终端日志输出视口 ──
         self.text_edit = QTextEdit(self)
@@ -279,7 +318,7 @@ class MkConsole(MkQWidget):
         self.text_edit.setMidLineWidth(0)
         self.text_edit.setReadOnly(True)
         self.text_edit.setUndoRedoEnabled(False)
-        self.text_edit.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
+        self.text_edit.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth if self._word_wrap else QTextEdit.LineWrapMode.NoWrap)
         self.text_edit.document().setDocumentMargin(14)
 
         # 现代等宽字体，保证排版整齐划一
@@ -300,6 +339,72 @@ class MkConsole(MkQWidget):
         """设置是否显示顶栏与日志区域之间的横向分割边框线。"""
         self.show_divider = bool(show)
         self.apply_theme_colors()
+
+    def set_show_filters(self, show: bool):
+        """设置是否显示顶部日志级别过滤胶囊 (全部/Info/Success/Warn/Error)。"""
+        self.show_filters = bool(show)
+        if hasattr(self, "filter_container"):
+            self.filter_container.setVisible(self.show_filters)
+
+    def set_show_level_tags(self, show: bool):
+        """设置是否在日志行首显示彩色级别微徽标 (INFO, SUCCESS, WARN, ERROR, DEBUG)。"""
+        self.show_level_tags = bool(show)
+        self._rebuild_display()
+
+    def set_clean_mode(self, clean: bool = True):
+        """
+        一键切换至纯净终端/训练输出模式：
+        - 隐藏顶部级别过滤胶囊；
+        - 隐藏每行开头的彩色级别徽标；
+        - 隐藏时间戳（只保留纯净的命令行输出文本）。
+        """
+        self.show_filters = not clean
+        self.show_level_tags = not clean
+        self.show_timestamp = not clean
+        if hasattr(self, "filter_container"):
+            self.filter_container.setVisible(self.show_filters)
+        self._rebuild_display()
+
+    def set_show_search(self, show: bool):
+        """设置是否显示顶部关键字搜索过滤框。"""
+        self.show_search = bool(show)
+        if hasattr(self, "search_input"):
+            self.search_input.setVisible(self.show_search)
+
+    def set_show_tools(self, show: bool):
+        """设置是否显示顶部右侧快捷工具按钮。"""
+        self.show_tools = bool(show)
+        if hasattr(self, "tools_container"):
+            self.tools_container.setVisible(self.show_tools)
+
+    def set_show_header(self, show: bool):
+        """设置是否显示整个顶部工具栏。"""
+        self.show_header = bool(show)
+        if hasattr(self, "header_frame"):
+            self.header_frame.setVisible(self.show_header)
+
+    def write(self, text: str):
+        """
+        流式/纯净文本写入接口（方便直接输出 YOLO 训练日志、流式 subprocess 输出等）。
+        自动按 raw 纯文本输出，不带任何级别微徽标与时间戳。
+        """
+        lines = str(text).splitlines()
+        if not lines:
+            if text == "\n":
+                return
+            self.log(str(text), level="raw", timestamp=False)
+        else:
+            for l in lines:
+                self.log(l, level="raw", timestamp=False)
+
+    def raw(self, text: str, timestamp: bool = False):
+        """纯文本打印接口，不带有任何级别微徽标。"""
+        self.log(text, level="raw", timestamp=timestamp)
+
+    def print(self, *args, sep: str = " ", end: str = "", timestamp: bool = False):
+        """模拟 Python 原生 print 打印接口。"""
+        text = sep.join(str(a) for a in args) + end
+        self.raw(text, timestamp=timestamp)
 
     def _toggle_terminal_mode(self):
         self.terminal_mode = "adaptive" if self.terminal_mode == "dark" else "dark"
@@ -408,16 +513,6 @@ class MkConsole(MkQWidget):
         self.title_label.setStyleSheet(f"color: {fg_main}; background: transparent; border: none;")
         self.title_icon.setPixmap(MkPhosphorIcon.get_pixmap("terminal-window", fg_muted, 16))
 
-        self.status_pill.setStyleSheet(f"""
-            QLabel {{
-                color: {status_fg};
-                background-color: {status_bg};
-                border-radius: 10px;
-                padding: 2px 8px;
-                border: none;
-            }}
-        """)
-
         # 动态同步过滤徽章主题样式
         pill_defs = {
             "all": {"fg": fg_main, "bg": "rgba(255,255,255,0.08)" if is_dark else "rgba(0,0,0,0.05)", "border": border, "active_bg": primary, "active_border": primary},
@@ -503,22 +598,25 @@ class MkConsole(MkQWidget):
 
         self._rebuild_display()
 
-    def log(self, text: str, level: str = "info", timestamp: bool = True):
+    def log(self, text: str, level: str = "info", timestamp: Optional[bool] = None):
         """
         核心日志打印接口。
         
         Args:
             text: 日志内容。
-            level: 日志级别 ("info", "success", "warning", "error", "debug")。
-            timestamp: 是否记录并展示时间戳。
+            level: 日志级别 ("info", "success", "warning", "error", "debug", "raw")。
+            timestamp: 是否记录并展示时间戳；若为 None 则默认遵循 self.show_timestamp。
         """
-        lvl = str(level).lower()
+        lvl = str(level).lower() if level else "raw"
         if lvl in ("warn", "warning"):
             lvl = "warning"
+        elif lvl in ("raw", "plain", "text", "none", ""):
+            lvl = "raw"
         elif lvl not in ("info", "success", "error", "debug"):
             lvl = "info"
 
-        now_str = datetime.datetime.now().strftime("%H:%M:%S") if timestamp and self._show_timestamp else ""
+        use_ts = self.show_timestamp if timestamp is None else bool(timestamp)
+        now_str = datetime.datetime.now().strftime("%H:%M:%S") if use_ts else ""
 
         entry = {
             "time": now_str,
@@ -527,14 +625,16 @@ class MkConsole(MkQWidget):
         }
         self._logs.append(entry)
         self._counts["all"] += 1
-        self._counts[lvl] = self._counts.get(lvl, 0) + 1
+        if lvl != "raw":
+            self._counts[lvl] = self._counts.get(lvl, 0) + 1
 
         # 超出行数限制则移出最早的日志
         if len(self._logs) > self._max_lines:
             removed = self._logs.pop(0)
             self._counts["all"] -= 1
             rm_lvl = removed["level"]
-            self._counts[rm_lvl] = max(0, self._counts.get(rm_lvl, 1) - 1)
+            if rm_lvl != "raw":
+                self._counts[rm_lvl] = max(0, self._counts.get(rm_lvl, 1) - 1)
             if self._matches_filter(removed):
                 doc = self.text_edit.document()
                 if doc.blockCount() > 0:
@@ -557,8 +657,9 @@ class MkConsole(MkQWidget):
                 self.text_edit.moveCursor(QTextCursor.MoveOperation.End)
 
     def _matches_filter(self, entry: Dict[str, Any]) -> bool:
-        if self._current_filter_level != "all" and entry["level"] != self._current_filter_level:
-            return False
+        if self.show_filters and self._current_filter_level != "all":
+            if entry["level"] != self._current_filter_level:
+                return False
         if self._search_keyword and self._search_keyword.lower() not in entry["text"].lower():
             return False
         return True
@@ -589,13 +690,19 @@ class MkConsole(MkQWidget):
                 "debug": ("#F1F5F9", "#64748B", "&nbsp;DEBUG&nbsp;&nbsp;")
             }
 
-        bg_col, fg_col, tag_html = badge_styles.get(lvl, ("#172554", "#60A5FA", "&nbsp;INFO&nbsp;&nbsp;&nbsp;"))
-
         time_part = f'<span style="color: {time_color}; font-family: Consolas;">{entry["time"]}</span>&nbsp;&nbsp;' if entry["time"] else ""
-        badge_part = f'<span style="background-color: {bg_col}; color: {fg_col}; font-family: Consolas; font-weight: bold;">{tag_html}&nbsp;</span>&nbsp;&nbsp;'
-        text_part = f'<span style="color: {text_color}; font-family: Consolas;">{entry["text"]}</span>'
 
-        return f'<p style="margin: 3px 0; line-height: 160%;">{time_part}{badge_part}{text_part}</p>'
+        # 是否展示彩色级别微徽标
+        if self.show_level_tags and lvl in badge_styles:
+            bg_col, fg_col, tag_html = badge_styles[lvl]
+            badge_part = f'<span style="background-color: {bg_col}; color: {fg_col}; font-family: Consolas; font-weight: bold;">{tag_html}&nbsp;</span>&nbsp;&nbsp;'
+        else:
+            badge_part = ""
+
+        # 安全转义并保留空格（&nbsp;）以确保 YOLO 训练等表格与字符严密对齐
+        safe_text = html.escape(entry["text"]).replace(" ", "&nbsp;")
+
+        return f'<p style="margin: 2px 0; line-height: 150%; font-family: Consolas, monospace;">{time_part}{badge_part}<span style="color: {text_color}; font-family: Consolas, monospace;">{safe_text}</span></p>'
 
     def _rebuild_display(self):
         self.text_edit.clear()
@@ -607,7 +714,7 @@ class MkConsole(MkQWidget):
             empty_msg = f"""
             <div style="text-align: left; padding: 6px 0; color: {muted_col};">
                 <p style="font-family: Consolas; font-size: 13px; margin: 0;">
-                    控制台就绪，等待日志输出...
+                    等待日志输出...
                 </p>
             </div>
             """
@@ -658,11 +765,13 @@ class MkConsole(MkQWidget):
         for e in self._logs:
             if self._matches_filter(e):
                 t_part = f"[{e['time']}] " if e['time'] else ""
-                lines.append(f"{t_part}[{e['level'].upper()}] {e['text']}")
+                lvl_part = f"[{e['level'].upper()}] " if self.show_level_tags and e['level'] != "raw" else ""
+                lines.append(f"{t_part}{lvl_part}{e['text']}")
         text = "\n".join(lines)
         QApplication.clipboard().setText(text)
-        self.status_pill.setText("已复制")
-        QTimer.singleShot(1500, lambda: self.status_pill.setText("就绪"))
+        orig_tip = self.btn_copy.toolTip()
+        self.btn_copy.setToolTip("已复制全部日志！")
+        QTimer.singleShot(1500, lambda: self.btn_copy.setToolTip(orig_tip))
 
     def export_logs(self, filepath: Optional[str] = None):
         """将日志导出为文本文件"""
@@ -675,7 +784,8 @@ class MkConsole(MkQWidget):
                 lines = []
                 for e in self._logs:
                     t_part = f"[{e['time']}] " if e['time'] else ""
-                    lines.append(f"{t_part}[{e['level'].upper()}] {e['text']}")
+                    lvl_part = f"[{e['level'].upper()}] " if self.show_level_tags and e['level'] != "raw" else ""
+                    lines.append(f"{t_part}{lvl_part}{e['text']}")
                 with open(filepath, "w", encoding="utf-8") as f:
                     f.write("\n".join(lines))
             except Exception as e:

@@ -40,7 +40,7 @@ from monkeyqt.components.basic.checkbox import MkCheckBox
 from monkeyqt.components.form.input import MkInput
 from monkeyqt.core.icons import MkPhosphorIcon
 from monkeyqt.themes.engine import ThemeEngine
-from monkeyqt.themes.style_utils import readable_text
+from monkeyqt.themes.style_utils import readable_text, qcolor
 
 
 class MkPageSizeDropdownPopup(MkQWidget):
@@ -292,7 +292,7 @@ class MkProTableWidget(QTableWidget):
         self._hovered_row = -1
         self._active_row = -1
         self._hover_bg_color = QColor("#F8FAFC")
-        self._divider_color = QColor("#E2E8F0")
+        self._divider_color = qcolor("#2E2F2F" if ThemeEngine.is_dark() else "#E2E8F0")
         self.setMouseTracking(True)
         self.viewport().setMouseTracking(True)
         self.viewport().installEventFilter(self)
@@ -301,8 +301,8 @@ class MkProTableWidget(QTableWidget):
         self._hover_bg_color = color
         self.viewport().update()
 
-    def set_divider_color(self, color: QColor):
-        self._divider_color = color
+    def set_divider_color(self, color: QColor | str):
+        self._divider_color = qcolor(color, "#2E2F2F" if ThemeEngine.is_dark() else "#E2E8F0")
         self.viewport().update()
 
     def set_hovered_row(self, row: int):
@@ -472,13 +472,14 @@ class MkProTableWidget(QTableWidget):
         super().paintEvent(event)
 
         # 3. 绘制行底部分隔线 (Subtle Row Dividers)
-        painter = QPainter(self.viewport())
-        painter.setPen(QPen(self._divider_color, 1.0))
-        w = self.viewport().width()
-        for r in range(self.rowCount()):
-            y = self.rowViewportPosition(r) + self.rowHeight(r) - 1
-            painter.drawLine(0, y, w, y)
-        painter.end()
+        if self._divider_color.isValid() and self._divider_color.alpha() > 0:
+            painter = QPainter(self.viewport())
+            painter.setPen(QPen(self._divider_color, 1.0))
+            w = self.viewport().width()
+            for r in range(self.rowCount()):
+                y = self.rowViewportPosition(r) + self.rowHeight(r) - 1
+                painter.drawLine(0, y, w, y)
+            painter.end()
 
 
 class MkProTableHeaderView(QHeaderView):
@@ -502,9 +503,9 @@ class MkProTableHeaderView(QHeaderView):
         super().__init__(orientation, parent)
         self._radius = float(radius)
         self._border_width = border_width
-        self._bg_color = QColor(bg_color)
-        self._border_color = QColor(border_color)
-        self._fg_color = QColor(fg_color)
+        self._bg_color = qcolor(bg_color, "transparent")
+        self._border_color = qcolor(border_color, "#2E2F2F" if ThemeEngine.is_dark() else "#E2E8F0")
+        self._fg_color = qcolor(fg_color, "#94A3B8")
         
         # 排序与复选框状态
         self._sort_index: Optional[int] = None
@@ -575,9 +576,9 @@ class MkProTableHeaderView(QHeaderView):
     def set_theme_props(self, radius: float, border_width: int, bg_color: str, border_color: str, fg_color: str):
         self._radius = float(radius)
         self._border_width = border_width
-        self._bg_color = QColor(bg_color)
-        self._border_color = QColor(border_color)
-        self._fg_color = QColor(fg_color)
+        self._bg_color = qcolor(bg_color, "transparent")
+        self._border_color = qcolor(border_color, "#2E2F2F" if ThemeEngine.is_dark() else "#E2E8F0")
+        self._fg_color = qcolor(fg_color, "#94A3B8")
         if hasattr(self, "header_checkbox"):
             self.header_checkbox._apply_style()
         self.viewport().update()
@@ -1029,6 +1030,7 @@ class MkProTable(MkQWidget):
         border_color: Optional[str] = None,
         show_actions: bool = False,
         actions: Optional[List[Dict[str, Any]]] = None,
+        auto_height: bool = False,
         role: str = "card",
         parent=None,
         **kwargs
@@ -1058,6 +1060,7 @@ class MkProTable(MkQWidget):
         self.selectable = bool(selectable)
         self.row_key = row_key
         self.row_height = int(row_height)
+        self.auto_height = bool(auto_height)
         self.show_actions = bool(show_actions)
         self.actions = actions
         
@@ -1617,6 +1620,53 @@ class MkProTable(MkQWidget):
         sel_suffix = f" (已选 {sel_count} 项)" if self.selectable and sel_count > 0 else ""
         self.total_label.setText(f"共 {total_items} 条{sel_suffix}")
         self._update_pagination_buttons(total_pages)
+        if getattr(self, "auto_height", False):
+            self._update_auto_height()
+
+    def set_auto_height(self, enabled: bool = True):
+        """
+        开启或关闭自适应行高展开模式。
+        开启后表格将关闭自身内部垂直滚动条，根据当前页实际行数完全向下延展，
+        使表格完美融入外层网页式整页滚动流中。
+        """
+        self.auto_height = bool(enabled)
+        if self.auto_height:
+            self._update_auto_height()
+        else:
+            if hasattr(self, "table_widget") and self.table_widget:
+                self.table_widget.setMaximumHeight(16777215)
+                self.table_widget.setMinimumHeight(0)
+                self.table_widget.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+            self.setMaximumHeight(16777215)
+            self.setMinimumHeight(0)
+            self.updateGeometry()
+
+    def _update_auto_height(self):
+        """动态计算表头、当前页行数、工具栏与边距总高度并完全展开"""
+        if not hasattr(self, "table_widget") or not self.table_widget:
+            return
+        tw = self.table_widget
+        row_count = tw.rowCount()
+        row_h = getattr(self, "row_height", 48)
+        header_h = tw.horizontalHeader().height() if tw.horizontalHeader() else 40
+        if header_h <= 0:
+            header_h = 40
+        visible_rows = max(1, row_count)
+        table_content_h = header_h + (visible_rows * row_h) + 4
+        tw.setFixedHeight(table_content_h)
+        tw.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
+        lay = self.layout()
+        if lay:
+            margins = lay.contentsMargins()
+            spacing = lay.spacing()
+            top_h = self.top_toolbar.sizeHint().height() if hasattr(self, "top_toolbar") and self.top_toolbar and self.top_toolbar.isVisible() else 0
+            footer_h = self.footer_toolbar.sizeHint().height() if hasattr(self, "footer_toolbar") and self.footer_toolbar and self.footer_toolbar.isVisible() else 0
+            m_top = margins.top() if hasattr(margins, "top") else margins[1]
+            m_bottom = margins.bottom() if hasattr(margins, "bottom") else margins[3]
+            total_card_h = m_top + top_h + spacing + table_content_h + spacing + footer_h + m_bottom
+            self.setFixedHeight(total_card_h)
+        self.updateGeometry()
 
     def _create_action_cell(self, abs_row_idx: int, row_dict: dict, actions: Optional[List[dict]] = None, align: Qt.AlignmentFlag = None) -> QWidget:
         container = QWidget(self.table_widget)
@@ -1765,9 +1815,9 @@ class MkProTable(MkQWidget):
             hover_color = QColor("#F1F5F9" if not is_dark else "#262626")
             grid_rule = "#000000"
         elif is_dark:
-            # 暗黑/OLED 风格下采用纯粹中性微透白高亮，在深灰/深黑底色上呈现高雅纯净的深炭灰（完全无偏蓝，参考图2、图3）
+            # 暗黑/OLED 风格下采用纯粹中性微透白高亮，横向行分隔线参考图1采用精致低对比度深灰 (#2E2F2F / rgb(46,47,47))
             hover_color = QColor(255, 255, 255, 18)
-            grid_rule = "rgba(255, 255, 255, 0.08)"
+            grid_rule = "#2E2F2F"
         else:
             hover_color = QColor(0, 0, 0, 10) if surface_muted == surface else QColor(surface_muted)
             grid_rule = border
@@ -1775,7 +1825,7 @@ class MkProTable(MkQWidget):
         hover_hex = hover_color.name(QColor.NameFormat.HexArgb) if hover_color.alpha() < 255 else hover_color.name()
 
         self.table_widget.set_hover_color(hover_color)
-        self.table_widget.set_divider_color(QColor(grid_rule))
+        self.table_widget.set_divider_color(qcolor(grid_rule, "#2E2F2F" if is_dark else "#E2E8F0"))
 
         if hasattr(self, "page_size_combo") and self.page_size_combo is not None:
             self.page_size_combo.update_theme_style()

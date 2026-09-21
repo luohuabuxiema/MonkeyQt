@@ -496,8 +496,26 @@ class ThemeEngine(QObject):
 
         primary_hover = lighten(primary, 0.10)
         primary_pressed = darken(primary, 0.12)
-        button_bg = card_bg
-        button_hover = surface_muted
+        if cls.is_dark():
+            button_bg = "#212121"
+            button_border = "#303030"
+            button_fg = "#FAFAFA"
+            button_hover = "#282828"
+            button_hover_border = "#383838"
+            button_hover_text = "#FAFAFA"
+            button_disabled_bg = "#7E7E7E"
+            button_disabled_fg = "#212121"
+            button_disabled_border = "#7E7E7E"
+        else:
+            button_bg = card_bg
+            button_border = panel_border
+            button_fg = fg
+            button_hover = surface_muted
+            button_hover_border = hover_primary
+            button_hover_text = fg
+            button_disabled_bg = disabled_bg
+            button_disabled_fg = text_muted
+            button_disabled_border = panel_border
         handle_border = card_bg
         groove_bg = surface_muted
         scroll_thumb = "rgba(255, 255, 255, 0.25)" if cls.is_dark() else "rgba(0, 0, 0, 0.20)"
@@ -611,15 +629,16 @@ class ThemeEngine(QObject):
             QPushButton {{
                 padding: 7px 14px;
                 border-radius: {radius};
-                border: {border_w} solid {panel_border};
+                border: {border_w} solid {button_border};
                 background-color: {button_bg};
-                color: {fg};
+                color: {button_fg};
                 font-weight: 600;
             }}
 
             QPushButton:hover {{
-                border-color: {hover_primary};
+                border-color: {button_hover_border};
                 background-color: {button_hover};
+                color: {button_hover_text};
             }}
 
             QPushButton:focus {{
@@ -639,9 +658,9 @@ class ThemeEngine(QObject):
             }}
 
             QPushButton:disabled {{
-                background-color: {disabled_bg};
-                border-color: {panel_border};
-                color: {text_muted};
+                background-color: {button_disabled_bg};
+                border-color: {button_disabled_border};
+                color: {button_disabled_fg};
             }}
 
             QToolButton {{

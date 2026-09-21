@@ -28,9 +28,15 @@ def is_color(value: str) -> bool:
     return bool(HEX_RE.match(value) or RGBA_RE.match(value) or QColor(value).isValid())
 
 
-def qcolor(value: str, fallback: str = "#409EFF", alpha: float | None = None) -> QColor:
-    """Return a valid QColor even when generated tokens contain CSS fragments."""
-    value = (value or "").strip()
+def qcolor(value: str | QColor | None, fallback: str = "#409EFF", alpha: float | None = None) -> QColor:
+    """Return a valid QColor even when generated tokens contain CSS fragments or are QColor."""
+    if isinstance(value, QColor):
+        color = QColor(value) if value.isValid() else QColor(fallback)
+        if alpha is not None:
+            color.setAlphaF(clamp(alpha, 0.0, 1.0))
+        return color
+
+    value = str(value or "").strip()
     color = QColor()
 
     match = RGBA_RE.match(value)

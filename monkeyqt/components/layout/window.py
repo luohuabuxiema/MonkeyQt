@@ -4,6 +4,8 @@
 @Desc ：Custom title bar and frameless window components for MonkeyQt.
 """
 import sys
+from typing import Optional, List, Dict, Any, Union
+
 
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
@@ -1084,8 +1086,8 @@ class MkWindow(QMainWindow):
             widget.setMouseTracking(True)
             self._apply_sidebar_layout()
             
-            from PySide6.QtWidgets import QAbstractScrollArea
-            if self._auto_scroll and not isinstance(widget, QAbstractScrollArea):
+            needs_wrap = self._auto_scroll and not self._is_scrollable_target(widget)
+            if needs_wrap:
                 from monkeyqt.components.layout.scroll_area import MkScrollArea
                 sidebar_info = self._find_sidebar_candidate(widget)
                 if sidebar_info is not None and not self._sidebar_full_height:
@@ -1095,7 +1097,7 @@ class MkWindow(QMainWindow):
                     right_child = None
                     for idx in range(s_layout.count()):
                         child = s_layout.itemAt(idx).widget()
-                        if child and child != sidebar and not isinstance(child, QAbstractScrollArea):
+                        if child and child != sidebar and not self._is_scrollable_target(child):
                             right_child = child
                             break
                     if right_child:
@@ -1118,6 +1120,23 @@ class MkWindow(QMainWindow):
 
             self._auto_detect_and_name_right_widget()
             self.update_style()
+
+    def _is_scrollable_target(self, w: Optional[QWidget]) -> bool:
+        """检查组件是否自身已具备滚动能力，避免在外部产生双重嵌套滚动条"""
+        if w is None:
+            return False
+        from PySide6.QtWidgets import QAbstractScrollArea
+        if isinstance(w, QAbstractScrollArea):
+            return True
+        if getattr(w, "_scrollable", False) is True:
+            return True
+        if hasattr(w, "is_scrollable") and callable(w.is_scrollable):
+            try:
+                if w.is_scrollable():
+                    return True
+            except Exception:
+                pass
+        return False
 
     def set_auto_scroll(self, enabled: bool):
         """Enable or disable automatic vertical scrolling for the content area."""

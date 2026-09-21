@@ -151,7 +151,12 @@ class MkTable(QTableWidget):
         radius = f"{int(radius_val)}px"
         active_fg = readable_text(primary)
         border_rule = "2px solid #000000" if t.is_brutal() or t.is_pixel() else f"1px solid {border}"
-        grid_rule = "#000000" if t.is_brutal() or t.is_pixel() else border
+        if t.is_brutal() or t.is_pixel():
+            grid_rule = "#000000"
+        elif t.is_dark():
+            grid_rule = "#2E2F2F" if border in ("#E2E8F0", "#000000", "") else border
+        else:
+            grid_rule = border
         family = "Consolas" if t.is_pixel() else '"Segoe UI", "Microsoft YaHei"'
         weight = "900" if t.is_brutal() else "700"
 

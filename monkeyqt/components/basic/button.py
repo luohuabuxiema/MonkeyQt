@@ -176,9 +176,15 @@ class MkButton(QPushButton):
             btn_press_fg = btn_fg
             btn_hover_border = btn_border
             btn_press_border = btn_border
-            disabled_bg = "#E2E8F0"
-            disabled_fg = "#94A3B8"
-            disabled_border = "#E2E8F0"
+            if t.is_dark():
+                # 暗黑模式下彩色按钮禁用态统一为纯中灰（参考图三 #7E7E7E / #212121）
+                disabled_bg = "#7E7E7E"
+                disabled_fg = "#212121"
+                disabled_border = "#7E7E7E"
+            else:
+                disabled_bg = "#E2E8F0"
+                disabled_fg = "#94A3B8"
+                disabled_border = "#E2E8F0"
 
         self.setStyleSheet(f"""
             QPushButton {{
@@ -221,6 +227,53 @@ class MkButton(QPushButton):
         primary = t.get("--primary", border)
         dark_theme = t.is_dark()
         is_info = self._btn_type == "info"
+
+        if dark_theme:
+            # 严格参考图一、图二、图三暗黑现代化按钮规范：
+            # 图一 (正常态): 深炭灰底色 #212121，纯白文字 #FAFAFA，暗细边框 #303030
+            # 图二 (悬停/激活态): 现代反转高亮浅白灰底色 #E5E5E5，深黑清晰文字 #171717
+            # 图三 (禁用态): 纯中灰底色 #7E7E7E，暗灰弱化文字 #212121
+            if is_info:
+                background = surface_muted if surface_muted != bg else "#262626"
+                foreground = "#F5F5F5"
+                btn_border = border if border != "#E2E8F0" else "#383838"
+                hover_background = "#3A3A3A"
+                hover_foreground = "#FFFFFF"
+                hover_border = "#505050"
+                pressed_background = "#1C1C1C"
+                pressed_foreground = "#E5E5E5"
+                pressed_border = "#2A2A2A"
+                disabled_background = "#7E7E7E"
+                disabled_foreground = "#212121"
+                disabled_border = "#7E7E7E"
+            else:
+                background = "#212121"
+                foreground = "#FAFAFA"
+                btn_border = "#303030"
+                hover_background = "#282828"
+                hover_foreground = "#FAFAFA"
+                hover_border = "#383838"
+                pressed_background = "#1C1C1C"
+                pressed_foreground = "#FAFAFA"
+                pressed_border = "#2A2A2A"
+                disabled_background = "#7E7E7E"
+                disabled_foreground = "#212121"
+                disabled_border = "#7E7E7E"
+
+            return {
+                "background": background,
+                "foreground": foreground,
+                "border": btn_border,
+                "hover_background": hover_background,
+                "hover_foreground": hover_foreground,
+                "hover_border": hover_border,
+                "pressed_background": pressed_background,
+                "pressed_foreground": pressed_foreground,
+                "pressed_border": pressed_border,
+                "disabled_background": disabled_background,
+                "disabled_foreground": disabled_foreground,
+                "disabled_border": disabled_border,
+            }
 
         background = surface_muted if is_info else surface
         if is_info:
@@ -310,8 +363,12 @@ class MkButton(QPushButton):
                 text_color = qcolor(neutral["foreground"])
         else:
             if not self.isEnabled():
-                btn_color = qcolor("#CBD5E1")
-                text_color = qcolor("#64748B")
+                if t.is_dark():
+                    btn_color = qcolor("#7E7E7E")
+                    text_color = qcolor("#212121")
+                else:
+                    btn_color = qcolor("#CBD5E1")
+                    text_color = qcolor("#64748B")
             if self._hovered:
                 btn_color = btn_color.lighter(115)
             if self._pressed:
@@ -498,6 +555,7 @@ class MkButton(QPushButton):
         super().setIcon(icon)
 
     def set_theme_style(self, style_name: str = None):
+        self._update_style()
         if getattr(self, "_ph_icon_spec", None):
             try:
                 spec = dict(self._ph_icon_spec)
@@ -519,6 +577,8 @@ class MkButton(QPushButton):
         else:
             if hasattr(self, "_liquid_timer") and self._liquid_timer.isActive():
                 self._liquid_timer.stop()
+        self.style().unpolish(self)
+        self.style().polish(self)
         self.update()
 
     @Property(str)

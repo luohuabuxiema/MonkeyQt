@@ -883,7 +883,7 @@ class ConsoleGallery(MkQWidget):
         layout.addWidget(desc)
         
         # 2. 实例化 MkConsole
-        self.console = MkConsole("演示控制台 / Demo Console")
+        self.console = MkConsole("输出控制台")
         layout.addWidget(self.console, stretch=1)
         
         # 3. 交互控制按钮

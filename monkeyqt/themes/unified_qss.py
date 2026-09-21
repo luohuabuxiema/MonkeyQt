@@ -26,6 +26,34 @@ def build_button_qss(p: Dict[str, Any]) -> str:
 
     sec_hover_bg = "rgba(59, 130, 246, 0.18)" if is_dark else "rgba(59, 130, 246, 0.08)"
 
+    if is_dark:
+        # 参考图一暗黑现代化默认按钮规范（鼠标悬停保持深炭灰微亮提升，文字纯白，绝不变白）
+        def_bg = "#212121"
+        def_fg = "#FAFAFA"
+        def_border = "#303030"
+        def_hover_bg = "#282828"
+        def_hover_fg = "#FAFAFA"
+        def_hover_border = "#383838"
+        def_press_bg = "#1C1C1C"
+        def_press_fg = "#FAFAFA"
+        def_press_border = "#2A2A2A"
+        dis_bg = "#7E7E7E"
+        dis_fg = "#212121"
+        dis_border = "#7E7E7E"
+    else:
+        def_bg = surface
+        def_fg = text
+        def_border = border
+        def_hover_bg = surface_muted
+        def_hover_fg = primary
+        def_hover_border = primary
+        def_press_bg = darken(surface, 0.08)
+        def_press_fg = primary
+        def_press_border = primary
+        dis_bg = surface_muted
+        dis_fg = str(p["muted"])
+        dis_border = border
+
     return f"""
         /* ── Base Buttons ── */
         QPushButton, MkButton {{
@@ -119,21 +147,26 @@ def build_button_qss(p: Dict[str, Any]) -> str:
 
         /* Default & Fallback Type */
         QPushButton[mk_type="default"], MkButton[mk_type="default"], QPushButton {{
-            background-color: {surface};
-            color: {text};
-            border: 1px solid {border};
+            background-color: {def_bg};
+            color: {def_fg};
+            border: 1px solid {def_border};
         }}
         QPushButton[mk_type="default"]:hover, MkButton[mk_type="default"]:hover {{
-            background-color: {surface_muted};
-            border-color: {primary};
-            color: {primary};
+            background-color: {def_hover_bg};
+            border-color: {def_hover_border};
+            color: {def_hover_fg};
+        }}
+        QPushButton[mk_type="default"]:pressed, MkButton[mk_type="default"]:pressed {{
+            background-color: {def_press_bg};
+            border-color: {def_press_border};
+            color: {def_press_fg};
         }}
 
         /* Disabled state */
         QPushButton:disabled, MkButton:disabled {{
-            background-color: {surface_muted};
-            color: {p["muted"]};
-            border-color: {border};
+            background-color: {dis_bg};
+            color: {dis_fg};
+            border-color: {dis_border};
         }}
 
         /* Size variants */

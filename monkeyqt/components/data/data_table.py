@@ -374,7 +374,12 @@ class MkDataTable(MkQWidget):
         surface_muted = t.get("--surface-muted", "#F8FAFC")
         radius = "0px" if t.is_brutal() or t.is_pixel() else t.get("--radius", "8px")
         border_rule = "2px solid #000000" if t.is_brutal() or t.is_pixel() else f"1px solid {border}"
-        grid_rule = "#000000" if t.is_brutal() or t.is_pixel() else border
+        if t.is_brutal() or t.is_pixel():
+            grid_rule = "#000000"
+        elif t.is_dark():
+            grid_rule = "#2E2F2F" if border in ("#E2E8F0", "#000000", "") else border
+        else:
+            grid_rule = border
 
         self.table_card.setStyleSheet(f"""
             QFrame#TableCard {{

@@ -4,6 +4,7 @@ from .widget import MkQWidget, MkWidget
 from .window import MkTitleBar, MkWindow
 from .window_shell import MkWindowShell
 from .scroll_area import MkScrollArea, MkStackedWidget
+from .page import MkPage
 
 __all__ = [
     "MkQVBoxLayout",
@@ -17,4 +18,6 @@ __all__ = [
     "MkWindowShell",
     "MkScrollArea",
     "MkStackedWidget",
+    "MkPage",
 ]
+
