@@ -552,8 +552,8 @@ def build_card_and_feedback_qss(p: Dict[str, Any]) -> str:
     primary = str(p["primary"])
     radius = str(p["radius"])
     is_dark = bool(p["dark"])
-    tip_bg = "#1e293b" if is_dark else "#0f172a"
-    tip_fg = "#f8fafc" if is_dark else "#ffffff"
+    tip_bg = surface
+    tip_fg = text
 
     return f"""
         /* ── Cards & Panels ── */
@@ -651,20 +651,20 @@ def build_window_and_layout_qss(p: Dict[str, Any]) -> str:
             border-bottom: 1px solid {border};
             border-top-right-radius: 8px;
         }}
-        QPushButton#TitleBarCloseButton {
+        QPushButton#TitleBarCloseButton {{
             background-color: transparent;
             border: none;
             margin: 0px;
             padding: 0px;
-        }
-        QPushButton#TitleBarCloseButton:hover {
+        }}
+        QPushButton#TitleBarCloseButton:hover {{
             background-color: transparent;
             border: none;
-        }
-        QPushButton#TitleBarCloseButton:pressed {
+        }}
+        QPushButton#TitleBarCloseButton:pressed {{
             background-color: transparent;
             border: none;
-        }
+        }}
         QWidget#MainRightWidget {{
             border-bottom-right-radius: 8px;
         }}

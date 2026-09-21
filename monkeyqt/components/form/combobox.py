@@ -165,10 +165,12 @@ class MkDropdownPopup(MkQWidget):
             self.view.doItemsLayout()
 
     def _on_item_clicked(self, index):
-        if index.isValid():
-            self.combo.setCurrentIndex(index.row())
-            self.combo.activated.emit(index.row())
+        valid = index.isValid()
+        row = index.row() if valid else -1
         self.hide()
+        if valid and row >= 0:
+            self.combo.setCurrentIndex(row)
+            self.combo.activated.emit(row)
 
     def keyPressEvent(self, event: QKeyEvent):
         key = event.key()
@@ -176,9 +178,14 @@ class MkDropdownPopup(MkQWidget):
             if self.view is not None:
                 curr = self.view.currentIndex()
                 if curr.isValid():
-                    self.combo.setCurrentIndex(curr.row())
-                    self.combo.activated.emit(curr.row())
-            self.hide()
+                    row = curr.row()
+                    self.hide()
+                    self.combo.setCurrentIndex(row)
+                    self.combo.activated.emit(row)
+                else:
+                    self.hide()
+            else:
+                self.hide()
             event.accept()
         elif key == Qt.Key.Key_Escape:
             self.hide()

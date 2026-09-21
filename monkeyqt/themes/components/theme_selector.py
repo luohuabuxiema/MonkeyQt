@@ -31,7 +31,11 @@ class MkThemeSelector(QComboBox):
 
         self.currentIndexChanged.connect(self._on_index_changed)
         ThemeEngine.instance().themeChanged.connect(self._sync_from_engine)
-        self._apply_selector_style()
+        curr = ThemeEngine.current_theme()
+        if curr:
+            self._sync_from_engine(curr)
+        else:
+            self._apply_selector_style()
 
     def showPopup(self):
         if time.time() - getattr(self, "_last_close_time", 0) < 0.25:
@@ -55,11 +59,14 @@ class MkThemeSelector(QComboBox):
         super().hideEvent(event)
 
     def _on_index_changed(self, index: int):
+        if hasattr(self, "_popup_widget") and self._popup_widget is not None:
+            self._popup_widget.hide()
         value = self.itemData(index)
         if value:
             use_theme(value)
             self.themeSelected.emit(value)
-        self._apply_selector_style()
+
+
 
     def _sync_from_engine(self, theme_name: str):
         for i in range(self.count()):

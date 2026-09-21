@@ -29,6 +29,7 @@ class ThemeEngine(QObject):
     _current_name: str = ""
     _current_tokens: dict = {}
     _overrides: dict = {}
+    _qss_cache: dict = {}
 
     @classmethod
     def instance(cls):
@@ -75,12 +76,6 @@ class ThemeEngine(QObject):
             if app:
                 qss = cls._build_global_qss()
                 app.setStyleSheet(qss)
-                if top_windows:
-                    for w in top_windows:
-                        try:
-                            w.setStyleSheet(qss)
-                        except Exception:
-                            pass
 
             # 触发信号
             cls.instance().themeChanged.emit(style_name)
@@ -88,6 +83,8 @@ class ThemeEngine(QObject):
             for w in top_windows:
                 try:
                     w.setUpdatesEnabled(True)
+                    if w.isVisible():
+                        w.repaint()
                 except Exception:
                     pass
 
@@ -113,18 +110,14 @@ class ThemeEngine(QObject):
             if app:
                 qss = cls._build_global_qss()
                 app.setStyleSheet(qss)
-                if top_windows:
-                    for w in top_windows:
-                        try:
-                            w.setStyleSheet(qss)
-                        except Exception:
-                            pass
 
             cls.instance().themeChanged.emit(cls.DEFAULT_THEME_NAME)
         finally:
             for w in top_windows:
                 try:
                     w.setUpdatesEnabled(True)
+                    if w.isVisible():
+                        w.repaint()
                 except Exception:
                     pass
 
@@ -161,6 +154,7 @@ class ThemeEngine(QObject):
     def set_override(cls, key: str, value: str) -> None:
         """设置全局 Token 重写（如单独控制侧边栏/标题栏颜色）"""
         cls._overrides[key] = value
+        cls._qss_cache.clear()
         if cls._current_name:
             cls.set_theme(cls._current_name)
 
@@ -171,6 +165,7 @@ class ThemeEngine(QObject):
             cls._overrides.pop(key, None)
         for key, value in (updates or {}).items():
             cls._overrides[key] = value
+        cls._qss_cache.clear()
         if refresh and cls._current_name:
             cls.set_theme(cls._current_name)
 
@@ -178,6 +173,7 @@ class ThemeEngine(QObject):
     def clear_overrides(cls) -> None:
         """清除所有全局 Token 重写"""
         cls._overrides.clear()
+        cls._qss_cache.clear()
         if cls._current_name:
             cls.set_theme(cls._current_name)
 
@@ -462,6 +458,11 @@ class ThemeEngine(QObject):
     @classmethod
     def _build_global_qss(cls) -> str:
         """根据当前 Token 构建应用级 QSS"""
+        cls._ensure_current()
+        cache_key = cls._current_name
+        if not cls._overrides and cache_key and cache_key in cls._qss_cache:
+            return cls._qss_cache[cache_key]
+
         t = cls.current_tokens()
         bg = t.get("--bg", "#FFFFFF")
         fg = t.get("--fg", "#1E293B")
@@ -897,6 +898,10 @@ class ThemeEngine(QObject):
             qss += "\n" + build_all_monkeyqt_qss()
         except Exception:
             pass
+
+        if not cls._overrides and cache_key:
+            cls._qss_cache[cache_key] = qss
+
         return qss
 
     @staticmethod

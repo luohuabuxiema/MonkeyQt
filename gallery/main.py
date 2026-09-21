@@ -297,18 +297,25 @@ class FeedbackGallery(MkQWidget):
         attach_box.addStretch()
         layout.addLayout(attach_box)
 
+        layout.addSpacing(20)
+
         # 1.2 现代化 AI 训练参数卡片展示（参考 LabelPaw & Ultralytics HUB）
-        card_train = MkQWidget(layout="v", role="card", radius=8, border=True, margins=12, spacing=10)
+        card_train = MkQWidget(layout="v", role="card", radius=8, border=True, margins=16, spacing=14)
         card_lay = card_train.inner_layout
+
+        card_title = QLabel("AI 训练超参数配置与字段提示 (对标 Ultralytics HUB / LabelPaw 规范)")
+        card_title.setFont(QFont("Microsoft YaHei", 10, QFont.Bold))
+        card_lay.addWidget(card_title)
+        card_lay.addSpacing(6)
 
         header_row = QHBoxLayout()
         header_row.addWidget(create_field_header(
             "基础模型选择 (Base Model)",
-            hint="选择预训练模型架构 (.pt) 或指定本地权重。YOLO 官方架构涵盖 detect、segment、pose、obb 等任务"
+            hint="选择预训练模型架构，如 `yolov8n.pt` 或本地模型权重。在 Python 中对应 `model` 参数。Learn more ↗"
         ))
         header_row.addWidget(create_field_header(
             "训练数据集配置 (Dataset)",
-            hint="配置用于模型训练的数据集。可直接在下方编辑 YAML 必填模板，或点击【上传 YAML...】自动解析并提取模板参数。"
+            hint="配置用于模型训练的数据集 YAML。在 Python 中对应 `data` 参数。Learn more ↗"
         ))
         card_lay.addLayout(header_row)
 
@@ -460,6 +467,14 @@ class ProTableGallery(MkQWidget):
         self.btn_toggle_action.clicked.connect(self._toggle_action_column)
         control_bar.addWidget(self.btn_toggle_action)
 
+        btn_expand_desc = MkButton("拓宽描述列 (340px)", type="default", size="small")
+        btn_expand_desc.clicked.connect(lambda: self.pro_table.set_column_width("description", 340))
+        control_bar.addWidget(btn_expand_desc)
+
+        btn_reset_widths = MkButton("均匀分布列宽", type="default", size="small")
+        btn_reset_widths.clicked.connect(lambda: self.pro_table.reset_column_widths())
+        control_bar.addWidget(btn_reset_widths)
+
         control_bar.addStretch()
         layout.addLayout(control_bar)
 
@@ -471,22 +486,22 @@ class ProTableGallery(MkQWidget):
 
         # 列配置：引入复选框 (selectable 参数控制)、图片 preview_img、视频 preview_vid、类型徽章、状态徽章等
         columns = [
-            {"key": "name", "label": "项目 / 模型名称", "type": "avatar_text", "width": 210, "sortable": True},
-            {"key": "preview_img", "label": "结果图片", "type": "image", "width": 88},
-            {"key": "preview_vid", "label": "演示视频", "type": "video", "width": 88},
-            {"key": "type", "label": "类型", "type": "badge", "width": 110, "sortable": True},
+            {"key": "name", "label": "项目 / 模型名称", "type": "avatar_text", "sortable": True},
+            {"key": "preview_img", "label": "结果图片", "type": "image", "width": 88, "align": "center"},
+            {"key": "preview_vid", "label": "演示视频", "type": "video", "width": 88, "align": "center"},
+            {"key": "type", "label": "类型", "type": "badge", "sortable": True},
             {"key": "description", "label": "描述与备注", "type": "text", "sortable": True},
-            {"key": "status", "label": "运行状态", "type": "status", "width": 110, "sortable": True},
-            {"key": "updated", "label": "更新时间", "type": "text", "width": 120, "sortable": True},
+            {"key": "status", "label": "运行状态", "type": "status", "sortable": True},
+            {"key": "updated", "label": "更新时间", "type": "text", "sortable": True},
         ]
 
         # 示例多媒体数据 (14 条，支持跨页多选与分页交互)
         mock_data = [
-            {"name": "Alpha 核心项目", "type": "项目", "description": "核心模板项目工程", "status": "已完成", "updated": "2 天前", "color": "#ef4444", "preview_img": before_path, "preview_vid": video_path},
-            {"name": "自动化训练流水线", "type": "项目", "description": "YOLO 自动化训练管道", "status": "已完成", "updated": "5 天前", "color": "#ec4899", "preview_img": after_path, "preview_vid": video_path},
-            {"name": "高精度图像数据集 2026", "type": "数据集", "description": "8 张高动态范围图像", "status": "就绪", "updated": "2026年5月28日", "avatar": before_path, "preview_img": before_path, "preview_vid": video_path},
-            {"name": "实用目标检测模型 v2", "type": "数据集", "description": "6 张标注样本集", "status": "就绪", "updated": "2026年5月28日", "avatar": after_path, "preview_img": after_path, "preview_vid": video_path},
-            {"name": "YOLOv8 边缘推理模型", "type": "数据集", "description": "2 张测试图像", "status": "就绪", "updated": "2026年5月27日", "avatar": before_path, "preview_img": before_path, "preview_vid": video_path},
+            {"name": "Alpha 核心项目", "type": "项目", "description": "核心模板项目工程 (对标 Ultralytics HUB 训练流水线，集成预训练模型校验与一键导出)", "status": "已完成", "updated": "2 天前", "color": "#ef4444", "preview_img": before_path, "preview_vid": video_path},
+            {"name": "自动化训练流水线", "type": "项目", "description": "基于 YOLOv8 的工业安全帽与反光衣实时目标检测自动化训练管道", "status": "已完成", "updated": "5 天前", "color": "#ec4899", "preview_img": after_path, "preview_vid": video_path},
+            {"name": "高精度图像数据集 2026", "type": "数据集", "description": "8 张高动态范围无人机航拍检测图像，已完成全景实例分割掩码切片", "status": "就绪", "updated": "2026年5月28日", "avatar": before_path, "preview_img": before_path, "preview_vid": video_path},
+            {"name": "实用目标检测模型 v2", "type": "数据集", "description": "6 张多分类工业质检标注样本集，包含表面划痕与金属凹坑缺陷标记", "status": "就绪", "updated": "2026年5月28日", "avatar": after_path, "preview_img": after_path, "preview_vid": video_path},
+            {"name": "YOLOv8 边缘推理模型", "type": "数据集", "description": "2 张边缘计算芯片实测基准图像，包含 FP16 与 INT8 量化延迟测试", "status": "就绪", "updated": "2026年5月27日", "avatar": before_path, "preview_img": before_path, "preview_vid": video_path},
             {"name": "精细化分类识别模型", "type": "数据集", "description": "2 张多视角图像", "status": "就绪", "updated": "2026年5月27日", "avatar": after_path, "preview_img": after_path, "preview_vid": video_path},
             {"name": "智能图像分割数据集", "type": "数据集", "description": "1 张超分辨率图像", "status": "就绪", "updated": "2026年5月21日", "avatar": before_path, "preview_img": before_path, "preview_vid": video_path},
             {"name": "优质样本检测库", "type": "数据集", "description": "11 张缺陷检测图像", "status": "就绪", "updated": "2026年5月21日", "avatar": after_path, "preview_img": after_path, "preview_vid": video_path},
@@ -1358,7 +1373,7 @@ class MainGallery(MkWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    use_theme("亮色")
+    use_theme("雅致亮色")
     window = MainGallery()
     window.show()
     sys.exit(app.exec())

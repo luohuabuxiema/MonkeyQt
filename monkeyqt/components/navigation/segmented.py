@@ -26,7 +26,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import (
     Qt, Signal, QSize, QRect, QPropertyAnimation, QEasingCurve, QTimer
 )
-from PySide6.QtGui import QFont, QColor, QIcon, QPainter, QPainterPath
+from PySide6.QtGui import QFont, QColor, QIcon, QPainter, QPainterPath, QFontMetrics
 
 from monkeyqt.themes.engine import ThemeEngine
 from monkeyqt.components.layout.widget import MkQWidget
@@ -157,14 +157,20 @@ class MkSegmentedButton(QPushButton):
         self._update_style()
 
     def sizeHint(self) -> QSize:
-        fm = self._text_label.fontMetrics()
+        # Use DemiBold (600) font metrics so button slot width is 100% invariant whether active or inactive.
+        # This prevents buttons from resizing and shifting sibling tabs when clicked.
+        f = QFont(self._text_label.font())
+        f.setWeight(QFont.Weight.DemiBold)
+        fm = QFontMetrics(f)
         text_w = fm.horizontalAdvance(self.label_text) if hasattr(fm, "horizontalAdvance") else fm.width(self.label_text)
         left, top, right, bottom = self._btn_layout.getContentsMargins()
         w = text_w + left + right
 
-        if self.icon_source and self._icon_label.isVisible():
-            px_w = self._icon_label.pixmap().width() if self._icon_label.pixmap() else 16
-            w += px_w + self._btn_layout.spacing()
+        # Deterministic icon width: always reserve icon width if icon_source is present,
+        # never rely on isVisible() which is False when widget/parent is hidden or before show()
+        if self.icon_source:
+            icon_sz = 14 if self.size_mode == "small" else (18 if self.size_mode == "large" else 16)
+            w += icon_sz + self._btn_layout.spacing()
 
         if self.badge_value is not None and str(self.badge_value).strip() != "":
             badge_w = fm.horizontalAdvance(str(self.badge_value)) if hasattr(fm, "horizontalAdvance") else fm.width(str(self.badge_value))
@@ -472,6 +478,7 @@ class MkSegmented(QWidget):
         self._anim = QPropertyAnimation(self._indicator, b"geometry", self)
         self._anim.setDuration(190)
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        self._anim.finished.connect(self._sync_indicator_to_current)
 
         # Height & sizing
         self._update_container_height()
@@ -522,6 +529,8 @@ class MkSegmented(QWidget):
 
         if self.is_fill:
             btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        else:
+            btn.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
 
         self._buttons.append(btn)
         self._keys.append(key)
@@ -593,6 +602,9 @@ class MkSegmented(QWidget):
         for i, btn in enumerate(self._buttons):
             btn.set_active(i == index)
 
+        # Synchronously re-evaluate internal layout so buttons reflect current geometries immediately
+        self._layout.activate()
+
         self._animate_indicator(old_index, index)
 
         key = self._keys[index] if index < len(self._keys) else ""
@@ -623,6 +635,10 @@ class MkSegmented(QWidget):
         self.currentChanged.connect(lambda idx, *args: stack.setCurrentIndex(idx))
         if len(self._buttons) > 0 and self._current_index >= 0:
             stack.setCurrentIndex(self._current_index)
+
+    def set_theme(self, is_dark: bool = False):
+        """Convenience method for manual theme synchronization."""
+        self._on_theme_changed()
 
     # ──────────────────────── Indicator & Layout ────────────────────────
 
@@ -669,11 +685,15 @@ class MkSegmented(QWidget):
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
+        self._layout.activate()
         self._sync_indicator_to_current()
 
     def showEvent(self, event):
         super().showEvent(event)
+        self._layout.activate()
+        self._sync_indicator_to_current()
         QTimer.singleShot(0, self._sync_indicator_to_current)
+        QTimer.singleShot(30, self._sync_indicator_to_current)
 
     # ──────────────────────── Theme & Geometry Calculation ────────────────────────
 

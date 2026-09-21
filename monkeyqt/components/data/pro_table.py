@@ -24,20 +24,21 @@ MkProTable - 现代化前端仪表盘数据表格组件 (Modern Dashboard Pro Ta
 import os
 import re
 from typing import List, Dict, Any, Optional
-from PySide6.QtCore import Qt, Signal, QRectF, QRect, QSize, QPoint, QEvent
+from PySide6.QtCore import Qt, Signal, QRectF, QRect, QSize, QPoint, QPointF, QEvent
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QTableWidget,
     QTableWidgetItem, QAbstractItemView, QHeaderView, QPushButton, QSizePolicy,
     QComboBox, QGraphicsDropShadowEffect, QApplication, QMenu
 )
 from PySide6.QtGui import (
-    QPainter, QPainterPath, QColor, QPen, QFont, QPixmap, QCursor,
+    QPainter, QPainterPath, QColor, QPen, QBrush, QFont, QPixmap, QCursor,
     QKeySequence, QAction
 )
 
 from monkeyqt.components.layout.widget import MkQWidget
 from monkeyqt.components.basic.checkbox import MkCheckBox
 from monkeyqt.components.form.input import MkInput
+from monkeyqt.components.feedback.tooltip import MkTooltipPopover
 from monkeyqt.core.icons import MkPhosphorIcon
 from monkeyqt.themes.engine import ThemeEngine
 from monkeyqt.themes.style_utils import readable_text, qcolor
@@ -633,28 +634,95 @@ class MkProTableHeaderView(QHeaderView):
         align_flag = self._align_map.get(logicalIndex, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         is_sortable = self._sortable_map.get(logicalIndex, True)
 
-        pad_left = 14
-        pad_right = 28 if is_sortable else 14
-        text_rect = rect.adjusted(pad_left, 0, -pad_right, 0)
-
-        painter.setPen(self._fg_color)
         font = QFont('-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif', 9, QFont.Weight.DemiBold)
         painter.setFont(font)
-        painter.drawText(text_rect, align_flag | Qt.TextFlag.TextSingleLine, header_text)
+        fm = painter.fontMetrics()
+        tw = fm.horizontalAdvance(header_text)
+        arrow_w = 12
+        arrow_gap = 5
+        arrow_total = (arrow_w + arrow_gap) if is_sortable else 0
 
-        # 2. 绘制右侧排序指示箭头
-        if is_sortable:
-            self._draw_sort_indicator(painter, rect, logicalIndex)
+        is_center = bool(align_flag & Qt.AlignmentFlag.AlignHCenter) or (align_flag == Qt.AlignmentFlag.AlignCenter)
+        is_right = bool(align_flag & Qt.AlignmentFlag.AlignRight)
+
+        arrow_x = None
+
+        if is_center:
+            # 居中对齐列 (如结果图片、演示视频)：文本与排序指示器作为整体在列宽中居中
+            total_content_w = tw + arrow_total
+            start_x = int(rect.left() + max(4, (rect.width() - total_content_w) / 2))
+            
+            # 防遮挡：若列宽过窄，优先保障文字显示
+            max_text_w = max(10, rect.width() - 8 - arrow_total)
+            if tw > max_text_w:
+                display_text = fm.elidedText(header_text, Qt.TextElideMode.ElideRight, max_text_w)
+                draw_tw = fm.horizontalAdvance(display_text)
+                start_x = rect.left() + 4
+            else:
+                display_text = header_text
+                draw_tw = tw
+                
+            text_rect = QRect(start_x, rect.top(), draw_tw, rect.height())
+            painter.setPen(self._fg_color)
+            painter.drawText(text_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, display_text)
+            
+            if is_sortable:
+                arrow_x = start_x + draw_tw + arrow_gap
+        elif is_right:
+            # 右对齐列
+            pad_right = 14
+            max_text_w = max(10, rect.width() - pad_right - 14 - arrow_total)
+            if tw > max_text_w:
+                display_text = fm.elidedText(header_text, Qt.TextElideMode.ElideRight, max_text_w)
+                draw_tw = fm.horizontalAdvance(display_text)
+            else:
+                display_text = header_text
+                draw_tw = tw
+
+            if is_sortable:
+                arrow_x = rect.right() - pad_right - arrow_w
+                text_x = arrow_x - arrow_gap - draw_tw
+            else:
+                text_x = rect.right() - pad_right - draw_tw
+
+            text_rect = QRect(text_x, rect.top(), draw_tw, rect.height())
+            painter.setPen(self._fg_color)
+            painter.drawText(text_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, display_text)
+        else:
+            # 默认左对齐列 (对标图三：Name ↑↓, Description ↑↓, Status ↑↓)
+            # 文本从左侧内边距 pad_left 起排，排序箭头紧随文字后方，绝不漂移至右边缘产生遮挡
+            pad_left = 14
+            max_text_w = max(10, rect.width() - pad_left - 8 - arrow_total)
+            if tw > max_text_w:
+                display_text = fm.elidedText(header_text, Qt.TextElideMode.ElideRight, max_text_w)
+                draw_tw = fm.horizontalAdvance(display_text)
+            else:
+                display_text = header_text
+                draw_tw = tw
+
+            text_rect = QRect(rect.left() + pad_left, rect.top(), max(draw_tw, rect.width() - pad_left - arrow_total - 2), rect.height())
+            painter.setPen(self._fg_color)
+            painter.drawText(text_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, display_text)
+
+            if is_sortable:
+                arrow_x = rect.left() + pad_left + draw_tw + arrow_gap
+
+        # 2. 绘制紧贴文本右侧的排序指示箭头
+        if is_sortable and arrow_x is not None and (arrow_x + arrow_w <= rect.right() - 2):
+            self._draw_sort_indicator(painter, rect, logicalIndex, arrow_x=arrow_x)
 
         painter.restore()
 
-    def _draw_sort_indicator(self, painter: QPainter, rect, logicalIndex: int):
+    def _draw_sort_indicator(self, painter: QPainter, rect, logicalIndex: int, arrow_x: Optional[int] = None):
         is_active = (self._sort_index == logicalIndex and self._sort_order is not None)
         order = self._sort_order if is_active else None
 
         arrow_w = 12
         arrow_h = 14
-        ax = rect.right() - arrow_w - 8
+        if arrow_x is not None:
+            ax = arrow_x
+        else:
+            ax = rect.right() - arrow_w - 8
         ay = rect.top() + (rect.height() - arrow_h) / 2.0
 
         if not is_active:
@@ -693,13 +761,104 @@ class MkProTableHeaderView(QHeaderView):
 # 现代化富单元格渲染控件
 # ─────────────────────────────────────────────────────────────
 
+class MkElidedLabel(QLabel):
+    """
+    自适应宽度省略号标签 (Auto-Elided Label)
+    当内容超出当前可视宽度时，在末尾动态显示省略号 (...)；
+    记录 is_elided 状态，并支持鼠标滑选复制。
+    """
+    clicked = Signal(str)
+
+    def __init__(self, text: str = "", parent=None):
+        super().__init__(parent)
+        self._full_text = str(text) if text is not None else ""
+        self._is_elided = False
+        self._updating_elide = False
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        self.setMinimumWidth(20)
+        self.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse | Qt.TextInteractionFlag.TextSelectableByKeyboard)
+        if self._full_text:
+            self._update_elided_text()
+
+    def set_full_text(self, text: str):
+        self._full_text = str(text) if text is not None else ""
+        self._update_elided_text()
+
+    def full_text(self) -> str:
+        return self._full_text
+
+    def is_elided(self) -> bool:
+        return self._is_elided
+
+    def setText(self, text: str):
+        if not self._updating_elide:
+            self._full_text = str(text) if text is not None else ""
+            self._update_elided_text()
+            return
+        super().setText(text)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._update_elided_text()
+
+    def _update_elided_text(self):
+        if not self._full_text:
+            self._updating_elide = True
+            super().setText("")
+            self._updating_elide = False
+            self._is_elided = False
+            return
+        fm = self.fontMetrics()
+        avail_w = max(10, self.width() - 2)
+        full_w = fm.horizontalAdvance(self._full_text)
+        self._updating_elide = True
+        if full_w > avail_w:
+            dots_w = fm.horizontalAdvance("...")
+            elided = fm.elidedText(self._full_text, Qt.TextElideMode.ElideRight, avail_w)
+            if elided.endswith('\u2026'):
+                base = elided[:-1]
+                while base and (fm.horizontalAdvance(base) + dots_w > avail_w):
+                    base = base[:-1]
+                elided = base + '...'
+            elif '\u2026' in elided:
+                elided = elided.replace('\u2026', '...')
+            self._is_elided = True
+            super().setText(elided)
+        else:
+            self._is_elided = False
+            super().setText(self._full_text)
+        self._updating_elide = False
+
+    def enterEvent(self, event):
+        if self.text():
+            MkTooltipPopover.show_popover_delayed(self, self.text(), delay_ms=350)
+        if event is not None:
+            try:
+                super().enterEvent(event)
+            except Exception:
+                pass
+
+    def leaveEvent(self, event):
+        MkTooltipPopover.schedule_close(180)
+        if event is not None:
+            try:
+                super().leaveEvent(event)
+            except Exception:
+                pass
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.clicked.emit(self.text())
+        super().mousePressEvent(event)
+
+
 class MkAvatarTextCell(MkQWidget):
-    """带圆形头像 (首字母或图片) + 标题主链接的复合单元格"""
+    """带圆形头像 (首字母或图片) + 标题主链接与超长自动省略提示的复合单元格"""
     clicked = Signal(str)
 
     def __init__(self, text: str, avatar: Optional[str] = None, color: Optional[str] = None, align=None, parent=None):
         super().__init__(parent)
-        self.text = text
+        self.text = str(text) if text is not None else ""
         self.avatar = avatar
         self.color = color or "#0284C7"
         self.align = align or (Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
@@ -716,11 +875,27 @@ class MkAvatarTextCell(MkQWidget):
         self._render_avatar()
         layout.addWidget(self.avatar_label)
 
-        # 文字标签 (支持划词高亮与复制)
-        self.text_label = QLabel(self.text, self)
+        # 文字标签 (支持划词高亮与超长自动省略 ...)
+        self.text_label = MkElidedLabel(self.text, self)
         self.text_label.setFont(QFont('-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif', 10, QFont.Weight.Medium))
-        self.text_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse | Qt.TextInteractionFlag.TextSelectableByKeyboard)
-        layout.addWidget(self.text_label)
+        layout.addWidget(self.text_label, stretch=1)
+
+    def enterEvent(self, event):
+        if self.text:
+            MkTooltipPopover.show_popover_delayed(self, self.text, delay_ms=350)
+        if event is not None:
+            try:
+                super().enterEvent(event)
+            except Exception:
+                pass
+
+    def leaveEvent(self, event):
+        MkTooltipPopover.schedule_close(180)
+        if event is not None:
+            try:
+                super().leaveEvent(event)
+            except Exception:
+                pass
 
     def _render_avatar(self):
         pix = QPixmap(32, 32)
@@ -749,49 +924,189 @@ class MkAvatarTextCell(MkQWidget):
 
 
 class MkBadgeCell(MkQWidget):
-    """优雅胶囊标签单元格 (Tag / Badge)，支持可选 Phosphor 矢量小图标"""
+    """优雅胶囊标签单元格 (Tag / Badge)，支持可选 Phosphor 矢量小图标与悬停提示"""
     def __init__(self, text: str, icon: Optional[str] = None, align=None, parent=None):
         super().__init__(parent)
+        self.text_value = str(text) if text is not None else ""
         layout = QHBoxLayout(self)
         layout.setContentsMargins(14, 0, 14, 0)
         layout.setSpacing(0)
         layout.setAlignment(align or (Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter))
 
-        pill = QFrame(self)
-        pill.setObjectName("BadgePill")
-        pill_layout = QHBoxLayout(pill)
+        self.pill = QFrame(self)
+        self.pill.setObjectName("BadgePill")
+        pill_layout = QHBoxLayout(self.pill)
         pill_layout.setContentsMargins(8, 3, 8, 3)
         pill_layout.setSpacing(5)
 
         if icon:
-            ic_lbl = QLabel(pill)
+            ic_lbl = QLabel(self.pill)
             ic_lbl.setPixmap(MkPhosphorIcon.get_pixmap(icon, "#64748B", 14))
             pill_layout.addWidget(ic_lbl)
 
-        txt_lbl = QLabel(text, pill)
-        txt_lbl.setFont(QFont('-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif', 9, QFont.Weight.Medium))
-        txt_lbl.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse | Qt.TextInteractionFlag.TextSelectableByKeyboard)
-        txt_lbl.setStyleSheet("color: #475569; background: transparent;")
-        pill_layout.addWidget(txt_lbl)
+        self.txt_lbl = QLabel(self.text_value, self.pill)
+        self.txt_lbl.setFont(QFont('-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif', 9, QFont.Weight.Medium))
+        self.txt_lbl.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse | Qt.TextInteractionFlag.TextSelectableByKeyboard)
+        pill_layout.addWidget(self.txt_lbl)
 
-        pill.setStyleSheet("""
-            QFrame#BadgePill {
-                background-color: #F1F5F9;
-                border: 1px solid #E2E8F0;
+        self.update_theme_style()
+        layout.addWidget(self.pill)
+
+    def update_theme_style(self):
+        is_dark = ThemeEngine.is_dark()
+        bg_col = "rgba(255, 255, 255, 0.08)" if is_dark else "#F1F5F9"
+        border_col = "rgba(255, 255, 255, 0.16)" if is_dark else "#E2E8F0"
+        text_col = "#E2E8F0" if is_dark else "#475569"
+        self.txt_lbl.setStyleSheet(f"color: {text_col}; background: transparent; border: none;")
+        self.pill.setStyleSheet(f"""
+            QFrame#BadgePill {{
+                background-color: {bg_col};
+                border: 1px solid {border_col};
                 border-radius: 12px;
-            }
+            }}
         """)
-        layout.addWidget(pill)
+
+    def enterEvent(self, event):
+        if self.text_value:
+            MkTooltipPopover.show_popover_delayed(self, self.text_value, delay_ms=350)
+        if event is not None:
+            try:
+                super().enterEvent(event)
+            except Exception:
+                pass
+
+    def leaveEvent(self, event):
+        MkTooltipPopover.schedule_close(180)
+        if event is not None:
+            try:
+                super().leaveEvent(event)
+            except Exception:
+                pass
+
+
+class MkStatusIcon(QWidget):
+    """
+    高保真矢量状态图标 (Vector Status Icon)
+    参考图一设计，完全由高抗锯齿 QPainter 矢量绘制，杜绝图标丢失、失真或模糊问题。
+    """
+    def __init__(self, icon_type: str, color: str, size: int = 14, parent=None):
+        super().__init__(parent)
+        self._icon_type = icon_type  # "check-circle", "play-circle", "clock", "x-circle", "dot"
+        self._color = QColor(color)
+        self.setFixedSize(size, size)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+
+    def update_color(self, color: str):
+        self._color = QColor(color)
+        self.update()
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        pen = QPen(self._color, 1.4, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin)
+        painter.setPen(pen)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+
+        w, h = self.width(), self.height()
+        r = min(w, h) / 2.0 - 1.2
+        cx, cy = w / 2.0, h / 2.0
+
+        if self._icon_type in ("check-circle", "check"):
+            painter.drawEllipse(QPointF(cx, cy), r, r)
+            path = QPainterPath()
+            path.moveTo(cx - 0.40 * r, cy + 0.02 * r)
+            path.lineTo(cx - 0.10 * r, cy + 0.36 * r)
+            path.lineTo(cx + 0.44 * r, cy - 0.28 * r)
+            painter.drawPath(path)
+        elif self._icon_type in ("play-circle", "play"):
+            painter.drawEllipse(QPointF(cx, cy), r, r)
+            tri = QPainterPath()
+            tri.moveTo(cx - 0.22 * r, cy - 0.35 * r)
+            tri.lineTo(cx + 0.38 * r, cy)
+            tri.lineTo(cx - 0.22 * r, cy + 0.35 * r)
+            tri.closeSubpath()
+            painter.setBrush(QBrush(self._color))
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.drawPath(tri)
+        elif self._icon_type in ("clock", "pending"):
+            painter.drawEllipse(QPointF(cx, cy), r, r)
+            painter.drawLine(QPointF(cx, cy), QPointF(cx, cy - 0.48 * r))
+            painter.drawLine(QPointF(cx, cy), QPointF(cx + 0.35 * r, cy))
+        elif self._icon_type in ("x-circle", "error", "failed"):
+            painter.drawEllipse(QPointF(cx, cy), r, r)
+            d = 0.32 * r
+            painter.drawLine(QPointF(cx - d, cy - d), QPointF(cx + d, cy + d))
+            painter.drawLine(QPointF(cx - d, cy + d), QPointF(cx + d, cy - d))
+        else:
+            painter.setBrush(QBrush(self._color))
+            painter.drawEllipse(QPointF(cx, cy), 3.0, 3.0)
+        painter.end()
 
 
 class MkStatusCell(MkQWidget):
-    """状态药丸单元格，带柔和色块与微脉冲圆点指示器"""
-    STATUS_MAP = {
-        "completed": {"bg": "#ECFDF5", "border": "#A7F3D0", "dot": "#10B981", "text": "#047857", "label": "Completed"},
-        "ready": {"bg": "#EFF6FF", "border": "#BFDBFE", "dot": "#3B82F6", "text": "#1D4ED8", "label": "Ready"},
-        "running": {"bg": "#F5F3FF", "border": "#DDD6FE", "dot": "#8B5CF6", "text": "#6D28D9", "label": "Running"},
-        "pending": {"bg": "#FFFBEB", "border": "#FDE68A", "dot": "#F59E0B", "text": "#B45309", "label": "Pending"},
-        "failed": {"bg": "#FEF2F2", "border": "#FECACA", "dot": "#EF4444", "text": "#B91C1C", "label": "Failed"},
+    """
+    状态胶囊药丸单元格 (Status Pill Badge)
+    参考图一设计标准，具备精致的圆角胶囊形态、左侧矢量状态图标与高可读性语义配色。
+    支持中文与英文全量状态映射，且自适应浅色与暗黑模式。
+    """
+    STATUS_CONFIG = {
+        # 成功 / 完成 (Green)
+        "已完成": {"light": {"bg": "#EBF9F1", "border": "#B7EBC8", "text": "#16A34A"},
+                  "dark": {"bg": "rgba(34, 197, 94, 0.16)", "border": "rgba(34, 197, 94, 0.30)", "text": "#4ADE80"},
+                  "icon": "check-circle", "label": "已完成"},
+        "完成": {"light": {"bg": "#EBF9F1", "border": "#B7EBC8", "text": "#16A34A"},
+                "dark": {"bg": "rgba(34, 197, 94, 0.16)", "border": "rgba(34, 197, 94, 0.30)", "text": "#4ADE80"},
+                "icon": "check-circle", "label": "完成"},
+        "completed": {"light": {"bg": "#EBF9F1", "border": "#B7EBC8", "text": "#16A34A"},
+                      "dark": {"bg": "rgba(34, 197, 94, 0.16)", "border": "rgba(34, 197, 94, 0.30)", "text": "#4ADE80"},
+                      "icon": "check-circle", "label": "已完成"},
+        "success": {"light": {"bg": "#EBF9F1", "border": "#B7EBC8", "text": "#16A34A"},
+                    "dark": {"bg": "rgba(34, 197, 94, 0.16)", "border": "rgba(34, 197, 94, 0.30)", "text": "#4ADE80"},
+                    "icon": "check-circle", "label": "成功"},
+
+        # 就绪 (Ready)
+        "就绪": {"light": {"bg": "#EBF9F1", "border": "#B7EBC8", "text": "#16A34A"},
+                "dark": {"bg": "rgba(34, 197, 94, 0.16)", "border": "rgba(34, 197, 94, 0.30)", "text": "#4ADE80"},
+                "icon": "check-circle", "label": "就绪"},
+        "ready": {"light": {"bg": "#EBF9F1", "border": "#B7EBC8", "text": "#16A34A"},
+                  "dark": {"bg": "rgba(34, 197, 94, 0.16)", "border": "rgba(34, 197, 94, 0.30)", "text": "#4ADE80"},
+                  "icon": "check-circle", "label": "就绪"},
+
+        # 运行中 / 进行中 (Blue)
+        "进行中": {"light": {"bg": "#EFF6FF", "border": "#BFDBFE", "text": "#2563EB"},
+                  "dark": {"bg": "rgba(59, 130, 246, 0.16)", "border": "rgba(59, 130, 246, 0.35)", "text": "#60A5FA"},
+                  "icon": "play-circle", "label": "进行中"},
+        "运行中": {"light": {"bg": "#EFF6FF", "border": "#BFDBFE", "text": "#2563EB"},
+                  "dark": {"bg": "rgba(59, 130, 246, 0.16)", "border": "rgba(59, 130, 246, 0.35)", "text": "#60A5FA"},
+                  "icon": "play-circle", "label": "运行中"},
+        "running": {"light": {"bg": "#EFF6FF", "border": "#BFDBFE", "text": "#2563EB"},
+                    "dark": {"bg": "rgba(59, 130, 246, 0.16)", "border": "rgba(59, 130, 246, 0.35)", "text": "#60A5FA"},
+                    "icon": "play-circle", "label": "进行中"},
+
+        # 待处理 / 排队中 (Amber / Orange)
+        "待处理": {"light": {"bg": "#FFFBEB", "border": "#FDE68A", "text": "#D97706"},
+                  "dark": {"bg": "rgba(245, 158, 11, 0.16)", "border": "rgba(245, 158, 11, 0.35)", "text": "#FBBF24"},
+                  "icon": "clock", "label": "待处理"},
+        "排队中": {"light": {"bg": "#FFFBEB", "border": "#FDE68A", "text": "#D97706"},
+                  "dark": {"bg": "rgba(245, 158, 11, 0.16)", "border": "rgba(245, 158, 11, 0.35)", "text": "#FBBF24"},
+                  "icon": "clock", "label": "排队中"},
+        "pending": {"light": {"bg": "#FFFBEB", "border": "#FDE68A", "text": "#D97706"},
+                    "dark": {"bg": "rgba(245, 158, 11, 0.16)", "border": "rgba(245, 158, 11, 0.35)", "text": "#FBBF24"},
+                    "icon": "clock", "label": "待处理"},
+
+        # 失败 / 错误 (Red)
+        "失败": {"light": {"bg": "#FEF2F2", "border": "#FECACA", "text": "#DC2626"},
+                "dark": {"bg": "rgba(239, 68, 68, 0.16)", "border": "rgba(239, 68, 68, 0.35)", "text": "#F87171"},
+                "icon": "x-circle", "label": "失败"},
+        "错误": {"light": {"bg": "#FEF2F2", "border": "#FECACA", "text": "#DC2626"},
+                "dark": {"bg": "rgba(239, 68, 68, 0.16)", "border": "rgba(239, 68, 68, 0.35)", "text": "#F87171"},
+                "icon": "x-circle", "label": "错误"},
+        "failed": {"light": {"bg": "#FEF2F2", "border": "#FECACA", "text": "#DC2626"},
+                   "dark": {"bg": "rgba(239, 68, 68, 0.16)", "border": "rgba(239, 68, 68, 0.35)", "text": "#F87171"},
+                   "icon": "x-circle", "label": "失败"},
+        "error": {"light": {"bg": "#FEF2F2", "border": "#FECACA", "text": "#DC2626"},
+                  "dark": {"bg": "rgba(239, 68, 68, 0.16)", "border": "rgba(239, 68, 68, 0.35)", "text": "#F87171"},
+                  "icon": "x-circle", "label": "错误"},
     }
 
     def __init__(self, raw_status: str, align=None, parent=None):
@@ -801,39 +1116,104 @@ class MkStatusCell(MkQWidget):
         layout.setSpacing(0)
         layout.setAlignment(align or (Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter))
 
-        st_key = str(raw_status).lower().strip()
-        cfg = self.STATUS_MAP.get(st_key, {
-            "bg": "#F8FAFC", "border": "#E2E8F0", "dot": "#94A3B8", "text": "#475569", "label": str(raw_status).capitalize()
-        })
+        self.raw_status = str(raw_status).strip()
+        self.display_label = self.raw_status
 
-        pill = QFrame(self)
-        pill_layout = QHBoxLayout(pill)
-        pill_layout.setContentsMargins(8, 4, 10, 4)
+        self.pill = QFrame(self)
+        self.pill.setObjectName("StatusPill")
+        self.pill.setFixedHeight(26)
+        pill_layout = QHBoxLayout(self.pill)
+        pill_layout.setContentsMargins(8, 2, 10, 2)
         pill_layout.setSpacing(6)
 
-        dot = QFrame(pill)
-        dot.setFixedSize(6, 6)
-        dot.setStyleSheet(f"background-color: {cfg['dot']}; border-radius: 3px;")
-        pill_layout.addWidget(dot)
+        st_key = self.raw_status.lower()
+        cfg = self.STATUS_CONFIG.get(self.raw_status) or self.STATUS_CONFIG.get(st_key)
+        is_dark = ThemeEngine.is_dark()
+        mode_key = "dark" if is_dark else "light"
 
-        txt = QLabel(cfg["label"], pill)
-        txt.setFont(QFont('-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif', 9, QFont.Weight.Medium))
-        txt.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse | Qt.TextInteractionFlag.TextSelectableByKeyboard)
-        txt.setStyleSheet(f"color: {cfg['text']}; background: transparent; border: none;")
-        pill_layout.addWidget(txt)
+        if cfg:
+            colors = cfg[mode_key]
+            icon_name = cfg["icon"]
+            self.display_label = cfg["label"]
+        else:
+            colors = {
+                "bg": "#F8FAFC" if not is_dark else "rgba(255,255,255,0.08)",
+                "border": "#E2E8F0" if not is_dark else "rgba(255,255,255,0.18)",
+                "text": "#475569" if not is_dark else "#94A3B8"
+            }
+            icon_name = "dot"
+            self.display_label = self.raw_status
 
-        pill.setStyleSheet(f"""
-            QFrame {{
-                background-color: {cfg['bg']};
-                border: 1px solid {cfg['border']};
+        # 矢量状态图标 (14x14)
+        self.status_icon = MkStatusIcon(icon_name, colors["text"], size=14, parent=self.pill)
+        pill_layout.addWidget(self.status_icon)
+
+        self.txt_label = QLabel(self.display_label, self.pill)
+        self.txt_label.setFont(QFont('-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif', 9, QFont.Weight.Medium))
+        self.txt_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse | Qt.TextInteractionFlag.TextSelectableByKeyboard)
+        self.txt_label.setStyleSheet(f"color: {colors['text']}; background: transparent; border: none; font-weight: 500;")
+        pill_layout.addWidget(self.txt_label)
+
+        self.pill.setStyleSheet(f"""
+            QFrame#StatusPill {{
+                background-color: {colors['bg']};
+                border: 1px solid {colors['border']};
                 border-radius: 12px;
             }}
         """)
-        layout.addWidget(pill)
+        layout.addWidget(self.pill)
+
+    def update_theme_style(self):
+        st_key = self.raw_status.lower()
+        cfg = self.STATUS_CONFIG.get(self.raw_status) or self.STATUS_CONFIG.get(st_key)
+        is_dark = ThemeEngine.is_dark()
+        mode_key = "dark" if is_dark else "light"
+
+        if cfg:
+            colors = cfg[mode_key]
+            icon_name = cfg["icon"]
+            self.display_label = cfg["label"]
+        else:
+            colors = {
+                "bg": "#F8FAFC" if not is_dark else "rgba(255,255,255,0.08)",
+                "border": "#E2E8F0" if not is_dark else "rgba(255,255,255,0.18)",
+                "text": "#475569" if not is_dark else "#94A3B8"
+            }
+            icon_name = "dot"
+            self.display_label = self.raw_status
+
+        self.status_icon._icon_type = icon_name
+        self.status_icon.update_color(colors["text"])
+        self.txt_label.setText(self.display_label)
+        self.txt_label.setStyleSheet(f"color: {colors['text']}; background: transparent; border: none; font-weight: 500;")
+        self.pill.setStyleSheet(f"""
+            QFrame#StatusPill {{
+                background-color: {colors['bg']};
+                border: 1px solid {colors['border']};
+                border-radius: 12px;
+            }}
+        """)
+
+    def enterEvent(self, event):
+        if self.raw_status:
+            MkTooltipPopover.show_popover_delayed(self, f"运行状态: {self.display_label}", delay_ms=350)
+        if event is not None:
+            try:
+                super().enterEvent(event)
+            except Exception:
+                pass
+
+    def leaveEvent(self, event):
+        MkTooltipPopover.schedule_close(180)
+        if event is not None:
+            try:
+                super().leaveEvent(event)
+            except Exception:
+                pass
 
 
 class MkTextCell(MkQWidget):
-    """支持鼠标滑选文本与快捷键复制的纯文本单元格 (Selectable Plain Text Cell)"""
+    """支持鼠标滑选文本、超长自动省略 (...) 与悬停气泡提示的纯文本单元格"""
     def __init__(self, text: str, align=None, parent=None):
         super().__init__(parent)
         self.text_value = str(text) if text is not None else ""
@@ -843,13 +1223,29 @@ class MkTextCell(MkQWidget):
         align_flag = align or (Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         layout.setAlignment(align_flag)
 
-        self.label = QLabel(self.text_value, self)
+        self.label = MkElidedLabel(self.text_value, self)
         self.label.setAlignment(align_flag)
         self.label.setFont(QFont('-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif', 9))
-        self.label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse | Qt.TextInteractionFlag.TextSelectableByKeyboard)
-        self.label.setToolTip(self.text_value)
         self.label.setStyleSheet("background: transparent; border: none;")
-        layout.addWidget(self.label)
+        layout.addWidget(self.label, stretch=1)
+
+    def enterEvent(self, event):
+        if self.text_value:
+            MkTooltipPopover.show_popover_delayed(self, self.text_value, delay_ms=350)
+        if event is not None:
+            try:
+                super().enterEvent(event)
+            except Exception:
+                pass
+
+    def leaveEvent(self, event):
+        MkTooltipPopover.schedule_close(180)
+        if event is not None:
+            try:
+                super().leaveEvent(event)
+            except Exception:
+                pass
+
 
 
 class MkImageCellWidget(MkQWidget):
@@ -1087,6 +1483,10 @@ class MkProTable(MkQWidget):
         # 搜索过滤文本
         self._search_query: str = ""
 
+        # 自定义列宽与自适应分配控制
+        self._custom_column_widths: Dict[Any, int] = {}
+        self._resizing_internally: bool = False
+
         self._setup_ui()
         self.refresh_table()
 
@@ -1189,6 +1589,7 @@ class MkProTable(MkQWidget):
         )
         self.header_view.sortRequested.connect(self._on_header_sort_requested)
         self.header_view.headerCheckboxClicked.connect(self._on_header_checkbox_clicked)
+        self.header_view.sectionResized.connect(self._on_header_section_resized)
         self.table_widget.setHorizontalHeader(self.header_view)
 
         tc_layout.addWidget(self.table_widget)
@@ -1260,12 +1661,22 @@ class MkProTable(MkQWidget):
         for c in self.columns_config:
             if c.get("type") == "selection" or c.get("key") == "__selection__":
                 continue
-            if c.get("type") == "action" or c.get("key") == "action":
+            col_copy = dict(c)
+            col_type = col_copy.get("type", "text")
+            if col_type in ("image", "video"):
+                if "align" not in col_copy:
+                    col_copy["align"] = "center"
+                if "width" not in col_copy:
+                    col_copy["width"] = 88
+            else:
+                if "align" not in col_copy:
+                    col_copy["align"] = "left"
+            if col_type == "action" or col_copy.get("key") == "action":
                 has_action_col = True
                 if self.show_actions:
-                    cols.append(c)
+                    cols.append(col_copy)
             else:
-                cols.append(c)
+                cols.append(col_copy)
 
         # 若开启了 show_actions 但未传入 action 列，则自动追加标准操作列
         if self.show_actions and not has_action_col:
@@ -1519,12 +1930,7 @@ class MkProTable(MkQWidget):
 
             self.header_view.set_column_alignment(col_idx, align_flag)
 
-            w = col.get("width")
-            if w:
-                self.header_view.setSectionResizeMode(col_idx, QHeaderView.ResizeMode.Interactive)
-                self.table_widget.setColumnWidth(col_idx, w)
-            else:
-                self.header_view.setSectionResizeMode(col_idx, QHeaderView.ResizeMode.Stretch)
+        self.distribute_column_widths()
 
         # 填充单元格
         for row_idx, row_dict in enumerate(page_data):
@@ -1569,25 +1975,25 @@ class MkProTable(MkQWidget):
                     self.table_widget.bind_cell_widget(cell_widget, row_idx)
 
                 elif col_type == "image":
-                    # 图片缩略图单元格
+                    # 图片缩略图单元格 (居中对齐)
                     cell_widget = MkImageCellWidget(str(raw_val), parent=self.table_widget)
                     cell_widget.clicked.connect(lambda p: self._show_image_lightbox(p))
                     wrapper = QWidget(self.table_widget)
                     w_lay = QHBoxLayout(wrapper)
-                    w_lay.setContentsMargins(14, 0, 14, 0)
+                    w_lay.setContentsMargins(0, 0, 0, 0)
                     w_lay.setAlignment(align_flag)
                     w_lay.addWidget(cell_widget)
                     self.table_widget.setCellWidget(row_idx, col_idx, wrapper)
                     self.table_widget.bind_cell_widget(wrapper, row_idx)
 
                 elif col_type == "video":
-                    # 视频缩略图单元格
+                    # 视频缩略图单元格 (居中对齐)
                     thumb_val = row_dict.get(col.get("thumbnail_key", "thumbnail"), None)
                     cell_widget = MkVideoCellWidget(str(raw_val), thumbnail_path=thumb_val, parent=self.table_widget)
                     cell_widget.clicked.connect(lambda p: self._show_video_player(p))
                     wrapper = QWidget(self.table_widget)
                     w_lay = QHBoxLayout(wrapper)
-                    w_lay.setContentsMargins(14, 0, 14, 0)
+                    w_lay.setContentsMargins(0, 0, 0, 0)
                     w_lay.setAlignment(align_flag)
                     w_lay.addWidget(cell_widget)
                     self.table_widget.setCellWidget(row_idx, col_idx, wrapper)
@@ -1610,7 +2016,7 @@ class MkProTable(MkQWidget):
                     self.table_widget.bind_cell_widget(action_widget, row_idx)
 
                 else:
-                    # 纯文本单元格采用支持划词选择复制的 MkTextCell
+                    # 纯文本单元格采用支持划词选择复制与超长省略 Tooltip 的 MkTextCell
                     cell_widget = MkTextCell(str(raw_val), align=align_flag, parent=self.table_widget)
                     self.table_widget.setCellWidget(row_idx, col_idx, cell_widget)
                     self.table_widget.bind_cell_widget(cell_widget, row_idx)
@@ -1622,6 +2028,115 @@ class MkProTable(MkQWidget):
         self._update_pagination_buttons(total_pages)
         if getattr(self, "auto_height", False):
             self._update_auto_height()
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self.distribute_column_widths()
+
+    def _on_header_section_resized(self, logical_index: int, old_size: int, new_size: int):
+        """用户拖拽表头分界线调节列宽时的记忆回调"""
+        if getattr(self, "_resizing_internally", False):
+            return
+        cols = self.effective_columns
+        if 0 <= logical_index < len(cols):
+            key = cols[logical_index].get("key")
+            if key and key != "__selection__":
+                self._custom_column_widths[key] = new_size
+
+    def distribute_column_widths(self):
+        """
+        智能分配与重排各列宽度：
+        1. 多选列 (selection)：固定紧凑宽度 48px，居中；
+        2. 图片与视频列 (image, video)：独立紧凑宽度 (默认 88px)，居中对齐，不参与普通列均分；
+        3. 用户自定义宽度列 (用户在 columns 中声明了 width 或调用过 set_column_width)：按用户设定宽度保留；
+        4. 其余未指定宽度的普通列：将视口剩余宽度均匀平分 (保底最小宽度 100px)；
+        5. 所有列启用 Interactive 模式，允许用户自由拖拽边框调节任意列宽。
+        """
+        effective_cols = self.effective_columns
+        col_count = len(effective_cols)
+        if col_count == 0 or not hasattr(self, "table_widget") or not self.table_widget:
+            return
+
+        self._resizing_internally = True
+        try:
+            viewport_w = self.table_widget.viewport().width()
+            if viewport_w < 100:
+                viewport_w = max(600, self.width() - 36)
+
+            assigned_widths = {}
+            flexible_indices = []
+
+            for idx, col in enumerate(effective_cols):
+                key = col.get("key", str(idx))
+                col_type = col.get("type", "text")
+
+                # 1. 优先检查用户 API 自定义宽度
+                custom_w = self._custom_column_widths.get(key)
+                if custom_w is not None:
+                    assigned_widths[idx] = int(custom_w)
+                elif col_type == "selection" or key == "__selection__":
+                    assigned_widths[idx] = 48
+                elif col_type in ("image", "video"):
+                    assigned_widths[idx] = int(col.get("width", 88))
+                elif col.get("width") is not None:
+                    assigned_widths[idx] = int(col["width"])
+                else:
+                    flexible_indices.append(idx)
+
+            fixed_sum = sum(assigned_widths.values())
+            remaining_w = max(0, viewport_w - fixed_sum)
+
+            if flexible_indices:
+                base_w = max(100, remaining_w // len(flexible_indices))
+                rem = max(0, remaining_w - (base_w * len(flexible_indices))) if remaining_w >= 100 * len(flexible_indices) else 0
+                for i, f_idx in enumerate(flexible_indices):
+                    assigned_widths[f_idx] = base_w + (1 if i < rem else 0)
+
+            for idx in range(col_count):
+                self.header_view.setSectionResizeMode(idx, QHeaderView.ResizeMode.Interactive)
+                w = assigned_widths.get(idx, 120)
+                self.table_widget.setColumnWidth(idx, w)
+        finally:
+            self._resizing_internally = False
+
+    def set_column_width(self, col: str | int, width: int):
+        """动态调节指定列的宽度 (支持列 key 字符串或逻辑索引整数)"""
+        col_idx = self._resolve_col_index(col)
+        if col_idx is not None and 0 <= col_idx < len(self.effective_columns):
+            key = self.effective_columns[col_idx].get("key")
+            if key:
+                self._custom_column_widths[key] = int(width)
+            self._custom_column_widths[col_idx] = int(width)
+            self._resizing_internally = True
+            try:
+                self.table_widget.setColumnWidth(col_idx, int(width))
+            finally:
+                self._resizing_internally = False
+
+    def get_column_width(self, col: str | int) -> int:
+        """获取指定列当前渲染宽度"""
+        col_idx = self._resolve_col_index(col)
+        if col_idx is not None and 0 <= col_idx < self.table_widget.columnCount():
+            return self.table_widget.columnWidth(col_idx)
+        return 0
+
+    def set_column_widths(self, widths: Dict[str | int, int]):
+        """批量调节多列宽度，例如 {'name': 240, 'description': 320}"""
+        for k, w in widths.items():
+            self.set_column_width(k, w)
+
+    def reset_column_widths(self):
+        """重置所有用户手动调节的列宽，恢复初始均衡自适应状态"""
+        self._custom_column_widths.clear()
+        self.distribute_column_widths()
+
+    def _resolve_col_index(self, col: str | int) -> Optional[int]:
+        if isinstance(col, int):
+            return col
+        for idx, c in enumerate(self.effective_columns):
+            if c.get("key") == col:
+                return idx
+        return None
 
     def set_auto_height(self, enabled: bool = True):
         """
@@ -2010,5 +2525,13 @@ class MkProTable(MkQWidget):
             }}
         """)
 
-        if hasattr(self, "page_size_combo"):
+        if hasattr(self, "page_size_combo") and self.page_size_combo is not None:
             self.page_size_combo.update_theme_style()
+
+        # 5. 通知表格中所有已渲染的自定义单元格更新其主题颜色 (如 MkStatusCell、MkBadgeCell)
+        if hasattr(self, "table_widget") and self.table_widget is not None:
+            for r in range(self.table_widget.rowCount()):
+                for c in range(self.table_widget.columnCount()):
+                    w = self.table_widget.cellWidget(r, c)
+                    if w is not None and hasattr(w, "update_theme_style"):
+                        w.update_theme_style()

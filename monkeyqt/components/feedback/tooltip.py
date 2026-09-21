@@ -8,8 +8,9 @@ Features:
 - create_field_header, create_input_field, create_switch_field: Helper functions for form fields with info hints.
 """
 
+import re
 from typing import Optional, Tuple, Any
-from PySide6.QtCore import Qt, QPoint, QPointF, QRect, QRectF, QObject, QEvent
+from PySide6.QtCore import Qt, QPoint, QPointF, QRect, QRectF, QObject, QEvent, QTimer
 from PySide6.QtGui import (
     QPainter,
     QPainterPath,
@@ -27,6 +28,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QGraphicsDropShadowEffect,
     QApplication,
+    QPushButton,
 )
 
 from monkeyqt.components.layout.widget import MkQWidget
@@ -36,15 +38,14 @@ from monkeyqt.themes.engine import ThemeEngine
 
 class MkTooltipPopover(MkQWidget):
     """
-    Speech-bubble tooltip popover with pointer arrow.
-    Benchmarked strictly against modern cloud platforms (Ultralytics HUB, OpenAI, etc.).
-    Automatically adapts across all 68 MonkeyQt themes:
-    - Light Mode: Pitch-black obsidian slate bubble (#0F172A), crisp white text (#FFFFFF)
-    - Dark / OLED Mode: High-contrast bright bubble (#FFFFFF), crisp dark text (#09090B)
-    - Glassmorphism Mode: Frosted translucent bubble with subtle border glow
-    - Brutalism Mode: 2px solid black border, 0px sharp corner radius, hard shadow
-    - Pixel Mode: 0px corner radius with pixelated contrast borders
-    - Cyberpunk / Neon Mode: Dark bubble with neon primary accent border & soft glow
+    现代化气泡提示浮窗 (Speech-bubble Tooltip Popover)
+    对标现代 AI 云平台 (Ultralytics HUB、LabelPaw 等) 标杆设计：
+    - 亮色模式 (参考图三)：沉浸黑卡片 (#18181B / #121212)，纯白清晰文本 (#FFFFFF)，代码块标签与右上角关闭按钮；
+    - 暗色模式 (参考图四)：纯白高反差卡片 (#FFFFFF)，深炭黑高清晰文本 (#09090B)，代码块标签与右上角关闭按钮；
+    - 玻璃拟态风格：磨砂半透明浮层 + 微发光边缘反射；
+    - 新野兽派 / 像素风格：粗黑边框、硬投影与高饱和纯色；
+    - 赛博朋克风格：深炭黑浮层 + 霓虹主色描边。
+    集成像素级平滑闭合路径抗锯齿绘制与智能防遮挡边缘对齐。
     """
     _instance: Optional["MkTooltipPopover"] = None
 
@@ -56,47 +57,132 @@ class MkTooltipPopover(MkQWidget):
 
     @classmethod
     def show_popover(cls, target_widget: QWidget, text: str, theme_override: Optional[str] = None):
-        """Display the popover anchored to target_widget."""
+        """Display the popover anchored to target_widget with pixel precision."""
         if not text or not target_widget or not target_widget.isVisible():
             return
         inst = cls.get_instance()
+        inst.cancel_close()
+        inst._target_widget = target_widget
         inst.set_content(text, theme_override=theme_override)
-        inst.adjustSize()
 
-        pop_w = inst.width()
-        pop_h = inst.height()
-
-        target_center_x = target_widget.mapToGlobal(QPoint(target_widget.width() // 2, 0)).x()
-        target_top_y = target_widget.mapToGlobal(QPoint(0, 0)).y()
-        target_bot_y = target_top_y + target_widget.height()
+        target_rect = QRect(target_widget.mapToGlobal(QPoint(0, 0)), target_widget.size())
+        target_center_x = target_rect.center().x()
 
         screen = target_widget.screen() or QApplication.primaryScreen()
         screen_avail = screen.availableGeometry() if screen else QRect(0, 0, 1920, 1080)
 
-        # Default to appearing on top with pointer arrow pointing downwards
+        top_boundary = screen_avail.top() + 8
+        if target_widget.window():
+            win_top = target_widget.window().mapToGlobal(QPoint(0, 0)).y()
+            top_boundary = max(top_boundary, win_top + 45)
+
+        padding = float(inst._padding)
+        gap = 2  # Gap between arrow tip and target widget boundary
+
+        # First pass: try bottom arrow (popover appears above target)
         arrow_position = 'bottom'
-        pos_y = target_top_y - pop_h - 4
-
-        # Flip downwards if too close to the screen top edge
-        if pos_y < screen_avail.top() + 10:
-            pos_y = target_bot_y + 4
-            arrow_position = 'top'
-
-        # Horizontal positioning clamped to screen bounds
-        pos_x = target_center_x - pop_w // 2
-        pos_x = max(screen_avail.left() + 12, min(screen_avail.right() - pop_w - 12, pos_x))
-
         inst.set_arrow_position(arrow_position)
+        inst.adjustSize()
+        pop_w = inst.width()
+        pop_h = inst.height()
+
+        pos_y = int(target_rect.top() - gap - (pop_h - padding))
+
+        # If insufficient room above, flip to top arrow (popover appears below target)
+        if pos_y < top_boundary:
+            arrow_position = 'top'
+            inst.set_arrow_position(arrow_position)
+            inst.adjustSize()
+            pop_w = inst.width()
+            pop_h = inst.height()
+            pos_y = int(target_rect.bottom() + gap - padding)
+
+        # Clamped horizontal positioning centered on target widget
+        pos_x = target_center_x - pop_w // 2
+        pos_x = max(screen_avail.left() + 8, min(screen_avail.right() - pop_w - 8, pos_x))
+
+        target_local_x = float(target_center_x - pos_x)
+
+        inst.set_arrow_x(target_local_x)
         inst.move(pos_x, pos_y)
-        inst.set_arrow_global_x(target_center_x)
         inst.show()
         inst.raise_()
 
     @classmethod
+    def show_popover_delayed(cls, target_widget: QWidget, text: str, delay_ms: int = 350, theme_override: Optional[str] = None):
+        """
+        Delayed popover trigger (Open Delay).
+        Industry standard open delay: 300ms ~ 500ms (default 350ms).
+        Prevents visual flicker when the cursor sweeps across table rows.
+        If the popover is already showing, smoothly transitions to the new cell immediately.
+        """
+        if not text or not target_widget or not target_widget.isVisible():
+            return
+        inst = cls.get_instance()
+        inst.cancel_close()
+
+        if inst.isVisible():
+            cls.show_popover(target_widget, text, theme_override=theme_override)
+            return
+
+        cls.cancel_open()
+        inst._pending_target = target_widget
+        inst._pending_text = text
+        inst._pending_theme = theme_override
+        inst._open_timer.start(delay_ms)
+
+    @classmethod
+    def cancel_open(cls):
+        """Cancel any pending delayed popover open."""
+        if cls._instance:
+            cls._instance._open_timer.stop()
+            cls._instance._pending_target = None
+            cls._instance._pending_text = None
+            cls._instance._pending_theme = None
+
+    @classmethod
     def hide_popover(cls):
-        """Dismiss the popover immediately."""
-        if cls._instance and cls._instance.isVisible():
-            cls._instance.hide()
+        """Dismiss the popover immediately and reset target widget hover state."""
+        if cls._instance:
+            cls.cancel_open()
+            cls._instance._close_timer.stop()
+            if cls._instance.isVisible():
+                cls._instance.hide()
+            if cls._instance._target_widget:
+                try:
+                    if hasattr(cls._instance._target_widget, "_update_appearance"):
+                        cls._instance._target_widget._is_hovered = False
+                        cls._instance._target_widget._update_appearance()
+                except RuntimeError:
+                    pass
+
+    @classmethod
+    def schedule_close(cls, delay_ms: int = 180):
+        """Schedule automatic close after grace period unless re-entered."""
+        if cls._instance:
+            cls.cancel_open()
+            if cls._instance.isVisible():
+                cls._instance._close_timer.start(delay_ms)
+
+    @classmethod
+    def cancel_close(cls):
+        """Cancel any pending auto-close."""
+        if cls._instance:
+            cls._instance._close_timer.stop()
+
+    def _check_auto_close(self):
+        """Grace timer callback: close popover if cursor is outside both anchor and popover."""
+        cursor_pos = QCursor.pos()
+        if self.isVisible() and self.geometry().adjusted(-4, -4, 4, 4).contains(cursor_pos):
+            return
+        if self._target_widget and self._target_widget.isVisible():
+            try:
+                tw_rect = QRect(self._target_widget.mapToGlobal(QPoint(0, 0)), self._target_widget.size())
+                if tw_rect.adjusted(-6, -6, 6, 6).contains(cursor_pos):
+                    return
+            except Exception:
+                pass
+        self.hide_popover()
 
     def __init__(self):
         super().__init__(None)
@@ -107,28 +193,58 @@ class MkTooltipPopover(MkQWidget):
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
-        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
+        self._target_widget: Optional[QWidget] = None
         self._arrow_x = 0.5
         self._arrow_position = 'bottom'
-        self._padding = 8
+        self._padding = 10
+        self._arrow_h = 6.0
+        self._arrow_w = 12.0
         self._style_meta = {}
 
         self.box_layout = QVBoxLayout(self)
         self.box_layout.setContentsMargins(
-            self._padding + 12, self._padding + 8, self._padding + 12, 6 + 10
+            self._padding + 14, self._padding + 9, self._padding + 14, self._padding + 9
         )
+        self.box_layout.setSpacing(0)
 
+        # 内容标签 (支持富文本与代码高亮胶囊，移除关闭按钮后更开阔精致)
         self.label = QLabel(self)
         self.label.setWordWrap(True)
-        self.label.setTextFormat(Qt.TextFormat.PlainText)
+        self.label.setTextFormat(Qt.TextFormat.RichText)
+        self.label.setOpenExternalLinks(True)
         self.box_layout.addWidget(self.label)
 
         self.shadow = QGraphicsDropShadowEffect(self)
         self.shadow.setBlurRadius(16)
         self.shadow.setOffset(0, 4)
         self.setGraphicsEffect(self.shadow)
+
+        # 鼠标移出区域平滑自动关闭定时器 (Grace Period Timer, 类似签到卡片悬停体验)
+        self._close_timer = QTimer(self)
+        self._close_timer.setSingleShot(True)
+        self._close_timer.setInterval(180)
+        self._close_timer.timeout.connect(self._check_auto_close)
+
+        # 鼠标移入延迟展开定时器 (Open Delay Timer, 业界标准 300~500ms，杜绝鼠标扫过时的浮窗抖动)
+        self._open_timer = QTimer(self)
+        self._open_timer.setSingleShot(True)
+        self._open_timer.timeout.connect(self._on_open_timer_timeout)
+        self._pending_target = None
+        self._pending_text = None
+        self._pending_theme = None
+
+    def _on_open_timer_timeout(self):
+        target = self._pending_target
+        text = self._pending_text
+        theme = self._pending_theme
+        self._pending_target = None
+        self._pending_text = None
+        self._pending_theme = None
+        if target and text and target.isVisible():
+            self.show_popover(target, text, theme_override=theme)
+
 
     def on_theme_changed(self, theme_name: str = ""):
         if self.isVisible() and self.label.text():
@@ -138,14 +254,20 @@ class MkTooltipPopover(MkQWidget):
     def set_arrow_position(self, pos: str):
         self._arrow_position = pos
         p = self._padding
+        ah = int(self._arrow_h)
         if pos == 'bottom':
-            self.box_layout.setContentsMargins(p + 12, p + 7, p + 12, 6 + 10)
+            self.box_layout.setContentsMargins(p + 14, p + 9, p + 14, p + ah + 9)
         else:
-            self.box_layout.setContentsMargins(p + 12, 6 + 10, p + 12, p + 7)
+            self.box_layout.setContentsMargins(p + 14, p + ah + 9, p + 14, p + 9)
+
+    def set_arrow_x(self, local_x: float):
+        p = float(self._padding)
+        min_x = p + 16.0
+        max_x = float(self.width()) - p - 16.0
+        self._arrow_x = max(min_x, min(max_x, float(local_x)))
+        self.update()
 
     def set_content(self, text: str, theme_override: Optional[str] = None):
-        self.label.setText(text)
-
         # Retrieve current theme metadata
         is_dark = ThemeEngine.is_dark()
         is_brutal = ThemeEngine.is_brutal()
@@ -154,32 +276,38 @@ class MkTooltipPopover(MkQWidget):
         curr_theme = (theme_override or ThemeEngine.current_theme() or "").lower()
         is_cyber = "cyber" in curr_theme or "neon" in curr_theme
 
-        # Dynamic color and shape adaptation
         font_family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif'
-        
+
         if is_dark:
-            # Dark mode: Crisp bright card with dark charcoal text
+            # 暗黑主题下 (参考图四)：高对比度纯白气泡卡片，深黑字
             text_color = "#09090B"
             bg_color = QColor(255, 255, 255)
-            border_color = QColor(0, 0, 0, 25)
-            shadow_color = QColor(0, 0, 0, 95)
+            border_color = QColor(0, 0, 0, 30)
+            shadow_color = QColor(0, 0, 0, 100)
             shadow_blur = 18
             shadow_offset = (0, 4)
-            corner_radius = 0.0 if (is_brutal or is_pixel) else 8.0
+            corner_radius = 0.0 if (is_brutal or is_pixel) else 10.0
             border_width = 2.0 if is_brutal else 1.0
+            code_bg = "#F4F4F5"
+            code_text = "#18181B"
+            code_border = "#E4E4E7"
+            link_color = "#2563EB"
         else:
-            # Light mode: Pitch-black obsidian slate card with crisp white text
+            # 浅色/默认雅致亮色下 (参考图三)：沉浸黑气泡卡片，纯白清晰文字
             text_color = "#FFFFFF"
-            bg_color = QColor(15, 23, 42)
-            border_color = QColor(255, 255, 255, 28)
-            shadow_color = QColor(0, 0, 0, 80)
+            bg_color = QColor(24, 24, 27)
+            border_color = QColor(255, 255, 255, 36)
+            shadow_color = QColor(0, 0, 0, 120)
             shadow_blur = 16
             shadow_offset = (0, 4)
-            corner_radius = 0.0 if (is_brutal or is_pixel) else 8.0
+            corner_radius = 0.0 if (is_brutal or is_pixel) else 10.0
             border_width = 2.0 if is_brutal else 1.0
+            code_bg = "#333338"
+            code_text = "#FFFFFF"
+            code_border = "rgba(255, 255, 255, 0.10)"
+            link_color = "#60A5FA"
 
         if is_brutal:
-            # Brutalism: Pure white or bright high-contrast card with thick black border
             bg_color = QColor(255, 255, 255)
             text_color = "#000000"
             border_color = QColor(0, 0, 0)
@@ -188,22 +316,24 @@ class MkTooltipPopover(MkQWidget):
             shadow_color = QColor(0, 0, 0, 220)
             shadow_blur = 0
             shadow_offset = (3, 3)
+            code_bg = "#E2E8F0"
+            code_text = "#000000"
+            code_border = "#000000"
+            link_color = "#000000"
         elif is_glass:
-            # Glassmorphism: Translucent acrylic frosted card with border reflection
             if is_dark:
                 bg_color = QColor(255, 255, 255, 235)
                 text_color = "#09090B"
                 border_color = QColor(255, 255, 255, 120)
             else:
-                bg_color = QColor(15, 23, 42, 218)
+                bg_color = QColor(24, 24, 27, 225)
                 text_color = "#FFFFFF"
                 border_color = QColor(255, 255, 255, 60)
-            corner_radius = 10.0
+            corner_radius = 12.0
             border_width = 1.0
             shadow_color = QColor(0, 0, 0, 90)
             shadow_blur = 20
         elif is_cyber:
-            # Cyberpunk / Glow: Dark bubble with neon primary accent border
             primary_hex = ThemeEngine.token("primary", "#3B82F6")
             bg_color = QColor(10, 15, 29)
             text_color = "#F8FAFC"
@@ -221,85 +351,117 @@ class MkTooltipPopover(MkQWidget):
             "is_brutal": is_brutal,
         }
 
+        # 格式化富文本 (支持 `code` 与 Learn more 链接)
+        code_style = f'background-color: {code_bg}; color: {code_text}; font-family: Consolas, monospace; font-size: 11px;'
+        formatted = re.sub(r"`([^`]+)`", rf'<code style="{code_style}">&nbsp;\1&nbsp;</code>', text)
+        link_style = f'color: {link_color}; text-decoration: none; font-weight: 500;'
+        formatted = re.sub(r"(Learn more\s*[↗→]?)", rf'<a href="#" style="{link_style}">\1</a>', formatted)
+
         self.label.setStyleSheet(f"""
             QLabel {{
                 color: {text_color};
                 font-family: {font_family};
                 font-size: 12px;
-                line-height: 1.45;
                 font-weight: {"600" if is_brutal else "400"};
                 background: transparent;
+                border: none;
+                padding: 2px 0px;
             }}
         """)
+        self.label.setText(formatted)
 
         self.shadow.setColor(shadow_color)
         self.shadow.setBlurRadius(shadow_blur)
         self.shadow.setOffset(shadow_offset[0], shadow_offset[1])
 
-        # Dynamic width matching the card aspect ratio
-        fm = self.label.fontMetrics()
-        single_line_w = fm.horizontalAdvance(text)
-        if single_line_w < 260:
-            target_w = max(160, single_line_w + 14)
-        elif single_line_w < 520:
+        # 根据纯文本长度动态伸缩卡片宽度
+        plain_len = len(re.sub(r"<[^>]+>", "", formatted))
+        if plain_len < 25:
+            target_w = max(180, plain_len * 12 + 40)
+        elif plain_len < 60:
+            target_w = 270
+        elif plain_len < 100:
             target_w = 320
         else:
-            target_w = 380
-        self.label.setFixedWidth(target_w)
-
+            target_w = 360
+        self.label.setFixedWidth(int(target_w))
         self.adjustSize()
 
-    def set_arrow_global_x(self, target_global_x: int):
-        local_x = target_global_x - self.x()
-        p = self._padding
-        min_x = p + 16
-        max_x = self.width() - p - 16
-        self._arrow_x = max(min_x, min(max_x, local_x))
-        self.update()
+    def enterEvent(self, event):
+        self.cancel_close()
+        if event is not None:
+            try:
+                super().enterEvent(event)
+            except Exception:
+                pass
+
+    def leaveEvent(self, event):
+        self.schedule_close(180)
+        if event is not None:
+            try:
+                super().leaveEvent(event)
+            except Exception:
+                pass
 
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-        p = self._padding
-        arrow_h = 5.0
-        arrow_w = 10.0
+        p = float(self._padding)
+        arrow_h = float(self._arrow_h)
+        arrow_w = float(self._arrow_w)
 
-        bg_color = self._style_meta.get("bg_color", QColor(15, 23, 42))
-        border_color = self._style_meta.get("border_color", QColor(255, 255, 255, 25))
-        border_w = self._style_meta.get("border_width", 1.0)
-        radius = self._style_meta.get("corner_radius", 8.0)
+        bg_color = self._style_meta.get("bg_color", QColor(24, 24, 27))
+        border_color = self._style_meta.get("border_color", QColor(255, 255, 255, 36))
+        border_w = float(self._style_meta.get("border_width", 1.0))
+        radius = float(self._style_meta.get("corner_radius", 10.0))
 
-        if self._arrow_position == 'bottom':
-            body_rect = QRectF(p, p, self.width() - 2 * p, self.height() - p - arrow_h - 1)
-            ax = getattr(self, '_arrow_x', self.width() / 2.0)
-            arrow = QPolygonF([
-                QPointF(ax - arrow_w / 2.0, body_rect.bottom()),
-                QPointF(ax + arrow_w / 2.0, body_rect.bottom()),
-                QPointF(ax, self.height() - 1)
-            ])
-        else:
-            body_rect = QRectF(p, arrow_h + 1, self.width() - 2 * p, self.height() - p - arrow_h - 1)
-            ax = getattr(self, '_arrow_x', self.width() / 2.0)
-            arrow = QPolygonF([
-                QPointF(ax - arrow_w / 2.0, body_rect.top()),
-                QPointF(ax + arrow_w / 2.0, body_rect.top()),
-                QPointF(ax, 1)
-            ])
+        w = float(self.width())
+        h = float(self.height())
+        rect = QRectF(p, p, w - 2.0 * p, h - 2.0 * p)
 
         path = QPainterPath()
-        if radius > 0:
-            path.addRoundedRect(body_rect, radius, radius)
+        ax = getattr(self, '_arrow_x', w / 2.0)
+        min_ax = rect.left() + radius + arrow_w / 2.0 + 2.0
+        max_ax = rect.right() - radius - arrow_w / 2.0 - 2.0
+        if min_ax <= max_ax:
+            ax = max(min_ax, min(max_ax, ax))
         else:
-            path.addRect(body_rect)
+            ax = rect.center().x()
 
-        arrow_path = QPainterPath()
-        arrow_path.addPolygon(arrow)
+        if self._arrow_position == 'bottom':
+            body = QRectF(rect.left(), rect.top(), rect.width(), rect.height() - arrow_h)
+            path.moveTo(body.left() + radius, body.top())
+            path.lineTo(body.right() - radius, body.top())
+            path.arcTo(QRectF(body.right() - 2.0 * radius, body.top(), 2.0 * radius, 2.0 * radius), 90, -90)
+            path.lineTo(body.right(), body.bottom() - radius)
+            path.arcTo(QRectF(body.right() - 2.0 * radius, body.bottom() - 2.0 * radius, 2.0 * radius, 2.0 * radius), 0, -90)
+            path.lineTo(ax + arrow_w / 2.0, body.bottom())
+            path.lineTo(ax, rect.bottom())
+            path.lineTo(ax - arrow_w / 2.0, body.bottom())
+            path.lineTo(body.left() + radius, body.bottom())
+            path.arcTo(QRectF(body.left(), body.bottom() - 2.0 * radius, 2.0 * radius, 2.0 * radius), 270, -90)
+            path.lineTo(body.left(), body.top() + radius)
+            path.arcTo(QRectF(body.left(), body.top(), 2.0 * radius, 2.0 * radius), 180, -90)
+            path.closeSubpath()
+        else:
+            body = QRectF(rect.left(), rect.top() + arrow_h, rect.width(), rect.height() - arrow_h)
+            path.moveTo(body.left() + radius, body.top())
+            path.lineTo(ax - arrow_w / 2.0, body.top())
+            path.lineTo(ax, rect.top())
+            path.lineTo(ax + arrow_w / 2.0, body.top())
+            path.lineTo(body.right() - radius, body.top())
+            path.arcTo(QRectF(body.right() - 2.0 * radius, body.top(), 2.0 * radius, 2.0 * radius), 90, -90)
+            path.lineTo(body.right(), body.bottom() - radius)
+            path.arcTo(QRectF(body.right() - 2.0 * radius, body.bottom() - 2.0 * radius, 2.0 * radius, 2.0 * radius), 0, -90)
+            path.lineTo(body.left() + radius, body.bottom())
+            path.arcTo(QRectF(body.left(), body.bottom() - 2.0 * radius, 2.0 * radius, 2.0 * radius), 270, -90)
+            path.lineTo(body.left(), body.top() + radius)
+            path.arcTo(QRectF(body.left(), body.top(), 2.0 * radius, 2.0 * radius), 180, -90)
+            path.closeSubpath()
 
-        bubble_path = path.united(arrow_path).simplified()
-
-        painter.fillPath(bubble_path, QBrush(bg_color))
-        painter.strokePath(bubble_path, QPen(border_color, border_w))
+        painter.fillPath(path, QBrush(bg_color))
+        painter.strokePath(path, QPen(border_color, border_w))
 
 
 class MkInfoIcon(QLabel):
@@ -354,6 +516,7 @@ class MkInfoIcon(QLabel):
         MkTooltipPopover.hide_popover()
 
     def enterEvent(self, event):
+        MkTooltipPopover.cancel_close()
         self.show_tooltip()
         if event is not None:
             try:
@@ -362,15 +525,20 @@ class MkInfoIcon(QLabel):
                 pass
 
     def leaveEvent(self, event):
-        cursor_pos = self.mapFromGlobal(QCursor.pos())
-        if self.rect().contains(cursor_pos):
-            return
-        self.hide_tooltip()
+        MkTooltipPopover.schedule_close(180)
         if event is not None:
             try:
                 super().leaveEvent(event)
             except Exception:
                 pass
+
+    def mousePressEvent(self, event):
+        popover = MkTooltipPopover.get_instance()
+        if popover.isVisible():
+            self.hide_tooltip()
+        else:
+            self.show_tooltip()
+        event.accept()
 
 
 # Backward-compatible alias
@@ -387,9 +555,12 @@ class _MkTooltipFilter(QObject):
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         if watched == self.target_widget:
             if event.type() == QEvent.Type.Enter:
+                MkTooltipPopover.cancel_close()
                 if self.hint_text:
                     MkTooltipPopover.show_popover(self.target_widget, self.hint_text)
-            elif event.type() in (QEvent.Type.Leave, QEvent.Type.Hide, QEvent.Type.Close):
+            elif event.type() == QEvent.Type.Leave:
+                MkTooltipPopover.schedule_close(180)
+            elif event.type() in (QEvent.Type.Hide, QEvent.Type.Close):
                 MkTooltipPopover.hide_popover()
         return super().eventFilter(watched, event)
 
