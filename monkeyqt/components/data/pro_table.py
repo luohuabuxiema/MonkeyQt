@@ -822,7 +822,7 @@ class MkElidedLabel(QLabel):
                 elided = base + '...'
             elif '\u2026' in elided:
                 elided = elided.replace('\u2026', '...')
-            self._is_elided = True
+            self._is_elided = (elided != self._full_text) and ("..." in elided)
             super().setText(elided)
         else:
             self._is_elided = False
@@ -830,8 +830,9 @@ class MkElidedLabel(QLabel):
         self._updating_elide = False
 
     def enterEvent(self, event):
-        if self.text():
-            MkTooltipPopover.show_popover_delayed(self, self.text(), delay_ms=350)
+        self._update_elided_text()
+        if self._is_elided and self._full_text:
+            MkTooltipPopover.show_popover_delayed(self, self._full_text, delay_ms=350)
         if event is not None:
             try:
                 super().enterEvent(event)
@@ -839,7 +840,11 @@ class MkElidedLabel(QLabel):
                 pass
 
     def leaveEvent(self, event):
-        MkTooltipPopover.schedule_close(180)
+        p = self.parentWidget()
+        if p and p.rect().contains(p.mapFromGlobal(QCursor.pos())):
+            pass
+        else:
+            MkTooltipPopover.schedule_close(180)
         if event is not None:
             try:
                 super().leaveEvent(event)
@@ -864,7 +869,7 @@ class MkAvatarTextCell(MkQWidget):
         self.align = align or (Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
 
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(14, 0, 14, 0)
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(10)
         layout.setAlignment(self.align)
 
@@ -881,8 +886,10 @@ class MkAvatarTextCell(MkQWidget):
         layout.addWidget(self.text_label, stretch=1)
 
     def enterEvent(self, event):
-        if self.text:
-            MkTooltipPopover.show_popover_delayed(self, self.text, delay_ms=350)
+        if hasattr(self, "text_label"):
+            self.text_label._update_elided_text()
+            if self.text_label.is_elided() and self.text:
+                MkTooltipPopover.show_popover_delayed(self.text_label, self.text, delay_ms=350)
         if event is not None:
             try:
                 super().enterEvent(event)
@@ -890,6 +897,8 @@ class MkAvatarTextCell(MkQWidget):
                 pass
 
     def leaveEvent(self, event):
+        if self.rect().contains(self.mapFromGlobal(QCursor.pos())):
+            return
         MkTooltipPopover.schedule_close(180)
         if event is not None:
             try:
@@ -929,12 +938,13 @@ class MkBadgeCell(MkQWidget):
         super().__init__(parent)
         self.text_value = str(text) if text is not None else ""
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(14, 0, 14, 0)
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         layout.setAlignment(align or (Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter))
 
         self.pill = QFrame(self)
         self.pill.setObjectName("BadgePill")
+        self.pill.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
         pill_layout = QHBoxLayout(self.pill)
         pill_layout.setContentsMargins(8, 3, 8, 3)
         pill_layout.setSpacing(5)
@@ -967,8 +977,6 @@ class MkBadgeCell(MkQWidget):
         """)
 
     def enterEvent(self, event):
-        if self.text_value:
-            MkTooltipPopover.show_popover_delayed(self, self.text_value, delay_ms=350)
         if event is not None:
             try:
                 super().enterEvent(event)
@@ -976,7 +984,6 @@ class MkBadgeCell(MkQWidget):
                 pass
 
     def leaveEvent(self, event):
-        MkTooltipPopover.schedule_close(180)
         if event is not None:
             try:
                 super().leaveEvent(event)
@@ -1112,7 +1119,7 @@ class MkStatusCell(MkQWidget):
     def __init__(self, raw_status: str, align=None, parent=None):
         super().__init__(parent)
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(14, 0, 14, 0)
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         layout.setAlignment(align or (Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter))
 
@@ -1122,8 +1129,9 @@ class MkStatusCell(MkQWidget):
         self.pill = QFrame(self)
         self.pill.setObjectName("StatusPill")
         self.pill.setFixedHeight(26)
+        self.pill.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
         pill_layout = QHBoxLayout(self.pill)
-        pill_layout.setContentsMargins(8, 2, 10, 2)
+        pill_layout.setContentsMargins(8, 2, 8, 2)
         pill_layout.setSpacing(6)
 
         st_key = self.raw_status.lower()
@@ -1195,8 +1203,6 @@ class MkStatusCell(MkQWidget):
         """)
 
     def enterEvent(self, event):
-        if self.raw_status:
-            MkTooltipPopover.show_popover_delayed(self, f"运行状态: {self.display_label}", delay_ms=350)
         if event is not None:
             try:
                 super().enterEvent(event)
@@ -1204,7 +1210,6 @@ class MkStatusCell(MkQWidget):
                 pass
 
     def leaveEvent(self, event):
-        MkTooltipPopover.schedule_close(180)
         if event is not None:
             try:
                 super().leaveEvent(event)
@@ -1218,7 +1223,7 @@ class MkTextCell(MkQWidget):
         super().__init__(parent)
         self.text_value = str(text) if text is not None else ""
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(14, 0, 14, 0)
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         align_flag = align or (Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         layout.setAlignment(align_flag)
@@ -1230,8 +1235,10 @@ class MkTextCell(MkQWidget):
         layout.addWidget(self.label, stretch=1)
 
     def enterEvent(self, event):
-        if self.text_value:
-            MkTooltipPopover.show_popover_delayed(self, self.text_value, delay_ms=350)
+        if hasattr(self, "label"):
+            self.label._update_elided_text()
+            if self.label.is_elided() and self.text_value:
+                MkTooltipPopover.show_popover_delayed(self.label, self.text_value, delay_ms=350)
         if event is not None:
             try:
                 super().enterEvent(event)
@@ -1239,6 +1246,8 @@ class MkTextCell(MkQWidget):
                 pass
 
     def leaveEvent(self, event):
+        if self.rect().contains(self.mapFromGlobal(QCursor.pos())):
+            return
         MkTooltipPopover.schedule_close(180)
         if event is not None:
             try:
@@ -2045,12 +2054,12 @@ class MkProTable(MkQWidget):
 
     def distribute_column_widths(self):
         """
-        智能分配与重排各列宽度：
-        1. 多选列 (selection)：固定紧凑宽度 48px，居中；
-        2. 图片与视频列 (image, video)：独立紧凑宽度 (默认 88px)，居中对齐，不参与普通列均分；
-        3. 用户自定义宽度列 (用户在 columns 中声明了 width 或调用过 set_column_width)：按用户设定宽度保留；
-        4. 其余未指定宽度的普通列：将视口剩余宽度均匀平分 (保底最小宽度 100px)；
-        5. 所有列启用 Interactive 模式，允许用户自由拖拽边框调节任意列宽。
+        智能语义列宽分配与弹性自适应系统 (Smart Semantic Column Width & Flex System):
+        1. 用户自定义宽度优先级最高 (用户拖拽表头分界线或调用 set_column_width)；
+        2. 显式指定宽度的列 (如 width=88) 保持绝对固定，窗口缩放时不发生任何位移漂移；
+        3. 智能语义推断紧凑列 (如 selection 48px, image/video 88px, badge 96px, status 115px, 日期时间 130px)；
+        4. 弹性内容列 (flex 列，如 description / remark)：平滑吸收视口剩余所有空间，避免短标签虚假拉伸；
+        5. 防抖抗卡顿增量更新：仅在列宽实际发生变化时才调用底层底层 setColumnWidth，最大化削减重绘开销。
         """
         effective_cols = self.effective_columns
         col_count = len(effective_cols)
@@ -2065,37 +2074,99 @@ class MkProTable(MkQWidget):
 
             assigned_widths = {}
             flexible_indices = []
+            flex_weights = {}
 
+            # 1. 扫描各列：区分固定列、语义推断紧凑列、以及弹性伸缩列 (Flex)
             for idx, col in enumerate(effective_cols):
                 key = col.get("key", str(idx))
                 col_type = col.get("type", "text")
 
-                # 1. 优先检查用户 API 自定义宽度
+                # 用户拖拽或 API 主动设定的列宽具有最高优先级
                 custom_w = self._custom_column_widths.get(key)
                 if custom_w is not None:
                     assigned_widths[idx] = int(custom_w)
-                elif col_type == "selection" or key == "__selection__":
+                    continue
+
+                # 显式配置了固定 width 的列
+                if col.get("width") is not None:
+                    assigned_widths[idx] = int(col["width"])
+                    continue
+
+                # 显式声明了 flex 权重的列
+                if col.get("flex") is not None and col.get("flex") > 0:
+                    flexible_indices.append(idx)
+                    flex_weights[idx] = float(col["flex"])
+                    continue
+
+                # 智能语义默认宽度识别（杜绝短标签、状态、日期、多媒体列无意义拉伸和位移漂移）
+                if col_type == "selection" or key == "__selection__":
                     assigned_widths[idx] = 48
                 elif col_type in ("image", "video"):
                     assigned_widths[idx] = int(col.get("width", 88))
-                elif col.get("width") is not None:
-                    assigned_widths[idx] = int(col["width"])
+                elif col_type == "badge":
+                    assigned_widths[idx] = 100
+                elif col_type == "status":
+                    assigned_widths[idx] = 120
+                elif col_type == "action":
+                    assigned_widths[idx] = 100
+                elif key in ("updated", "date", "created_at", "updated_at", "time", "timestamp"):
+                    assigned_widths[idx] = 135
+                elif col_type == "avatar_text":
+                    # 头像主标题列在未指定 flex 时给舒适的基准固定宽度 220px
+                    assigned_widths[idx] = 220
                 else:
+                    # 普通未声明宽度的文本列候选为弹性列
                     flexible_indices.append(idx)
+                    flex_weights[idx] = 1.0
 
+            # 2. 智能弹性吸收列兜底：如果所有列都被判定为固定宽度或没有弹性列，
+            # 则挑选最适合弹性展开的长文本列（如 description / remark / name）作为弹性空间吸收列
+            if not flexible_indices and len(effective_cols) > 0:
+                best_elastic_idx = None
+                for idx, col in enumerate(effective_cols):
+                    k = col.get("key", "").lower()
+                    if k in ("description", "desc", "remark", "content", "detail", "details", "info", "note"):
+                        best_elastic_idx = idx
+                        break
+                if best_elastic_idx is None:
+                    for idx, col in enumerate(effective_cols):
+                        if col.get("type", "text") in ("text", "avatar_text") and col.get("key") not in ("__selection__", "selection"):
+                            best_elastic_idx = idx
+                            break
+                if best_elastic_idx is not None:
+                    flexible_indices.append(best_elastic_idx)
+                    flex_weights[best_elastic_idx] = 1.0
+                    if best_elastic_idx in assigned_widths:
+                        del assigned_widths[best_elastic_idx]
+
+            # 3. 计算剩余宽度并按 flex 权重比例平滑分配
             fixed_sum = sum(assigned_widths.values())
             remaining_w = max(0, viewport_w - fixed_sum)
+            total_flex = sum(flex_weights.values()) if flex_weights else 1.0
 
             if flexible_indices:
-                base_w = max(100, remaining_w // len(flexible_indices))
-                rem = max(0, remaining_w - (base_w * len(flexible_indices))) if remaining_w >= 100 * len(flexible_indices) else 0
-                for i, f_idx in enumerate(flexible_indices):
-                    assigned_widths[f_idx] = base_w + (1 if i < rem else 0)
+                total_allocated = 0
+                for f_idx in flexible_indices:
+                    col = effective_cols[f_idx]
+                    min_w = int(col.get("min_width", 120))
+                    fw = flex_weights.get(f_idx, 1.0)
+                    share = int(remaining_w * (fw / total_flex))
+                    col_w = max(min_w, share)
+                    assigned_widths[f_idx] = col_w
+                    total_allocated += col_w
 
+                # 尾差对齐到最后一个弹性列，避免出现像素级空白缝隙
+                diff = remaining_w - total_allocated
+                if diff > 0 and flexible_indices:
+                    last_f = flexible_indices[-1]
+                    assigned_widths[last_f] += diff
+
+            # 4. 增量更新防抖应用：仅在宽度发生实质变化时调用 setColumnWidth
             for idx in range(col_count):
                 self.header_view.setSectionResizeMode(idx, QHeaderView.ResizeMode.Interactive)
-                w = assigned_widths.get(idx, 120)
-                self.table_widget.setColumnWidth(idx, w)
+                target_w = assigned_widths.get(idx, 120)
+                if self.table_widget.columnWidth(idx) != target_w:
+                    self.table_widget.setColumnWidth(idx, target_w)
         finally:
             self._resizing_internally = False
 

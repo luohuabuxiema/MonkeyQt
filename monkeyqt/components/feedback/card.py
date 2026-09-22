@@ -61,6 +61,10 @@ class MkCard(QFrame):
 
         ThemeEngine.instance().themeChanged.connect(self.set_theme_style)
 
+    @property
+    def content_widget(self) -> QFrame:
+        return self._content_widget
+
     def _update_style(self):
         t = ThemeEngine
 
@@ -86,38 +90,12 @@ class MkCard(QFrame):
         else:
             self._title_label.setStyleSheet(f"background: transparent; color: {fg};")
 
-        # 对于复杂风格使用 paintEvent
-        if t.is_neumorphic() or t.is_glass() or t.is_brutal() or t.is_glow() or t.is_pixel():
+        if not self.styleSheet():
             self.setStyleSheet("QFrame { background: transparent; border: none; }")
-            return
-
-        # 标准 QSS
-        bg = t.get("--bg", "#FFFFFF")
-        border = t.get("--border", "#E2E8F0")
-        radius = t.get("--radius", "6px")
-        border_w = t.get("--border-width", "1px")
-
-        card_bg = t.get("--surface", bg if not t.is_dark() else t._lighten_hex(bg, 0.06))
-        border_qss = "none" if not self._show_title else f"{border_w} solid {border}"
-
-        self.setStyleSheet(f"""
-            MkCard {{
-                background-color: {card_bg};
-                border: {border_qss};
-                border-radius: {radius};
-            }}
-            MkCard:hover {{
-                border-color: {t.get('--input-hover-border', border) if self._show_title else 'transparent'};
-            }}
-        """)
+        self.update()
 
     def paintEvent(self, event):
         t = ThemeEngine
-
-        if not (t.is_neumorphic() or t.is_glass() or t.is_brutal() or t.is_glow() or t.is_pixel()):
-            super().paintEvent(event)
-            return
-
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         rect = self.rect()
@@ -220,6 +198,21 @@ class MkCard(QFrame):
                 painter.setPen(Qt.PenStyle.NoPen)
                 painter.setBrush(QBrush(QColor("#FFFFFF")))
                 painter.drawRect(inset)
+        else:
+            inset = rect.adjusted(1, 1, -1, -1)
+            bg = t.get("--bg", "#FFFFFF")
+            border = t.get("--border", "#E2E8F0")
+            border_w = t.get("--border-width", "1px")
+            bw = parse_px(border_w, 1, 0, 8)
+            card_bg = t.get("--surface", bg if not t.is_dark() else t._lighten_hex(bg, 0.06))
+
+            painter.setBrush(QBrush(qcolor(card_bg)))
+            if self._show_title and bw > 0:
+                border_color = qcolor(t.get('--input-hover-border', border) if self._hovered else border)
+                painter.setPen(QPen(border_color, bw))
+            else:
+                painter.setPen(Qt.PenStyle.NoPen)
+            painter.drawRoundedRect(inset, radius, radius)
 
         painter.end()
 

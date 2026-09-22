@@ -10,9 +10,9 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QFont, QPixmap, QIcon
 from PySide6.QtCore import Qt, QEvent
 from monkeyqt import (
-    MkButton, MkCheckBox, MkMenu, MkTopbar, MkBreadcrumb, MkTabs,
+    MkButton, MkCheckBox, MkSelectItem, MkSelectCard, MkMenu, MkTopbar, MkBreadcrumb, MkTabs,
     MkSegmented, MkSegmentedTabs,
-    MkAlert, MkProgressBar, MkProgressRing,
+    MkAlert, MkProgressBar, MkProgressRing, MkCard,
     MkTooltip, MkInfoIcon, create_field_header, create_input_field, create_switch_field,
     MkPagination, MkDropdown, MkSwitch, MkSlider, MkDatePicker, MkForm,
     MkInput, MkCaptchaWidget, MkAuthScreen, MkMessage,
@@ -75,38 +75,304 @@ class ButtonGallery(MkQWidget):
         layout.addStretch()
 
 class CheckboxGallery(MkQWidget):
-    """复选框组件的展示页"""
+    """复选框与选择卡片组件的展示页"""
     def __init__(self):
         super().__init__()
-        layout = QVBoxLayout(self)
+        self._task_counter = 4
+        root_layout = QVBoxLayout(self)
+        root_layout.setContentsMargins(0, 0, 0, 0)
+        
+        scroll = MkScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        
+        container = MkQWidget(role="transparent")
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(10, 10, 10, 10)
         layout.setSpacing(20)
         
-        title_font = QFont("Microsoft YaHei", 12, QFont.Bold)
+        title_font = QFont("Microsoft YaHei", 12, QFont.Weight.Bold)
         
-        label_checkbox = QLabel("复选框 (CheckBox)")
-        label_checkbox.setFont(title_font)
-        layout.addWidget(label_checkbox)
+        # ── 1. 基础复选框 ──
+        self.label_checkbox = QLabel("1. 基础复选框 (MkCheckBox)")
+        self.label_checkbox.setFont(title_font)
+        layout.addWidget(self.label_checkbox)
         
-        checkbox_layout = QHBoxLayout()
-        checkbox_layout.addWidget(MkCheckBox("Option 1"))
-        
-        chk2 = MkCheckBox("Option 2 (Checked)")
+        chk_layout = QHBoxLayout()
+        chk_layout.setSpacing(24)
+        chk_layout.addWidget(MkCheckBox("未勾选 (Default)", variant="neutral"))
+        chk2 = MkCheckBox("已勾选 (Checked)", variant="neutral")
         chk2.setChecked(True)
-        checkbox_layout.addWidget(chk2)
-        
-        chk3 = MkCheckBox("Disabled")
+        chk_layout.addWidget(chk2)
+        chk3 = MkCheckBox("禁用未选 (Disabled)", variant="neutral")
         chk3.setEnabled(False)
-        checkbox_layout.addWidget(chk3)
-        
-        chk4 = MkCheckBox("Disabled & Checked")
+        chk_layout.addWidget(chk3)
+        chk4 = MkCheckBox("禁用已选 (Disabled & Checked)", variant="neutral")
         chk4.setChecked(True)
         chk4.setEnabled(False)
-        checkbox_layout.addWidget(chk4)
-        
-        checkbox_layout.addStretch()
-        layout.addLayout(checkbox_layout)
+        chk_layout.addWidget(chk4)
+        chk_layout.addStretch()
+        layout.addLayout(chk_layout)
 
+        # ── 2. 列表选择项交互组件 (MkSelectItem - 参考图一与图三) ──
+        self.label_item = QLabel("2. 列表选择项交互组件 (MkSelectItem - 参考图一与图三)")
+        self.label_item.setFont(title_font)
+        layout.addWidget(self.label_item)
+        
+        # 图一与图三风格：无经典蓝，悬浮才显示操作按钮
+        item1 = MkSelectItem(
+            item_id="exp-1",
+            title="exp",
+            subtitle="47.1% · 5 MB",
+            dot_color="#EF4444",
+            checked=True,
+            actions=[
+                {"key": "download", "icon": "download-simple", "tooltip": "下载权重"},
+                {"key": "delete", "icon": "trash", "tooltip": "删除训练任务", "danger": True},
+            ],
+        )
+        
+        item2 = MkSelectItem(
+            item_id="yolo26n",
+            title="yolo26n",
+            subtitle="40.1% · 5 MB",
+            dot_color="#3B82F6",
+            checked=False,
+            actions=[
+                {"key": "download", "icon": "download-simple", "tooltip": "下载权重"},
+                {"key": "delete", "icon": "trash", "tooltip": "删除训练任务", "danger": True},
+            ],
+        )
+        
+        item3 = MkSelectItem(
+            item_id="exp-seg",
+            title="exp-1 (yolo26n-seg.pt)",
+            dot_color="#3B82F6",
+            checked=True,
+            show_arrow=True,
+            actions=[
+                {"key": "delete", "icon": "trash", "tooltip": "删除", "danger": True},
+            ],
+        )
+        
+        item4 = MkSelectItem(
+            item_id="resnet",
+            title="ResNet-50-Classifier (骨干网络)",
+            subtitle="准确率: 84.6% · 显存占用: 1.2 GB",
+            icon="cube",
+            checked=False,
+            show_arrow=True,
+            actions=[
+                {"key": "copy", "icon": "copy", "tooltip": "复制模型参数"},
+                {"key": "delete", "icon": "trash", "tooltip": "移除", "danger": True},
+            ],
+        )
+        
+        layout.addWidget(item1)
+        layout.addWidget(item2)
+        layout.addWidget(item3)
+        layout.addWidget(item4)
+        
+        self.item_log_lbl = QLabel("交互提示：鼠标悬浮到条目上才显现操作图标（下载/删除/详情箭头），告别经典蓝与多余嵌套卡片")
+        self.item_log_lbl.setStyleSheet("color: #64748B; font-size: 11px; padding: 4px;")
+        layout.addWidget(self.item_log_lbl)
+        
+        for it in (item1, item2, item3, item4):
+            it.action_clicked.connect(lambda k, iid: self.item_log_lbl.setText(f"[操作触发] 点击了按钮: '{k}'，目标项 ID: '{iid}'"))
+            it.clicked.connect(lambda iid: self.item_log_lbl.setText(f"[整行点击] 选中聚焦项 ID: '{iid}'"))
+            it.detail_clicked.connect(lambda iid: self.item_log_lbl.setText(f"[详情导航] 点击了跳转箭头 -> 打开任务详情: '{iid}'"))
+            it.toggled.connect(lambda c, t=it._title_text: self.item_log_lbl.setText(f"[勾选切换] 任务 '{t}' 状态更新为: {'已勾选' if c else '未勾选'}"))
+
+        # ── 3. 多选卡片组合组件 (MkSelectCard - 参考图三与图一完整组合) ──
+        self.label_card = QLabel("3. 多选卡片组合组件 (MkSelectCard - 集成头部/全选联动/动态徽标/分组管理)")
+        self.label_card.setFont(title_font)
+        layout.addWidget(self.label_card)
+        
+        card_demo_layout = QHBoxLayout()
+        card_demo_layout.setSpacing(16)
+        
+        # 左侧：组合卡片实例（参考图三: Models / 1 selected / Select all / v Detect 2）
+        self.select_card = MkSelectCard(
+            title="Models",
+            icon="cube",
+            select_all_text="Select all",
+            badge_pattern="{count} selected",
+            max_list_height=320
+        )
+        self.select_card.setMinimumWidth(320)
+        self.select_card.setMaximumWidth(400)
+        
+        # 添加分组标题: v Detect（数量由内部项数自动动态计算并联动）
+        self.group_detect = self.select_card.add_group(group_id="detect", title="Detect")
+        
+        # 添加真实模型任务数据（完全匹配图三）
+        self.select_card.add_item({
+            "id": "exp",
+            "title": "exp",
+            "subtitle": "47.1% · 5 MB",
+            "dot_color": "#EF4444",
+            "checked": True,
+            "group_id": "detect",
+            "actions": [
+                {"key": "download", "icon": "download-simple", "tooltip": "下载模型权重"},
+                {"key": "delete", "icon": "trash", "tooltip": "删除训练任务", "danger": True}
+            ]
+        })
+        self.select_card.add_item({
+            "id": "yolo26n",
+            "title": "yolo26n",
+            "subtitle": "40.1% · 5 MB",
+            "dot_color": "#3B82F6",
+            "checked": False,
+            "group_id": "detect",
+            "actions": [
+                {"key": "download", "icon": "download-simple", "tooltip": "下载模型权重"},
+                {"key": "delete", "icon": "trash", "tooltip": "删除训练任务", "danger": True}
+            ]
+        })
+        self.select_card.add_item({
+            "id": "yolo26s",
+            "title": "yolo26s",
+            "subtitle": "52.3% · 12 MB",
+            "dot_color": "#10B981",
+            "checked": False,
+            "group_id": "detect",
+            "actions": [
+                {"key": "download", "icon": "download-simple", "tooltip": "下载模型权重"},
+                {"key": "delete", "icon": "trash", "tooltip": "删除训练任务", "danger": True}
+            ]
+        })
+        
+        card_demo_layout.addWidget(self.select_card)
+        
+        # 右侧：控制与联动实时日志面板
+        right_panel = MkCard(title="组件联动与实时日志", show_title=True)
+        r_layout = right_panel.content_layout
+        r_layout.setSpacing(10)
+        
+        btn_row1 = QHBoxLayout()
+        btn_add = MkButton("添加新模型任务", type="primary", size="small", icon="plus")
+        btn_add.clicked.connect(self.add_random_task)
+        btn_select_all = MkButton("全部勾选", type="default", size="small")
+        btn_select_all.clicked.connect(lambda: self.select_card.select_all(True))
+        btn_unselect_all = MkButton("全部取消", type="default", size="small")
+        btn_unselect_all.clicked.connect(lambda: self.select_card.select_all(False))
+        btn_clear = MkButton("清空所有", type="danger", size="small")
+        btn_clear.clicked.connect(self.select_card.clear_items)
+        
+        btn_row1.addWidget(btn_add)
+        btn_row1.addWidget(btn_select_all)
+        btn_row1.addWidget(btn_unselect_all)
+        btn_row1.addWidget(btn_clear)
+        btn_row1.addStretch()
+        r_layout.addLayout(btn_row1)
+        
+        self.card_log_label = QLabel("当前选中任务 ID: ['exp']\n徽标计数已联动：1 selected\n等待用户操作...")
+        self.card_log_label.setStyleSheet("""
+            QLabel {
+                background: rgba(128, 128, 128, 0.08);
+                border: 1px solid rgba(128, 128, 128, 0.2);
+                border-radius: 6px;
+                padding: 12px;
+                font-family: Consolas, "Fira Code", monospace;
+                font-size: 11px;
+                line-height: 1.5;
+            }
+        """)
+        self.card_log_label.setWordWrap(True)
+        r_layout.addWidget(self.card_log_label)
+        r_layout.addStretch()
+        
+        # 监听组合卡片信号
+        self.select_card.selection_changed.connect(self.on_card_selection_changed)
+        self.select_card.item_action_clicked.connect(self.on_card_action_clicked)
+        self.select_card.item_detail_clicked.connect(lambda iid: self.card_log_label.setText(f"[详情导航] 打开训练任务详情页: {iid}"))
+        self.select_card.item_clicked.connect(lambda iid: self.card_log_label.setText(f"[项点击] 聚焦高亮任务条目: {iid}"))
+        
+        card_demo_layout.addWidget(right_panel, stretch=1)
+        layout.addLayout(card_demo_layout)
+        
         layout.addStretch()
+        scroll.setWidget(container)
+        root_layout.addWidget(scroll)
+
+        ThemeEngine.instance().themeChanged.connect(self._apply_theme_colors)
+        self._apply_theme_colors()
+
+    def _apply_theme_colors(self, theme_name: str = None):
+        t = ThemeEngine
+        fg = t.get("--fg", "#1E293B")
+        surface_container = t.get("--surface-container-low", "rgba(128, 128, 128, 0.08)")
+        border = t.get("--border", "rgba(128, 128, 128, 0.2)")
+        for lbl in (self.label_checkbox, self.label_item, self.label_card):
+            lbl.setStyleSheet(f"color: {fg}; font-weight: bold; background: transparent;")
+        if hasattr(self, "card_log_label"):
+            self.card_log_label.setStyleSheet(f"""
+                QLabel {{
+                    background: {surface_container};
+                    color: {fg};
+                    border: 1px solid {border};
+                    border-radius: 6px;
+                    padding: 12px;
+                    font-family: Consolas, "Fira Code", monospace;
+                    font-size: 11px;
+                    line-height: 1.5;
+                }}
+            """)
+
+    def on_card_selection_changed(self, selected_ids):
+        count = len(selected_ids)
+        self.card_log_label.setText(
+            f"[选择变更] 当前已选任务数: {count}\n"
+            f"已勾选的任务 ID: {selected_ids}\n"
+            f"卡片右上角徽标已自动同步为: {count} 已选"
+        )
+
+    def on_card_action_clicked(self, action_key, item_id):
+        if action_key == "delete":
+            self.select_card.remove_item(item_id)
+            self.card_log_label.setText(f"[删除操作] 已成功从卡片中移除训练任务: {item_id}")
+        elif action_key == "download":
+            self.card_log_label.setText(f"[下载操作] 正在导出/下载任务权重文件: {item_id}.pt")
+        else:
+            self.card_log_label.setText(f"[自定义操作] 触发操作 '{action_key}' 针对任务: {item_id}")
+
+    def on_model_files_uploaded(self, files):
+        import os
+        for f in files:
+            fname = os.path.basename(f)
+            tid = f"task_{fname.replace('.', '_')}"
+            self.select_card.add_item({
+                "id": tid,
+                "title": f"{fname}",
+                "subtitle": "刚刚拖拽导入",
+                "dot_color": "#06B6D4",
+                "checked": True,
+                "show_arrow": True,
+                "actions": [{"key": "delete", "icon": "trash", "tooltip": "删除", "danger": True}]
+            })
+        self.card_log_label.setText(f"[拖拽上传] 已通过底部插槽添加 {len(files)} 个新权重模型并自动同步全选状态！")
+
+    def add_random_task(self):
+        tid = f"exp-{self._task_counter}"
+        colors = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899"]
+        c = colors[self._task_counter % len(colors)]
+        self.select_card.add_item({
+            "id": tid,
+            "title": f"{tid} (custom-model.pt)",
+            "subtitle": f"mAP50: {45 + (self._task_counter * 3) % 40}%",
+            "dot_color": c,
+            "checked": False,
+            "group_id": "detect",
+            "show_arrow": True,
+            "actions": [
+                {"key": "download", "icon": "download-simple", "tooltip": "下载权重"},
+                {"key": "delete", "icon": "trash", "tooltip": "删除", "danger": True}
+            ]
+        })
+        self._task_counter += 1
+        cnt = self.select_card.get_group_count("detect")
+        self.card_log_label.setText(f"[动态添加] 成功向分组 'Detect' 添加新任务: {tid}，分组数量动态联动为: {cnt}")
 
 class TopbarGallery(MkQWidget):
     """顶部导航栏组件的展示页"""
@@ -486,13 +752,13 @@ class ProTableGallery(MkQWidget):
 
         # 列配置：引入复选框 (selectable 参数控制)、图片 preview_img、视频 preview_vid、类型徽章、状态徽章等
         columns = [
-            {"key": "name", "label": "项目 / 模型名称", "type": "avatar_text", "sortable": True},
+            {"key": "name", "label": "项目 / 模型名称", "type": "avatar_text", "width": 220, "sortable": True},
             {"key": "preview_img", "label": "结果图片", "type": "image", "width": 88, "align": "center"},
             {"key": "preview_vid", "label": "演示视频", "type": "video", "width": 88, "align": "center"},
-            {"key": "type", "label": "类型", "type": "badge", "sortable": True},
-            {"key": "description", "label": "描述与备注", "type": "text", "sortable": True},
-            {"key": "status", "label": "运行状态", "type": "status", "sortable": True},
-            {"key": "updated", "label": "更新时间", "type": "text", "sortable": True},
+            {"key": "type", "label": "类型", "type": "badge", "width": 100, "sortable": True},
+            {"key": "description", "label": "描述与备注", "type": "text", "flex": 1, "sortable": True},
+            {"key": "status", "label": "运行状态", "type": "status", "width": 120, "sortable": True},
+            {"key": "updated", "label": "更新时间", "type": "text", "width": 135, "sortable": True},
         ]
 
         # 示例多媒体数据 (14 条，支持跨页多选与分页交互)
@@ -1266,10 +1532,11 @@ class MainGallery(MkWindow):
         # --- 1. 创建并配置侧边栏 (参考 mainui.py) ---
         self.sidebar = MkMenu(title="MonkeyQt", collapse_mode="hamburger")
         self.sidebar.set_border_right("none")
+        self.sidebar.setMinimumWidth(280)
         
         sub_basic = self.sidebar.add_submenu("基础组件", icon="squares-four")
-        self.sidebar.add_submenu_item(sub_basic, "btn", "Button 按钮", icon="cursor-click")
-        self.sidebar.add_submenu_item(sub_basic, "chk", "CheckBox 复选框", icon="check-square")
+        self.sidebar.add_submenu_item(sub_basic, "btn", "按钮", icon="cursor-click")
+        self.sidebar.add_submenu_item(sub_basic, "chk", "复选框与选择卡片", icon="check-square")
         
         sub_nav = self.sidebar.add_submenu("导航", icon="compass")
         self.sidebar.add_submenu_item(sub_nav, "sidebar", "侧边导航", icon="sidebar")

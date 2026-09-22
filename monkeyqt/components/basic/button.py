@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from PySide6.QtWidgets import QPushButton, QWidget, QGraphicsDropShadowEffect
 from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve, Property, QRect
-from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QPainterPath, QFont, QLinearGradient
+from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QPainterPath, QFont, QLinearGradient, QIcon
 from monkeyqt.themes.engine import ThemeEngine
 from monkeyqt.themes.style_utils import (
     darken,
@@ -91,129 +91,10 @@ class MkButton(QPushButton):
             if hasattr(self, "_liquid_timer") and self._liquid_timer.isActive():
                 self._liquid_timer.stop()
 
-        primary = t.get("--primary", "#409EFF")
-        bg = t.get("--bg", "#FFFFFF")
-        fg = t.get("--fg", "#1E293B")
-        border = t.get("--border", "#E2E8F0")
-        radius = t.get("--radius", "6px")
-        border_w = t.get("--border-width", "1px")
-
-        if t.is_neumorphic() or t.is_glass() or t.is_brutal() or t.is_glow() or t.is_pixel():
-            text = t.get("--glass-text", fg) if t.is_glass() else fg
-            self.setStyleSheet(f"""
-                QPushButton {{
-                    background: transparent;
-                    border: none;
-                    color: {text};
-                    padding: 8px 20px;
-                    font-weight: 700;
-                }}
-                QPushButton:disabled {{
-                    color: #94A3B8;
-                }}
-            """)
-            self.setGraphicsEffect(None)
-            self._apply_size_qss()
-            self.update()
-            return
-
-        hover_primary = t._lighten_hex(primary, 0.15) if primary.startswith("#") else primary
-        press_primary = t._darken_hex(primary, 0.1) if primary.startswith("#") else primary
-
-        if self._btn_type == "primary":
-            btn_bg = primary
-            btn_fg = readable_text(qcolor(primary))
-            btn_border = primary
-            btn_hover_bg = hover_primary if primary.upper() != "#FFFFFF" else "#E2E8F0"
-            btn_press_bg = press_primary if primary.upper() != "#FFFFFF" else "#CBD5E1"
-        elif self._btn_type == "danger":
-            btn_bg = "#EF4444"
-            btn_fg = "#FFFFFF"
-            btn_border = "#EF4444"
-            btn_hover_bg = "#F87171"
-            btn_press_bg = "#DC2626"
-        elif self._btn_type == "success":
-            btn_bg = "#22C55E"
-            btn_fg = "#FFFFFF"
-            btn_border = "#22C55E"
-            btn_hover_bg = "#4ADE80"
-            btn_press_bg = "#16A34A"
-        elif self._btn_type == "warning":
-            btn_bg = "#F59E0B"
-            btn_fg = "#FFFFFF"
-            btn_border = "#F59E0B"
-            btn_hover_bg = "#FBBF24"
-            btn_press_bg = "#D97706"
-        elif self._btn_type == "secondary":
-            btn_bg = "transparent"
-            btn_fg = primary
-            btn_border = primary
-            if t.is_dark():
-                btn_hover_bg = "rgba(255, 255, 255, 0.12)"
-                btn_press_bg = "rgba(255, 255, 255, 0.20)"
-            else:
-                btn_hover_bg = t._lighten_hex(primary, 0.9) if primary.startswith("#") else "#F0F4FF"
-                btn_press_bg = t._lighten_hex(primary, 0.8) if primary.startswith("#") else "#E0E7FF"
-        else:
-            neutral = self._neutral_palette()
-            btn_bg = neutral["background"]
-            btn_fg = neutral["foreground"]
-            btn_border = neutral["border"]
-            btn_hover_bg = neutral["hover_background"]
-            btn_press_bg = neutral["pressed_background"]
-
-        if self._btn_type in ("default", "info"):
-            neutral = self._neutral_palette()
-            btn_hover_fg = neutral["hover_foreground"]
-            btn_press_fg = neutral["pressed_foreground"]
-            btn_hover_border = neutral["hover_border"]
-            btn_press_border = neutral["pressed_border"]
-            disabled_bg = neutral["disabled_background"]
-            disabled_fg = neutral["disabled_foreground"]
-            disabled_border = neutral["disabled_border"]
-        else:
-            btn_hover_fg = btn_fg
-            btn_press_fg = btn_fg
-            btn_hover_border = btn_border
-            btn_press_border = btn_border
-            if t.is_dark():
-                # 暗黑模式下彩色按钮禁用态统一为纯中灰（参考图三 #7E7E7E / #212121）
-                disabled_bg = "#7E7E7E"
-                disabled_fg = "#212121"
-                disabled_border = "#7E7E7E"
-            else:
-                disabled_bg = "#E2E8F0"
-                disabled_fg = "#94A3B8"
-                disabled_border = "#E2E8F0"
-
-        self.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {btn_bg};
-                color: {btn_fg};
-                border: {border_w} solid {btn_border};
-                border-radius: {radius};
-                padding: 8px 20px;
-                font-weight: 600;
-            }}
-            QPushButton:hover {{
-                background-color: {btn_hover_bg};
-                color: {btn_hover_fg};
-                border-color: {btn_hover_border};
-            }}
-            QPushButton:pressed {{
-                background-color: {btn_press_bg};
-                color: {btn_press_fg};
-                border-color: {btn_press_border};
-            }}
-            QPushButton:disabled {{
-                opacity: 0.5;
-                background-color: {disabled_bg};
-                color: {disabled_fg};
-                border-color: {disabled_border};
-            }}
-        """)
+        self.setStyleSheet("QPushButton { background: transparent; border: none; outline: none; }")
         self.setGraphicsEffect(None)
         self._apply_size_qss()
+        self.update()
 
     def _neutral_palette(self):
         """Build theme-aware states for the neutral default and info variants."""
@@ -229,10 +110,10 @@ class MkButton(QPushButton):
         is_info = self._btn_type == "info"
 
         if dark_theme:
-            # 严格参考图一、图二、图三暗黑现代化按钮规范：
-            # 图一 (正常态): 深炭灰底色 #212121，纯白文字 #FAFAFA，暗细边框 #303030
-            # 图二 (悬停/激活态): 现代反转高亮浅白灰底色 #E5E5E5，深黑清晰文字 #171717
-            # 图三 (禁用态): 纯中灰底色 #7E7E7E，暗灰弱化文字 #212121
+            # 严格参考暗黑现代化按钮规范：
+            # (正常态): 深炭灰底色 #212121，纯白文字 #FAFAFA，暗细边框 #303030
+            # (悬停态): 现代反转高亮浅白灰底色 #E5E5E5，深黑清晰文字 #171717
+            # (禁用态): 纯中灰底色 #7E7E7E，暗灰弱化文字 #212121
             if is_info:
                 background = surface_muted if surface_muted != bg else "#262626"
                 foreground = "#F5F5F5"
@@ -275,39 +156,51 @@ class MkButton(QPushButton):
                 "disabled_border": disabled_border,
             }
 
-        background = surface_muted if is_info else surface
+        # 雅致亮色 (Light Mode) 现代化中性与行动按钮规范 (严格参考用户图一至图五):
+        # 图一 (默认态 Default - Connect GitHub): 纯白底色 #FFFFFF，深黑文字 #0F172A，浅灰细边框 #E2E8F0
+        # 图二 (中灰填色 Info/Add): 中灰底色 #8B8B8B，纯白文字 #FFFFFF，边框 #8B8B8B
+        # 图三 (悬停态 Hover - Connect GitHub): 浅白灰底色 #F5F5F5，深黑文字 #0F172A，浅灰边框 #CBD5E1
+        # 按压态 (Pressed): 浅白灰底色 #E5E5E5，深黑文字 #0F172A，浅灰边框 #94A3B8
         if is_info:
-            hover_background = (
-                lighten(background, 0.10)
-                if dark_theme
-                else darken(background, 0.055)
-            )
-            pressed_background = darken(background, 0.10)
+            background = "#8B8B8B"
+            foreground = "#FFFFFF"
+            btn_border = "#8B8B8B"
+            hover_background = "#71717A"
+            hover_foreground = "#FFFFFF"
+            hover_border = "#71717A"
+            pressed_background = "#52525B"
+            pressed_foreground = "#FFFFFF"
+            pressed_border = "#52525B"
+            disabled_background = "#E2E8F0"
+            disabled_foreground = "#94A3B8"
+            disabled_border = "#E2E8F0"
         else:
-            hover_background = surface_muted
-            if qcolor(hover_background).rgba() == qcolor(background).rgba():
-                hover_background = (
-                    lighten(background, 0.08)
-                    if dark_theme
-                    else darken(background, 0.045)
-                )
-            pressed_background = darken(background, 0.08)
-        disabled_background = darken(surface_muted, 0.14 if dark_theme else 0.03)
-        hover_border = border if is_info else t.get("--input-hover-border", border)
+            background = "#FFFFFF"
+            foreground = _button_text_color(fg, "#FFFFFF")
+            btn_border = qss_color(border, "#E2E8F0")
+            hover_background = "#F5F5F5"
+            hover_foreground = _button_text_color(fg, hover_background)
+            hover_border = "#CBD5E1"
+            pressed_background = "#E5E5E5"
+            pressed_foreground = _button_text_color(fg, pressed_background)
+            pressed_border = "#94A3B8"
+            disabled_background = "#F8FAFC"
+            disabled_foreground = qss_color(text_muted, "#94A3B8")
+            disabled_border = qss_color(border, "#E2E8F0")
 
         return {
-            "background": qss_color(background, bg),
-            "foreground": _button_text_color(fg, background),
-            "border": qss_color(border, "#E2E8F0"),
-            "hover_background": qss_color(hover_background, surface_muted),
-            "hover_foreground": _button_text_color(fg, hover_background),
-            "hover_border": qss_color(hover_border, border),
-            "pressed_background": qss_color(pressed_background, surface),
-            "pressed_foreground": _button_text_color(fg, pressed_background),
-            "pressed_border": qss_color(border, "#E2E8F0"),
-            "disabled_background": qss_color(disabled_background, surface_muted),
-            "disabled_foreground": qss_color(text_muted, fg),
-            "disabled_border": qss_color(border, "#E2E8F0"),
+            "background": background,
+            "foreground": foreground,
+            "border": btn_border,
+            "hover_background": hover_background,
+            "hover_foreground": hover_foreground,
+            "hover_border": hover_border,
+            "pressed_background": pressed_background,
+            "pressed_foreground": pressed_foreground,
+            "pressed_border": pressed_border,
+            "disabled_background": disabled_background,
+            "disabled_foreground": disabled_foreground,
+            "disabled_border": disabled_border,
         }
 
     def _apply_size_qss(self):
@@ -321,11 +214,6 @@ class MkButton(QPushButton):
 
     def paintEvent(self, event):
         t = ThemeEngine
-
-        if not (t.is_neumorphic() or t.is_glass() or t.is_glow() or t.is_brutal() or t.is_pixel()):
-            super().paintEvent(event)
-            return
-
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         rect = self.rect()
@@ -369,10 +257,17 @@ class MkButton(QPushButton):
                 else:
                     btn_color = qcolor("#CBD5E1")
                     text_color = qcolor("#64748B")
-            if self._hovered:
-                btn_color = btn_color.lighter(115)
-            if self._pressed:
-                btn_color = btn_color.darker(110)
+            elif self._hovered:
+                # 若主色为深黑/炭黑（如雅致亮色 #171717，参考图四与图五），悬停转换为炭灰 #454545，避免 lighter 无效
+                if self._btn_type == "primary" and btn_color.lightness() < 60:
+                    btn_color = qcolor("#454545")
+                else:
+                    btn_color = btn_color.lighter(115)
+            elif self._pressed:
+                if self._btn_type == "primary" and btn_color.lightness() < 60:
+                    btn_color = qcolor("#0A0A0A")
+                else:
+                    btn_color = btn_color.darker(110)
 
         if t.is_neumorphic():
             inset = rect.adjusted(4, 4, -4, -4)
@@ -452,6 +347,47 @@ class MkButton(QPushButton):
             painter.drawRect(inset)
             painter.setPen(QPen(QColor("#000000"), 2))
             painter.drawRect(inset)
+        else:
+            inset = rect.adjusted(1, 1, -1, -1)
+            border_w = t.get("--border-width", "1px")
+            bw = parse_px(border_w, 1, 0, 8)
+
+            if self._btn_type == "secondary":
+                if t.is_dark():
+                    border_color = qcolor(primary)
+                    if self._hovered: btn_color = qcolor("rgba(255, 255, 255, 0.12)")
+                    elif self._pressed: btn_color = qcolor("rgba(255, 255, 255, 0.20)")
+                    else: btn_color = QColor(0, 0, 0, 0)
+                else:
+                    if self._hovered:
+                        btn_color = qcolor("#F5F5F5")
+                        border_color = qcolor("#CBD5E1")
+                    elif self._pressed:
+                        btn_color = qcolor("#E5E5E5")
+                        border_color = qcolor("#94A3B8")
+                    else:
+                        btn_color = QColor(0, 0, 0, 0)
+                        border_color = qcolor("#E2E8F0")
+            elif self._btn_type in ("default", "info"):
+                neutral = self._neutral_palette()
+                border_color = qcolor(neutral["border"])
+                if not self.isEnabled():
+                    border_color = qcolor(neutral["disabled_border"])
+                elif self._hovered:
+                    border_color = qcolor(neutral["hover_border"])
+                elif self._pressed:
+                    border_color = qcolor(neutral["pressed_border"])
+            else:
+                border_color = btn_color
+                if not self.isEnabled():
+                    border_color = qcolor("#7E7E7E" if t.is_dark() else "#CBD5E1")
+
+            painter.setBrush(QBrush(btn_color))
+            if border_color and bw > 0:
+                painter.setPen(QPen(border_color, bw))
+            else:
+                painter.setPen(Qt.PenStyle.NoPen)
+            painter.drawRoundedRect(inset, radius, radius)
 
         if self._btn_type in ("default", "info") and not self.isEnabled():
             text_color = qcolor(self._neutral_palette()["disabled_foreground"])
@@ -530,8 +466,8 @@ class MkButton(QPushButton):
             return readable_text(qcolor(primary))
         elif self._btn_type in ("danger", "success", "warning"):
             return "#FFFFFF"
-        elif self._btn_type in ("text", "outline"):
-            return primary
+        elif self._btn_type in ("text", "outline", "secondary"):
+            return fg if not t.is_dark() else "#FAFAFA"
 
         if t.is_glow():
             return primary
@@ -542,7 +478,15 @@ class MkButton(QPushButton):
         return fg
 
     def setIcon(self, icon):
-        if hasattr(icon, "_ph_spec"):
+        if isinstance(icon, str):
+            try:
+                from monkeyqt.icons import Ph
+                pm = Ph.pixmap(icon, size=16, color=self._get_button_text_color())
+                if pm and not pm.isNull():
+                    icon = QIcon(pm)
+            except Exception:
+                pass
+        elif hasattr(icon, "_ph_spec"):
             self._ph_icon_spec = getattr(icon, "_ph_spec", None)
             try:
                 spec = dict(self._ph_icon_spec)
@@ -577,8 +521,6 @@ class MkButton(QPushButton):
         else:
             if hasattr(self, "_liquid_timer") and self._liquid_timer.isActive():
                 self._liquid_timer.stop()
-        self.style().unpolish(self)
-        self.style().polish(self)
         self.update()
 
     @Property(str)
@@ -615,5 +557,4 @@ class MkButton(QPushButton):
         self._mk_size = value
         self.setProperty("mk_size", value)
         self._update_style()
-        self.style().unpolish(self)
-        self.style().polish(self)
+        self.update()

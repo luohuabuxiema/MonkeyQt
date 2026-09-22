@@ -24,8 +24,27 @@ if not os.path.exists(_check_dark_svg_path):
     except Exception:
         pass
 
+_minus_light_svg_path = os.path.join(_cur_dir, "minus.svg")
+_minus_dark_svg_path = os.path.join(_cur_dir, "minus_dark.svg")
+
+if not os.path.exists(_minus_light_svg_path):
+    try:
+        with open(_minus_light_svg_path, "w", encoding="utf-8") as _f:
+            _f.write('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><line x1="56" y1="128" x2="200" y2="128" stroke="white" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/></svg>')
+    except Exception:
+        pass
+
+if not os.path.exists(_minus_dark_svg_path):
+    try:
+        with open(_minus_dark_svg_path, "w", encoding="utf-8") as _f:
+            _f.write('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><line x1="56" y1="128" x2="200" y2="128" stroke="#0F172A" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/></svg>')
+    except Exception:
+        pass
+
 CHECK_LIGHT_SVG_URL = _check_light_svg_path.replace("\\", "/")
 CHECK_DARK_SVG_URL = _check_dark_svg_path.replace("\\", "/")
+MINUS_LIGHT_SVG_URL = _minus_light_svg_path.replace("\\", "/")
+MINUS_DARK_SVG_URL = _minus_dark_svg_path.replace("\\", "/")
 CHECK_SVG_URL = CHECK_LIGHT_SVG_URL
 
 
@@ -35,7 +54,7 @@ class MkCheckBox(QCheckBox):
     自适应 68 种主题风格的高清矢量复选框，完美融入现代暗色/亮色界面。
     """
     
-    def __init__(self, text="", parent=None, size=MkSize.DEFAULT.value):
+    def __init__(self, text="", parent=None, size=MkSize.DEFAULT.value, variant="primary"):
         # 兼容 Qt Designer
         if isinstance(text, QWidget):
             parent = text
@@ -44,6 +63,7 @@ class MkCheckBox(QCheckBox):
         super().__init__(text, parent)
         
         self._mk_size = size
+        self._variant = variant
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         
         ThemeEngine.instance().themeChanged.connect(self._apply_style)
@@ -68,10 +88,27 @@ class MkCheckBox(QCheckBox):
             hover_border = primary
             indicator_bg = surface
 
-        checked_bg = primary
-        checked_border = primary
-        hover_text = primary
-        svg_url = CHECK_LIGHT_SVG_URL if readable_text(primary) == "#FFFFFF" else CHECK_DARK_SVG_URL
+        if self._variant in ("neutral", "dark", "black"):
+            if is_dark:
+                checked_bg = "#F8FAFC"
+                checked_border = "#F8FAFC"
+                hover_border = "#FFFFFF"
+                hover_text = fg
+                svg_url = CHECK_DARK_SVG_URL
+                minus_svg_url = MINUS_DARK_SVG_URL
+            else:
+                checked_bg = "#0F172A"
+                checked_border = "#0F172A"
+                hover_border = "#0F172A"
+                hover_text = fg
+                svg_url = CHECK_LIGHT_SVG_URL
+                minus_svg_url = MINUS_LIGHT_SVG_URL
+        else:
+            checked_bg = primary
+            checked_border = primary
+            hover_text = primary
+            svg_url = CHECK_LIGHT_SVG_URL if readable_text(primary) == "#FFFFFF" else CHECK_DARK_SVG_URL
+            minus_svg_url = MINUS_LIGHT_SVG_URL if readable_text(primary) == "#FFFFFF" else MINUS_DARK_SVG_URL
 
         disabled_bg = t.get("--surface-muted", "#EDF2FC")
 
@@ -109,6 +146,13 @@ class MkCheckBox(QCheckBox):
                 background-color: {checked_bg};
                 border-color: {checked_border};
                 image: url({svg_url});
+            }}
+
+            /* 半选 (indeterminate) 状态 */
+            MkCheckBox::indicator:indeterminate {{
+                background-color: {checked_bg};
+                border-color: {checked_border};
+                image: url({minus_svg_url});
             }}
             
             /* 禁用状态 */

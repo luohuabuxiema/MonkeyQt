@@ -971,6 +971,43 @@ class MkWindow(QMainWindow):
                 border_color = "#e2e8f0"
             border_rule = f"1px solid {border_color}"
 
+        if theme_active:
+            # 极速路径：全局 QSS 已由 Qt C++ 级联引擎统一渲染，此处无需执行昂贵且卡顿的多重局部 setStyleSheet
+            if self.container_frame and self.container_frame.styleSheet():
+                self.container_frame.setStyleSheet("")
+            if self._sidebar_host and self._sidebar_host.styleSheet():
+                self._sidebar_host.setStyleSheet("")
+            if self._content_host and self._content_host.styleSheet():
+                self._content_host.setStyleSheet("")
+            if self._desktop_shell and self._desktop_shell.styleSheet():
+                self._desktop_shell.setStyleSheet("")
+
+            candidate_sidebar = self._promoted_sidebar
+            if candidate_sidebar is None and self.user_central_widget is not None:
+                info = self._find_sidebar_candidate(self.user_central_widget)
+                if info:
+                    candidate_sidebar = info[0]
+            if candidate_sidebar and hasattr(candidate_sidebar, "inner_frame") and candidate_sidebar.inner_frame.styleSheet():
+                candidate_sidebar.inner_frame.setStyleSheet("")
+
+            if self.container_frame:
+                self.container_frame.setProperty("mk_maximized", "true" if is_max else "false")
+            if self._sidebar_host:
+                self._sidebar_host.setProperty("mk_maximized", "true" if is_max else "false")
+            if self._content_host:
+                self._content_host.setProperty("mk_maximized", "true" if is_max else "false")
+            if self._desktop_shell:
+                self._desktop_shell.setProperty("mk_maximized", "true" if is_max else "false")
+            if candidate_sidebar:
+                candidate_sidebar.setProperty("mk_maximized", "true" if is_max else "false")
+                if hasattr(candidate_sidebar, "inner_frame"):
+                    candidate_sidebar.inner_frame.setProperty("mk_maximized", "true" if is_max else "false")
+
+            if self.titlebar:
+                self.titlebar.apply_theme_colors()
+                self.titlebar.update_buttons(is_max=is_max)
+            return
+
         if self.container_frame:
             self.container_frame.setStyleSheet(f"""
                 QWidget#MkWindowContainer, QFrame#MkWindowContainer {{

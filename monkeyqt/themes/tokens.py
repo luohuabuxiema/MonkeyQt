@@ -9,7 +9,7 @@ THEME_TOKENS: dict[str, dict] = {
     'Elegant Light': {
         'name': 'Elegant Light',
         'type': 'General',
-        'keywords': 'Premium, elegant, clean, modern, high contrast, blue accent, light mode',
+        'keywords': 'Premium, elegant, clean, modern, high contrast, obsidian accent, light mode',
         'effects': 'Smooth hover transitions, clear shadow layers',
         'best_for': 'SaaS platforms, dashboards, developer tools, professional application suites',
         'performance': '⚡ Excellent',
@@ -18,7 +18,7 @@ THEME_TOKENS: dict[str, dict] = {
         'dark_mode': '✕ None',
         '--bg': '#F8FAFC',
         '--fg': '#0F172A',
-        '--primary': '#3B82F6',
+        '--primary': '#171717',
         '--secondary': '#FFFFFF',
         '--accent': '#10B981',
         '--border': '#E2E8F0',

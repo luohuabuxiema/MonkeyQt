@@ -31,6 +31,13 @@ class ThemeEngine(QObject):
     _overrides: dict = {}
     _qss_cache: dict = {}
 
+    _theme_version: int = 1
+
+    @classmethod
+    def theme_version(cls) -> int:
+        """获取当前活跃主题的版本代次（用于组件懒样式判定）"""
+        return cls._theme_version
+
     @classmethod
     def instance(cls):
         """获取唯一的单例实例，用于连接信号"""
@@ -61,6 +68,7 @@ class ThemeEngine(QObject):
 
         cls._current_name = style_name
         cls._current_tokens = cls._normalize_tokens(THEME_TOKENS[style_name])
+        cls._theme_version += 1
 
         app = QApplication.instance()
         top_windows = []
@@ -83,8 +91,7 @@ class ThemeEngine(QObject):
             for w in top_windows:
                 try:
                     w.setUpdatesEnabled(True)
-                    if w.isVisible():
-                        w.repaint()
+                    w.update()
                 except Exception:
                     pass
 
@@ -95,6 +102,7 @@ class ThemeEngine(QObject):
         """恢复 MonkeyQt 内置默认样式，应用默认的 QSS。"""
         cls._current_name = cls.DEFAULT_THEME_NAME
         cls._current_tokens = cls._normalize_tokens(cls._default_tokens)
+        cls._theme_version += 1
 
         app = QApplication.instance()
         top_windows = []
@@ -116,8 +124,7 @@ class ThemeEngine(QObject):
             for w in top_windows:
                 try:
                     w.setUpdatesEnabled(True)
-                    if w.isVisible():
-                        w.repaint()
+                    w.update()
                 except Exception:
                     pass
 
