@@ -114,8 +114,8 @@ class CheckboxGallery(MkQWidget):
         chk_layout.addStretch()
         layout.addLayout(chk_layout)
 
-        # ── 2. 列表选择项交互组件 (MkSelectItem - 参考图一与图三) ──
-        self.label_item = QLabel("2. 列表选择项交互组件 (MkSelectItem - 参考图一与图三)")
+        # ── 2. 列表选择项交互组件 (MkSelectItem) ──
+        self.label_item = QLabel("2. 列表选择项交互组件 (MkSelectItem)")
         self.label_item.setFont(title_font)
         layout.addWidget(self.label_item)
         

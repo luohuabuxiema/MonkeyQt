@@ -1405,7 +1405,7 @@ class MkWindow(QMainWindow):
         if target_stack is None and self.user_central_widget:
             target_stack = self._find_stacked_widget(self.user_central_widget)
 
-        if target_stack is not None and not isinstance(target_stack, MkAnimatedStackedWidget):
+        if animation_duration > 0 and target_stack is not None and not isinstance(target_stack, MkAnimatedStackedWidget):
             target_stack = self._upgrade_to_animated_stack(target_stack, animation_duration)
 
         self._extras_stack = target_stack

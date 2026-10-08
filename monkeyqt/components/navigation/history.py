@@ -23,11 +23,14 @@ class MkAnimatedStackedWidget(QStackedWidget):
 
     animationFinished = Signal(int)
 
-    def __init__(self, parent=None, animation_duration: int = 280):
+    def __init__(self, parent=None, animation_duration: int = 200):
         super().__init__(parent)
         self._animation_duration = max(0, int(animation_duration))
         self._animation_group = None
         self._is_animating = False
+        self._anim_target_index = None
+        self._anim_current_widget = None
+        self._anim_next_widget = None
 
     def set_animation_duration(self, duration: int) -> None:
         self._animation_duration = max(0, int(duration))
@@ -35,9 +38,40 @@ class MkAnimatedStackedWidget(QStackedWidget):
     def is_animating(self) -> bool:
         return self._is_animating
 
+    def _interrupt_and_finish_animation(self) -> None:
+        """立即快速终结正在运行的旧动画，复位控件并直接就位，绝不吞掉用户的任何一次新点击。"""
+        if self._animation_group is not None:
+            group = self._animation_group
+            self._animation_group = None
+            try:
+                group.stop()
+            except Exception:
+                pass
+
+        if self._anim_target_index is not None and 0 <= self._anim_target_index < self.count():
+            target_idx = self._anim_target_index
+            self._anim_target_index = None
+            self.setCurrentIndex(target_idx)
+
+        if self._anim_next_widget is not None:
+            self._anim_next_widget.move(0, 0)
+            self._anim_next_widget = None
+
+        if self._anim_current_widget is not None:
+            self._anim_current_widget.move(0, 0)
+            if self._anim_current_widget is not self.currentWidget():
+                self._anim_current_widget.hide()
+            self._anim_current_widget = None
+
+        self._is_animating = False
+
     def slide_to(self, index: int, direction: str | None = None) -> bool:
-        if self._is_animating or index < 0 or index >= self.count():
+        if index < 0 or index >= self.count():
             return False
+
+        # 如果当前正在播放动画，立即快速收尾旧动画，复位旧视图，绝不吞掉新点击
+        if self._is_animating:
+            self._interrupt_and_finish_animation()
 
         current_index = self.currentIndex()
         if current_index == index:
@@ -58,6 +92,10 @@ class MkAnimatedStackedWidget(QStackedWidget):
             return True
 
         self._is_animating = True
+        self._anim_target_index = index
+        self._anim_current_widget = current_widget
+        self._anim_next_widget = next_widget
+
         next_widget.setGeometry(self.rect())
         next_widget.move(offset, 0)
         next_widget.show()
@@ -90,13 +128,17 @@ class MkAnimatedStackedWidget(QStackedWidget):
         return self.slide_to(index, direction)
 
     def _finish_transition(self, index, current_widget, next_widget) -> None:
-        self.setCurrentIndex(index)
-        current_widget.move(0, 0)
-        next_widget.move(0, 0)
-        if current_widget is not next_widget:
-            current_widget.hide()
+        if self._animation_group is not None:
+            self.setCurrentIndex(index)
+            current_widget.move(0, 0)
+            next_widget.move(0, 0)
+            if current_widget is not next_widget:
+                current_widget.hide()
         self._is_animating = False
         self._animation_group = None
+        self._anim_target_index = None
+        self._anim_current_widget = None
+        self._anim_next_widget = None
         self.animationFinished.emit(index)
 
 
@@ -176,11 +218,8 @@ class MkHistoryNavigation(MkQWidget):
         record_history: bool = True,
         direction: str | None = None,
     ) -> bool:
-        if self._is_busy():
-            return False
-
         current_page = self.current_page()
-        if current_page == page_id:
+        if current_page == page_id and not getattr(self.stack, "_is_animating", False):
             self._update_buttons()
             return False
 
@@ -195,7 +234,7 @@ class MkHistoryNavigation(MkQWidget):
         return moved
 
     def back(self) -> bool:
-        if not self.can_go_back() or self._is_busy():
+        if not self.can_go_back():
             return False
         target_history_index = self._history_index - 1
         page_id = self._history[target_history_index]
@@ -207,7 +246,7 @@ class MkHistoryNavigation(MkQWidget):
         return moved
 
     def forward(self) -> bool:
-        if not self.can_go_forward() or self._is_busy():
+        if not self.can_go_forward():
             return False
         target_history_index = self._history_index + 1
         page_id = self._history[target_history_index]
@@ -242,7 +281,7 @@ class MkHistoryNavigation(MkQWidget):
 
     def _move_stack(self, page_id: str, direction: str) -> bool:
         target_index = self._resolve_page_index(page_id)
-        if target_index < 0 or self._is_busy():
+        if target_index < 0:
             return False
 
         if isinstance(self.stack, MkAnimatedStackedWidget):
@@ -256,15 +295,11 @@ class MkHistoryNavigation(MkQWidget):
         return moved
 
     def _is_busy(self) -> bool:
-        return (
-            isinstance(self.stack, MkAnimatedStackedWidget)
-            and self.stack.is_animating()
-        )
+        return False
 
     def _update_buttons(self) -> None:
-        busy = self._is_busy()
-        can_back = self.can_go_back() and not busy
-        can_forward = self.can_go_forward() and not busy
+        can_back = self.can_go_back()
+        can_forward = self.can_go_forward()
         self.back_button.setEnabled(can_back)
         self.forward_button.setEnabled(can_forward)
 

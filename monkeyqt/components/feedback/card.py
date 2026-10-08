@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
-from PySide6.QtCore import Qt, Property
-from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QFont
+from PySide6.QtCore import Qt, Property, QRectF, QTimer, QSize
+from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QFont, QLinearGradient
 from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout
 
 from monkeyqt.themes.engine import ThemeEngine
@@ -11,12 +10,19 @@ class MkCard(QFrame):
     """
     MkCard 组件 - 风格化卡片容器，完美自适应 68 种内置主题风格。
     
+    特性：
+        1. 主题自适应：全自动适配 68 套主题规范（毛玻璃、新拟态、极简风等）；
+        2. 原生流光骨架屏（Skeleton Shimmer）：
+           调用 card.set_loading(True) 或初始化 MkCard(loading=True)，
+           整张卡片将自动呈现科技感极强的流光骨架占位；加载完成后 set_loading(False) 平滑展现真实数据。
+    
     用法:
         card = MkCard(title="Settings", parent=self)
         card_layout = card.content_layout  # 在此添加子组件
+        card.set_loading(True)             # 开启流光骨架屏
     """
 
-    def __init__(self, title="", show_title=True, parent=None):
+    def __init__(self, title="", show_title=True, loading=False, parent=None):
         from PySide6.QtWidgets import QWidget
         if isinstance(title, QWidget):
             parent = title
@@ -25,12 +31,18 @@ class MkCard(QFrame):
         elif isinstance(show_title, QWidget):
             parent = show_title
             show_title = True
+        elif isinstance(loading, QWidget):
+            parent = loading
+            loading = False
 
         super().__init__(parent)
         self._title = title
         self._show_title = show_title
         self._hovered = False
         self._time_angle = 0.0
+        self._loading = bool(loading)
+        self._shimmer_progress = 0.0
+        self._shimmer_timer = None
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setMinimumSize(200, 120)
 
@@ -60,6 +72,14 @@ class MkCard(QFrame):
         self._layout.addWidget(self._content_widget)
 
         ThemeEngine.instance().themeChanged.connect(self.set_theme_style)
+
+        if self._loading:
+            self._content_widget.setVisible(False)
+            self._title_label.setVisible(False)
+            self._shimmer_timer = QTimer(self)
+            self._shimmer_timer.setInterval(30)
+            self._shimmer_timer.timeout.connect(self._on_shimmer_step)
+            self._shimmer_timer.start()
 
     @property
     def content_widget(self) -> QFrame:
@@ -214,7 +234,125 @@ class MkCard(QFrame):
                 painter.setPen(Qt.PenStyle.NoPen)
             painter.drawRoundedRect(inset, radius, radius)
 
+        # 若处于骨架屏加载态，绘制整卡流光骨架（参考图一/图三 Web 质感）
+        if self._loading:
+            self._draw_skeleton_shimmer(painter, rect, t)
+
         painter.end()
+
+    def _draw_skeleton_shimmer(self, painter: QPainter, rect, t):
+        is_dark = t.is_dark()
+        # 柔和底色与高光色
+        base_color = QColor(36, 36, 42) if is_dark else QColor(241, 245, 249)
+        highlight_color = QColor(54, 54, 64, 200) if is_dark else QColor(255, 255, 255, 230)
+
+        # 内部边距
+        pad_x = 20 if self._show_title else 16
+        pad_y = 16 if self._show_title else 14
+        content_w = max(10.0, float(rect.width() - pad_x * 2))
+        content_h = max(10.0, float(rect.height() - pad_y * 2))
+
+        if hasattr(self, "_get_skeleton_blocks") and callable(getattr(self, "_get_skeleton_blocks")):
+            blocks = self._get_skeleton_blocks(rect, content_w, content_h, pad_x, pad_y)
+        else:
+            blocks = []
+            if content_h <= 110.0:
+                # 类似图一顶部的 3 个 KPI 指标卡 (标题条 + 大数值骨架块)
+                blocks.append(QRectF(float(pad_x), float(pad_y + 4), min(100.0, content_w * 0.45), 14.0))
+                blocks.append(QRectF(float(pad_x), float(pad_y + 30), min(80.0, content_w * 0.35), 26.0))
+            elif content_h <= 200.0:
+                # 中等卡片 (如 GPU 状态卡)
+                blocks.append(QRectF(float(pad_x), float(pad_y + 4), min(160.0, content_w * 0.4), 16.0))
+                blocks.append(QRectF(float(pad_x), float(pad_y + 32), content_w * 0.85, 14.0))
+                blocks.append(QRectF(float(pad_x), float(pad_y + 54), content_w * 0.55, 14.0))
+            else:
+                # 大容器卡片：顶部标题 + 多行雅致流光条纹，杜绝粗笨大色块
+                blocks.append(QRectF(float(pad_x), float(pad_y + 4), min(180.0, content_w * 0.35), 16.0))
+                blocks.append(QRectF(float(pad_x), float(pad_y + 26), min(130.0, content_w * 0.25), 12.0))
+                curr_y = pad_y + 52.0
+                max_y = float(rect.height()) - float(pad_y) - 16.0
+                while curr_y + 16.0 <= max_y and len(blocks) < 8:
+                    ratio = 0.90 if len(blocks) % 3 == 0 else (0.75 if len(blocks) % 3 == 1 else 0.55)
+                    blocks.append(QRectF(float(pad_x), float(curr_y), content_w * ratio, 18.0))
+                    curr_y += 30.0
+
+        painter.setPen(Qt.PenStyle.NoPen)
+
+        # 流光扫描位移
+        sweep_x = float(rect.left()) + float(rect.width() + 200) * self._shimmer_progress - 100.0
+        gradient_width = max(120.0, float(rect.width()) * 0.45)
+
+        for block in blocks:
+            rad = 6.0 if block.height() > 20.0 else 4.0
+            grad = QLinearGradient(sweep_x - gradient_width, 0, sweep_x + gradient_width, 0)
+            grad.setColorAt(0.0, base_color)
+            grad.setColorAt(0.5, highlight_color)
+            grad.setColorAt(1.0, base_color)
+
+            painter.setBrush(QBrush(grad))
+            painter.drawRoundedRect(block, rad, rad)
+
+    @Property(bool)
+    def loading(self) -> bool:
+        return self._loading
+
+    @loading.setter
+    def loading(self, val: bool):
+        self.set_loading(val)
+
+    def set_loading(self, loading: bool = True):
+        """设置卡片骨架屏加载态。开启后自动隐藏内容并播放流光扫光，关闭后平滑恢复内容。"""
+        if self._loading == loading:
+            return
+        self._loading = bool(loading)
+        if self._loading:
+            self._content_widget.setVisible(False)
+            self._title_label.setVisible(False)
+            if not hasattr(self, "_shimmer_timer") or self._shimmer_timer is None:
+                self._shimmer_timer = QTimer(self)
+                self._shimmer_timer.setInterval(30)
+                self._shimmer_timer.timeout.connect(self._on_shimmer_step)
+            if not self._shimmer_timer.isActive() and self.isVisible():
+                self._shimmer_timer.start()
+        else:
+            if hasattr(self, "_shimmer_timer") and self._shimmer_timer and self._shimmer_timer.isActive():
+                self._shimmer_timer.stop()
+            self._content_widget.setVisible(True)
+            self._title_label.setVisible(bool(self._title) and self._show_title)
+            self._content_widget.updateGeometry()
+            self.updateGeometry()
+            if self.parentWidget() and self.parentWidget().layout():
+                self.parentWidget().layout().invalidate()
+                self.parentWidget().layout().activate()
+        self.update()
+
+    def sizeHint(self) -> QSize:
+        if hasattr(self, "_content_widget") and self._content_widget:
+            cw_hint = self._content_widget.sizeHint()
+            if cw_hint.isValid() and cw_hint.height() > 0:
+                pad_y = 32 if self._show_title else 0
+                title_h = self._title_label.sizeHint().height() + 8 if (bool(self._title) and self._show_title) else 0
+                return QSize(max(200, cw_hint.width()), max(120, cw_hint.height() + title_h + pad_y))
+        return super().sizeHint()
+
+    def _on_shimmer_step(self):
+        if not self.isVisible() or not self._loading:
+            return
+        self._shimmer_progress += 0.03
+        if self._shimmer_progress >= 1.0:
+            self._shimmer_progress = 0.0
+        self.update()
+
+    def hideEvent(self, event):
+        if hasattr(self, "_shimmer_timer") and self._shimmer_timer and self._shimmer_timer.isActive():
+            self._shimmer_timer.stop()
+        super().hideEvent(event)
+
+    def showEvent(self, event):
+        if getattr(self, "_loading", False):
+            if hasattr(self, "_shimmer_timer") and self._shimmer_timer and not self._shimmer_timer.isActive():
+                self._shimmer_timer.start()
+        super().showEvent(event)
 
     def enterEvent(self, event):
         self._hovered = True

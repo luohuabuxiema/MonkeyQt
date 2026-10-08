@@ -24,7 +24,7 @@ MkProTable - 现代化前端仪表盘数据表格组件 (Modern Dashboard Pro Ta
 import os
 import re
 from typing import List, Dict, Any, Optional
-from PySide6.QtCore import Qt, Signal, QRectF, QRect, QSize, QPoint, QPointF, QEvent
+from PySide6.QtCore import Qt, Signal, QRectF, QRect, QSize, QPoint, QPointF, QEvent, QTimer
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QTableWidget,
     QTableWidgetItem, QAbstractItemView, QHeaderView, QPushButton, QSizePolicy,
@@ -32,7 +32,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtGui import (
     QPainter, QPainterPath, QColor, QPen, QBrush, QFont, QPixmap, QCursor,
-    QKeySequence, QAction
+    QKeySequence, QAction, QLinearGradient
 )
 
 from monkeyqt.components.layout.widget import MkQWidget
@@ -2606,3 +2606,118 @@ class MkProTable(MkQWidget):
                     w = self.table_widget.cellWidget(r, c)
                     if w is not None and hasattr(w, "update_theme_style"):
                         w.update_theme_style()
+
+    @property
+    def loading(self) -> bool:
+        return getattr(self, "_loading", False)
+
+    @loading.setter
+    def loading(self, val: bool):
+        self.set_loading(val)
+
+    def set_loading(self, loading: bool = True):
+        """设置数据表格的流光骨架屏加载态。开启时隐藏真实控件与表头，展示纯净流光条纹骨架。"""
+        if getattr(self, "_loading", False) == loading:
+            return
+        self._loading = bool(loading)
+
+        # 隐藏/恢复真实控件（顶部工具栏、表格内容、底部分页等全部清空）
+        if hasattr(self, "top_toolbar") and self.top_toolbar is not None:
+            self.top_toolbar.setVisible(not self._loading)
+        if hasattr(self, "table_container") and self.table_container is not None:
+            self.table_container.setVisible(not self._loading)
+        if hasattr(self, "footer_toolbar") and self.footer_toolbar is not None:
+            self.footer_toolbar.setVisible(not self._loading)
+
+        if self._loading:
+            if getattr(self, "auto_height", False):
+                self._prev_loading_min_h = self.minimumHeight()
+                self._prev_loading_max_h = self.maximumHeight()
+                self.setFixedHeight(300)
+            if not hasattr(self, "_shimmer_timer") or self._shimmer_timer is None:
+                self._shimmer_timer = QTimer(self)
+                self._shimmer_timer.setInterval(30)
+                self._shimmer_timer.timeout.connect(self._on_table_shimmer_step)
+            if not self._shimmer_timer.isActive() and self.isVisible():
+                self._shimmer_timer.start()
+        else:
+            if getattr(self, "auto_height", False) and hasattr(self, "_prev_loading_min_h"):
+                self.setMinimumHeight(self._prev_loading_min_h)
+                self.setMaximumHeight(self._prev_loading_max_h)
+                self._update_auto_height()
+            if hasattr(self, "_shimmer_timer") and self._shimmer_timer and self._shimmer_timer.isActive():
+                self._shimmer_timer.stop()
+        self.update()
+
+    def _on_table_shimmer_step(self):
+        if not self.isVisible() or not getattr(self, "_loading", False):
+            return
+        self._shimmer_progress = (getattr(self, "_shimmer_progress", 0.0) + 0.03) % 1.0
+        self.update()
+
+    def hideEvent(self, event):
+        if hasattr(self, "_shimmer_timer") and self._shimmer_timer and self._shimmer_timer.isActive():
+            self._shimmer_timer.stop()
+        super().hideEvent(event)
+
+    def showEvent(self, event):
+        if getattr(self, "_loading", False):
+            if hasattr(self, "_shimmer_timer") and self._shimmer_timer and not self._shimmer_timer.isActive():
+                self._shimmer_timer.start()
+        super().showEvent(event)
+
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        if getattr(self, "_loading", False):
+            painter = QPainter(self)
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+            t = ThemeEngine
+            is_dark = t.is_dark()
+            base_color = QColor(36, 36, 42) if is_dark else QColor(241, 245, 249)
+            highlight_color = QColor(54, 54, 64, 200) if is_dark else QColor(255, 255, 255, 230)
+
+            rect = self.rect()
+            pad_x = 20.0
+            content_w = max(20.0, float(rect.width() - pad_x * 2))
+
+            blocks = []
+            # 1. 顶部工具栏骨架 (左侧标题 + 右侧搜索框)
+            blocks.append(QRectF(pad_x, 16.0, min(200.0, content_w * 0.35), 18.0))
+            if getattr(self, "searchable", True):
+                search_w = min(180.0, content_w * 0.25)
+                blocks.append(QRectF(float(rect.right()) - pad_x - search_w, 14.0, search_w, 24.0))
+
+            # 2. 表头整栏骨架 (浅色条带)
+            header_y = 50.0
+            blocks.append(QRectF(pad_x, header_y, content_w, 32.0))
+
+            # 3. 数据行骨架条 (5~6 行交替均匀条纹)
+            row_y = header_y + 38.0
+            row_h = float(max(24, self.row_height - 14))
+            max_y = float(rect.height()) - 48.0
+            row_count = 0
+            while row_y + row_h <= max_y and row_count < 6:
+                blocks.append(QRectF(pad_x, row_y, content_w, row_h))
+                row_y += row_h + 8.0
+                row_count += 1
+
+            # 4. 底部分页栏骨架 (左侧统计 + 右侧分页按钮组)
+            footer_y = float(rect.bottom()) - 30.0
+            blocks.append(QRectF(pad_x, footer_y, 90.0, 14.0))
+            pager_w = min(140.0, content_w * 0.2)
+            blocks.append(QRectF(float(rect.right()) - pad_x - pager_w, footer_y - 2.0, pager_w, 18.0))
+
+            painter.setPen(Qt.PenStyle.NoPen)
+            shimmer_prog = getattr(self, "_shimmer_progress", 0.0)
+            sweep_x = float(rect.left()) + float(rect.width() + 200) * shimmer_prog - 100.0
+            gradient_width = max(120.0, float(rect.width()) * 0.45)
+
+            for block in blocks:
+                rad = 4.0
+                grad = QLinearGradient(sweep_x - gradient_width, 0, sweep_x + gradient_width, 0)
+                grad.setColorAt(0.0, base_color)
+                grad.setColorAt(0.5, highlight_color)
+                grad.setColorAt(1.0, base_color)
+                painter.setBrush(QBrush(grad))
+                painter.drawRoundedRect(block, rad, rad)
+            painter.end()
