@@ -28,8 +28,8 @@ class MkTitleBarCloseButton(QPushButton):
        - Windowed mode: Smooth rounded top-right corner matching window border-radius (default 8px).
        - Maximized mode: Straight 90-degree right angle (0px) honoring Fitts's Law.
     2. Pixel-perfect seamless fitting:
-       - Uses QPainter.CompositionMode_Source to eliminate any underlying titlebar/container
-         background fringe or color leak.
+       - Clears alpha only for translucent fallback windows; DWM-clipped opaque
+         windows preserve the titlebar background to avoid black corner pixels.
        - High-DPI anti-aliased geometry drawing.
     """
     def __init__(self, titlebar, parent=None):
@@ -61,11 +61,15 @@ class MkTitleBarCloseButton(QPushButton):
         win = self.window()
         if win and hasattr(win, "isMaximized") and win.isMaximized():
             return 0.0
+        if win and getattr(win, "_use_native_corner_surface", False):
+            return 0.0
         p_win = getattr(self._titlebar, "parent_window", None)
         if p_win:
             if hasattr(p_win, "isMaximized") and p_win.isMaximized():
                 return 0.0
             if getattr(p_win, "_current_is_max_state", False):
+                return 0.0
+            if getattr(p_win, "_use_native_corner_surface", False):
                 return 0.0
             if hasattr(p_win, "_border_radius"):
                 return float(p_win._border_radius)
@@ -116,14 +120,25 @@ class MkTitleBarCloseButton(QPushButton):
 
         if self._is_hovered or self._is_pressed:
             bg_color = QColor("#c42b1c" if self._is_pressed else "#e81123")
-            # 1. Clear any parent titlebar background using Source mode to prevent edge leak
-            painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
-            painter.fillRect(self.rect(), QColor(0, 0, 0, 0))
+            host_window = getattr(self._titlebar, "parent_window", None)
+            native_corner_surface = bool(
+                getattr(host_window, "_use_native_corner_surface", False)
+            )
+            # Clearing to transparent is required by the legacy alpha-window
+            # path, but creates opaque black pixels in a DWM-clipped surface.
+            # The native path keeps the already-painted titlebar background.
+            if not native_corner_surface:
+                painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
+                painter.fillRect(self.rect(), QColor(0, 0, 0, 0))
 
             painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceOver)
-            if r <= 0.0:
+            if r <= 0.0 or native_corner_surface:
+                # On Windows 11 DWM-clipped surfaces, the close button fills the full
+                # corner rectangle so DWM clips the window boundary natively without
+                # exposing any underlying titlebar background sliver.
                 painter.fillRect(self.rect(), bg_color)
             else:
+                # Translucent fallback windows on legacy systems require manual corner curve
                 painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
                 path = QPainterPath()
                 path.moveTo(0, 0)
@@ -754,6 +769,11 @@ class MkWindow(QMainWindow):
         self._auto_content_container = None
         self._close_behavior = "close"  # "close" or "hide"
         self._border_radius = 8
+        # Windows 11 can let DWM clip an opaque frameless window. This avoids
+        # the layered-window trails seen while shrinking a translucent window,
+        # while older platforms keep the original alpha-based corner path.
+        self._use_native_corner_surface = self._supports_native_corner_surface()
+        self._native_frame_synced = False
         self._normal_geometry = None
         self._is_maximizing = False
         
@@ -806,10 +826,23 @@ class MkWindow(QMainWindow):
         self.setWindowFlags(Qt.WindowType.Window)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
 
+    @staticmethod
+    def _supports_native_corner_surface() -> bool:
+        if sys.platform != "win32":
+            return False
+        try:
+            # DWMWA_WINDOW_CORNER_PREFERENCE is supported from build 22000.
+            return sys.getwindowsversion().build >= 22000
+        except (AttributeError, OSError):
+            return False
+
     def init_custom_frame(self):
         # Custom frameless behavior
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Window)
-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self.setAttribute(
+            Qt.WidgetAttribute.WA_TranslucentBackground,
+            not self._use_native_corner_surface,
+        )
         
         # 1. Root outer layout to support padding for drop shadow
         self._root_widget = QWidget(self)
@@ -887,6 +920,11 @@ class MkWindow(QMainWindow):
         super().setCentralWidget(self._root_widget)
         
         self.update_style()
+        if self._use_native_corner_surface and not self._enable_native_corners(False):
+            # Unsupported DWM implementations (older systems, compatibility
+            # layers) retain the original translucent corner implementation.
+            self._use_native_corner_surface = False
+            self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
 
     def set_preset(self, preset: str):
         self._preset = preset
@@ -1541,8 +1579,7 @@ class MkWindow(QMainWindow):
         return None
 
     def _enable_native_corners(self, is_max: bool | None = None):
-        import sys
-        if sys.platform == "win32":
+        if getattr(self, "_use_native_corner_surface", False):
             try:
                 import ctypes
                 hwnd = getattr(self, "_mk_cached_hwnd", None)
@@ -1556,7 +1593,14 @@ class MkWindow(QMainWindow):
                 # 2 = DWMWCP_ROUND (Standard Windows 11 rounded corners)
                 # 3 = DWMWCP_ROUNDSMALL (Restrained Windows 11 rounded corners)
                 pref = ctypes.c_int(1 if is_max else 2)
-                ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, 33, ctypes.byref(pref), ctypes.sizeof(pref))
+                result = ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                    hwnd,
+                    33,
+                    ctypes.byref(pref),
+                    ctypes.sizeof(pref),
+                )
+                if result != 0:
+                    return False
 
                 border_color = ctypes.c_uint(0xFFFFFFFE)  # DWMWA_COLOR_NONE
                 ctypes.windll.dwmapi.DwmSetWindowAttribute(
@@ -1565,8 +1609,58 @@ class MkWindow(QMainWindow):
                     ctypes.byref(border_color),
                     ctypes.sizeof(border_color),
                 )
+                return True
+            except Exception:
+                return False
+        return False
+
+    def _notify_native_frame_changed(self) -> bool:
+        """Force one Win32 non-client recalculation after the first show."""
+        if sys.platform != "win32" or not self._use_native_corner_surface:
+            return False
+        try:
+            hwnd = getattr(self, "_mk_cached_hwnd", None)
+            if hwnd is None:
+                hwnd = int(self.winId())
+                self._mk_cached_hwnd = hwnd
+
+            set_window_pos = ctypes.windll.user32.SetWindowPos
+            set_window_pos.argtypes = [
+                wintypes.HWND,
+                wintypes.HWND,
+                ctypes.c_int,
+                ctypes.c_int,
+                ctypes.c_int,
+                ctypes.c_int,
+                wintypes.UINT,
+            ]
+            set_window_pos.restype = wintypes.BOOL
+
+            # SWP_FRAMECHANGED sends WM_NCCALCSIZE even though position and
+            # dimensions stay unchanged. This is the frame refresh otherwise
+            # observed only after the first maximize/restore cycle.
+            flags = 0x0001 | 0x0002 | 0x0004 | 0x0010 | 0x0020
+            res = bool(set_window_pos(hwnd, 0, 0, 0, 0, 0, flags))
+            try:
+                ctypes.windll.user32.RedrawWindow(hwnd, None, None, 0x0401)  # RDW_FRAME | RDW_INVALIDATE
             except Exception:
                 pass
+            return res
+        except Exception:
+            return False
+
+    def _refresh_native_chrome(self):
+        """Re-apply DWM clipping after the HWND has entered the shown state."""
+        if not getattr(self, "_use_native_corner_surface", False):
+            return
+        try:
+            is_max = self.isMaximized()
+            if self.titlebar:
+                self.titlebar.set_maximized_state(is_max)
+            self._notify_native_frame_changed()
+            self._enable_native_corners(is_max)
+        except RuntimeError:
+            pass
 
     def _apply_window_state_immediate(self, is_max: bool, force: bool = False):
         try:
@@ -1682,6 +1776,15 @@ class MkWindow(QMainWindow):
                 self._normal_geometry = self._get_safe_normal_geometry(self.geometry())
         is_max = True if getattr(self, "_is_maximizing", False) else self.isMaximized()
         self._apply_window_state_immediate(is_max, force=True)
+        if self._use_native_corner_surface:
+            # A custom frameless HWND needs one explicit non-client refresh on
+            # first show. Re-apply the DWM preference afterwards because frame
+            # recalculation may recreate its visible corner state.
+            if not self._native_frame_synced:
+                self._native_frame_synced = self._notify_native_frame_changed()
+                self._enable_native_corners(is_max)
+            QTimer.singleShot(0, self._refresh_native_chrome)
+            QTimer.singleShot(80, self._refresh_native_chrome)
 
     def resizeEvent(self, event):
         super().resizeEvent(event)

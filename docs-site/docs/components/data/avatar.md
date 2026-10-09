@@ -11,6 +11,8 @@
 
 ### 基础用法
 
+![Avatar 头像预览](../../assets/images/avatar_preview.png)
+
 ```python
 from monkeyqt import MkAvatar
 

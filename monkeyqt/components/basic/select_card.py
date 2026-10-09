@@ -281,6 +281,7 @@ class MkSelectItem(QFrame):
 
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setMinimumWidth(0)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
         self._init_ui()
@@ -311,6 +312,10 @@ class MkSelectItem(QFrame):
 
         # 3. 文本列（主标题 + 副标题/指标）
         self.text_container = QWidget(self)
+        self.text_container.setMinimumWidth(0)
+        text_policy = self.text_container.sizePolicy()
+        text_policy.setHorizontalPolicy(QSizePolicy.Policy.Ignored)
+        self.text_container.setSizePolicy(text_policy)
         _MkThemeEngine.apply_style_sheet(self.text_container, "background: transparent;")
         text_layout = QVBoxLayout(self.text_container)
         text_layout.setContentsMargins(0, 0, 0, 0)
@@ -321,6 +326,10 @@ class MkSelectItem(QFrame):
         title_font.setPointSize(10)
         title_font.setWeight(QFont.Weight.Normal)
         self.lbl_title.setFont(title_font)
+        self.lbl_title.setMinimumWidth(0)
+        title_policy = self.lbl_title.sizePolicy()
+        title_policy.setHorizontalPolicy(QSizePolicy.Policy.Ignored)
+        self.lbl_title.setSizePolicy(title_policy)
         _MkThemeEngine.apply_style_sheet(self.lbl_title, "background: transparent;")
         text_layout.addWidget(self.lbl_title)
 
@@ -328,6 +337,10 @@ class MkSelectItem(QFrame):
         sub_font = QFont()
         sub_font.setPointSize(9)
         self.lbl_subtitle.setFont(sub_font)
+        self.lbl_subtitle.setMinimumWidth(0)
+        subtitle_policy = self.lbl_subtitle.sizePolicy()
+        subtitle_policy.setHorizontalPolicy(QSizePolicy.Policy.Ignored)
+        self.lbl_subtitle.setSizePolicy(subtitle_policy)
         _MkThemeEngine.apply_style_sheet(self.lbl_subtitle, "background: transparent;")
         self.lbl_subtitle.setVisible(bool(self._subtitle_text))
         text_layout.addWidget(self.lbl_subtitle)
@@ -375,6 +388,26 @@ class MkSelectItem(QFrame):
         # 初始状态：若开启了悬浮展示，则默认隐藏
         if self._actions_visible_on_hover:
             self.actions_container.setVisible(False)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._update_elided_text()
+
+    def _update_elided_text(self):
+        """Fit long labels into narrow cards without growing the scroll area."""
+        for label, source in (
+            (self.lbl_title, self._title_text),
+            (self.lbl_subtitle, self._subtitle_text),
+        ):
+            available = max(0, label.width() - 2)
+            display = label.fontMetrics().elidedText(
+                source,
+                Qt.TextElideMode.ElideRight,
+                available,
+            )
+            if label.text() != display:
+                label.setText(display)
+            label.setToolTip(source if display != source else "")
 
     def _update_indicator(self):
         """更新圆点或图标展示"""
@@ -558,12 +591,12 @@ class MkSelectItem(QFrame):
 
     def set_title(self, title: str):
         self._title_text = title
-        self.lbl_title.setText(title)
+        self._update_elided_text()
 
     def set_subtitle(self, subtitle: str):
         self._subtitle_text = subtitle
-        self.lbl_subtitle.setText(subtitle)
         self.lbl_subtitle.setVisible(bool(subtitle))
+        self._update_elided_text()
         self.setMinimumHeight(56)
 
     def set_dot_color(self, color: Optional[str]):
@@ -729,11 +762,11 @@ class MkSelectCard(QFrame):
 
     def __init__(
         self,
-        title: str = "Models",
+        title: str = "训练任务与模型",
         icon: Optional[str] = "cube",
         show_select_all: bool = True,
-        select_all_text: str = "Select all",
-        badge_pattern: str = "{count} selected",
+        select_all_text: str = "全选 / 取消全选",
+        badge_pattern: str = "{count} 已选",
         max_list_height: Optional[int] = None,
         parent: Optional[QWidget] = None,
     ):
@@ -752,6 +785,8 @@ class MkSelectCard(QFrame):
         self._updating_select_all = False
 
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setMinimumWidth(0)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self._init_ui()
         ThemeEngine.instance().themeChanged.connect(self._apply_style)
         self._apply_style()
@@ -775,10 +810,13 @@ class MkSelectCard(QFrame):
         hdr_font.setPointSize(11)
         hdr_font.setWeight(QFont.Weight.Bold)
         self.lbl_hdr_title.setFont(hdr_font)
+        self.lbl_hdr_title.setMinimumWidth(0)
+        header_title_policy = self.lbl_hdr_title.sizePolicy()
+        header_title_policy.setHorizontalPolicy(QSizePolicy.Policy.Ignored)
+        self.lbl_hdr_title.setSizePolicy(header_title_policy)
         _MkThemeEngine.apply_style_sheet(self.lbl_hdr_title, "background: transparent;")
-        self.header_layout.addWidget(self.lbl_hdr_title)
-
-        self.header_layout.addStretch()
+        # 标题本身承担弹性空间，避免独立 stretch 在窄屏下把标题和计数压成 0px。
+        self.header_layout.addWidget(self.lbl_hdr_title, stretch=1)
 
         # 右侧简约文本计数（参考图三: "1 selected"，告别蓝色胶囊）
         self.lbl_badge = QLabel(self._badge_pattern.format(count=0), self)
@@ -787,6 +825,10 @@ class MkSelectCard(QFrame):
         badge_font.setWeight(QFont.Weight.Normal)
         self.lbl_badge.setFont(badge_font)
         self.lbl_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.lbl_badge.setMinimumWidth(0)
+        badge_policy = self.lbl_badge.sizePolicy()
+        badge_policy.setHorizontalPolicy(QSizePolicy.Policy.Minimum)
+        self.lbl_badge.setSizePolicy(badge_policy)
         self.header_layout.addWidget(self.lbl_badge)
 
         self._card_layout.addLayout(self.header_layout)
@@ -802,11 +844,18 @@ class MkSelectCard(QFrame):
         self.scroll_area = QScrollArea(self)
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        self.scroll_area.setMinimumWidth(0)
+        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         if self._max_list_height:
             self.scroll_area.setMaximumHeight(self._max_list_height)
 
         self.list_container = QWidget()
         self.list_container.setObjectName("MkSelectListContainer")
+        self.list_container.setMinimumWidth(0)
+        list_policy = self.list_container.sizePolicy()
+        list_policy.setHorizontalPolicy(QSizePolicy.Policy.Ignored)
+        self.list_container.setSizePolicy(list_policy)
         self.list_layout = QVBoxLayout(self.list_container)
         self.list_layout.setContentsMargins(0, 0, 0, 0)
         self.list_layout.setSpacing(6)

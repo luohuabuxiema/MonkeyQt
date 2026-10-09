@@ -58,7 +58,7 @@ from .components.feedback.tooltip import (
 # Layout
 from .components.layout.window import MkTitleBar, MkWindow
 from .components.layout.window_shell import MkWindowShell
-from .components.layout.box import MkQVBoxLayout, MkQHBoxLayout, MkVBox, MkHBox
+from .components.layout.box import MkQVBoxLayout, MkQHBoxLayout, MkResponsiveBox, MkVBox, MkHBox
 from .components.layout.widget import MkQWidget, MkWidget
 from .components.layout.scroll_area import MkScrollArea, MkStackedWidget
 from .components.layout.page import MkPage
@@ -137,6 +137,7 @@ __all__ = [
     "MkWindowShell",
     "MkQVBoxLayout",
     "MkQHBoxLayout",
+    "MkResponsiveBox",
     "MkVBox",
     "MkHBox",
     "MkQWidget",
