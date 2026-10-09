@@ -214,19 +214,23 @@ def _render_icon_cached(
     mirrored: bool,
     rotation: int
 ) -> QtGui.QIcon:
-    """Internal LRU-cached icon renderer."""
-    pixmap = _render_pixmap_cached(
-        name=name,
-        weight=weight,
-        width=size,
-        height=size,
-        color=color,
-        secondary_color=secondary_color,
-        secondary_opacity=secondary_opacity,
-        mirrored=mirrored,
-        rotation=rotation
-    )
-    return QtGui.QIcon(pixmap)
+    """Internal LRU-cached icon renderer supporting High-DPI screens."""
+    icon = QtGui.QIcon()
+    for dpr in (1.0, 1.25, 1.5, 2.0, 3.0):
+        pm = _render_pixmap_cached(
+            name=name,
+            weight=weight,
+            width=size,
+            height=size,
+            color=color,
+            secondary_color=secondary_color,
+            secondary_opacity=secondary_opacity,
+            mirrored=mirrored,
+            rotation=rotation,
+            dpr=dpr
+        )
+        icon.addPixmap(pm)
+    return icon
 
 
 def clear_theme_icon_cache(theme_name: str = ""):

@@ -214,10 +214,23 @@ class MkButton(QPushButton):
             qss += f"\nQPushButton {{ {size_qss} }}"
         _MkThemeEngine.apply_style_sheet(self, qss)
 
+    def sizeHint(self):
+        hint = super().sizeHint()
+        fm = self.fontMetrics()
+        text_w = fm.horizontalAdvance(self.text()) if self.text() else 0
+        icon_w = self.iconSize().width() if not self.icon().isNull() else 0
+        spacing = 8 if (icon_w and text_w) else 0
+        padding_h = 28 if text_w else 0
+        w = max(hint.width(), icon_w + text_w + spacing + padding_h)
+        h = max(hint.height(), 36)
+        from PySide6.QtCore import QSize
+        return QSize(w, h)
+
     def paintEvent(self, event):
         t = ThemeEngine
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
         rect = self.rect()
         primary = t.get("--primary", "#409EFF")
         bg = t.get("--bg", "#FFFFFF")
@@ -411,7 +424,7 @@ class MkButton(QPushButton):
             icon_sz = self.iconSize()
             icon_w = icon_sz.width()
             icon_h = icon_sz.height()
-            spacing = 6 if text else 0
+            spacing = 8 if text else 0
             fm = painter.fontMetrics()
             text_w = fm.horizontalAdvance(text) if text else 0
             total_w = icon_w + spacing + text_w
@@ -419,8 +432,7 @@ class MkButton(QPushButton):
             start_x = rect.left() + (rect.width() - total_w) // 2
             icon_y = rect.top() + (rect.height() - icon_h) // 2
 
-            pixmap = icon.pixmap(icon_sz)
-            painter.drawPixmap(start_x, icon_y, pixmap)
+            icon.paint(painter, QRect(start_x, icon_y, icon_w, icon_h))
 
             if text:
                 text_rect = QRect(start_x + icon_w + spacing, rect.top(), text_w + 10, rect.height())
@@ -482,7 +494,7 @@ class MkButton(QPushButton):
     def setIcon(self, icon):
         if isinstance(icon, str):
             try:
-                from monkeyqt.icons import Ph
+                from monkeyqt_icons import Ph
                 pm = Ph.pixmap(icon, size=16, color=self._get_button_text_color())
                 if pm and not pm.isNull():
                     icon = QIcon(pm)
@@ -491,11 +503,15 @@ class MkButton(QPushButton):
         elif hasattr(icon, "_ph_spec"):
             self._ph_icon_spec = getattr(icon, "_ph_spec", None)
             try:
+                from monkeyqt_icons import Ph
                 spec = dict(self._ph_icon_spec)
                 orig_color = spec.get("color")
                 if orig_color in (None, "auto", "default", "fg", "foreground", "currentcolor"):
                     spec["color"] = self._get_button_text_color()
                 icon = Ph.icon(**spec)
+                if "size" in spec and isinstance(spec["size"], int):
+                    from PySide6.QtCore import QSize
+                    self.setIconSize(QSize(spec["size"], spec["size"]))
             except Exception:
                 pass
         super().setIcon(icon)
@@ -504,6 +520,7 @@ class MkButton(QPushButton):
         self._update_style()
         if getattr(self, "_ph_icon_spec", None):
             try:
+                from monkeyqt_icons import Ph
                 spec = dict(self._ph_icon_spec)
                 orig_color = spec.get("color")
                 if orig_color in (None, "auto", "default", "fg", "foreground", "currentcolor"):
