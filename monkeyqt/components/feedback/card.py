@@ -1,3 +1,4 @@
+from monkeyqt.themes.engine import ThemeEngine as _MkThemeEngine
 from PySide6.QtCore import Qt, Property, QRectF, QTimer, QSize
 from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QFont, QLinearGradient
 from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout
@@ -57,7 +58,7 @@ class MkCard(QFrame):
         # 标题
         self._title_label = QLabel(title)
         self._title_label.setObjectName("MkCardTitle")
-        self._title_label.setStyleSheet("background: transparent;")
+        _MkThemeEngine.apply_style_sheet(self._title_label, "background: transparent;")
         font = QFont("Segoe UI", 13, QFont.Weight.DemiBold)
         self._title_label.setFont(font)
         self._layout.addWidget(self._title_label)
@@ -65,7 +66,7 @@ class MkCard(QFrame):
 
         # 内容区域（用户可往此添加子组件）
         self._content_widget = QFrame()
-        self._content_widget.setStyleSheet("background: transparent; border: none;")
+        _MkThemeEngine.apply_style_sheet(self._content_widget, "background: transparent; border: none;")
         self.content_layout = QVBoxLayout(self._content_widget)
         self.content_layout.setContentsMargins(0, 0, 0, 0)
         self.content_layout.setSpacing(6)
@@ -104,14 +105,14 @@ class MkCard(QFrame):
 
         # 标题颜色
         if t.is_dark():
-            self._title_label.setStyleSheet(f"background: transparent; color: #FFFFFF;")
+            _MkThemeEngine.apply_style_sheet(self._title_label, f"background: transparent; color: #FFFFFF;")
         elif t.is_brutal():
-            self._title_label.setStyleSheet(f"background: transparent; color: #000000; font-weight: 900;")
+            _MkThemeEngine.apply_style_sheet(self._title_label, f"background: transparent; color: #000000; font-weight: 900;")
         else:
-            self._title_label.setStyleSheet(f"background: transparent; color: {fg};")
+            _MkThemeEngine.apply_style_sheet(self._title_label, f"background: transparent; color: {fg};")
 
         if not self.styleSheet():
-            self.setStyleSheet("QFrame { background: transparent; border: none; }")
+            _MkThemeEngine.apply_style_sheet(self, "QFrame { background: transparent; border: none; }")
         self.update()
 
     def paintEvent(self, event):

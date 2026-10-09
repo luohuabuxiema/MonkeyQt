@@ -21,6 +21,7 @@ MkProTable - 现代化前端仪表盘数据表格组件 (Modern Dashboard Pro Ta
 - 底部现代化控制栏：每页行数下拉切换 (10/20/50/100 行/页)、总条数统计与前后翻页器。
 """
 
+from monkeyqt.themes.engine import ThemeEngine as _MkThemeEngine
 import os
 import re
 from typing import List, Dict, Any, Optional
@@ -105,17 +106,17 @@ class MkPageSizeDropdownPopup(MkQWidget):
 
             lbl_txt = QLabel(text, btn)
             lbl_txt.setFont(QFont('-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif', 9, QFont.Weight.Medium if is_selected else QFont.Weight.Normal))
-            lbl_txt.setStyleSheet(f"color: {primary if is_selected else fg}; background: transparent;")
+            _MkThemeEngine.apply_style_sheet(lbl_txt, f"color: {primary if is_selected else fg}; background: transparent;")
             btn_lay.addWidget(lbl_txt)
             btn_lay.addStretch()
 
             if is_selected:
                 lbl_check = QLabel("✓", btn)
                 lbl_check.setFont(QFont('-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', 9, QFont.Weight.Bold))
-                lbl_check.setStyleSheet(f"color: {primary}; background: transparent;")
+                _MkThemeEngine.apply_style_sheet(lbl_check, f"color: {primary}; background: transparent;")
                 btn_lay.addWidget(lbl_check)
 
-            btn.setStyleSheet(f"""
+            _MkThemeEngine.apply_style_sheet(btn, f"""
                 QPushButton {{
                     background-color: {surface_muted if is_selected else 'transparent'};
                     border: none;
@@ -146,7 +147,7 @@ class MkPageSizeDropdownPopup(MkQWidget):
         else:
             self.shadow.setColor(QColor(0, 0, 0, 35))
 
-        self.card.setStyleSheet(f"""
+        _MkThemeEngine.apply_style_sheet(self.card, f"""
             QFrame#MkPageSizeDropdownCard {{
                 background-color: {surface};
                 border: 1px solid {border};
@@ -217,7 +218,7 @@ class MkPageSizeComboBox(QComboBox):
         focus_border = t.get("--input-focus-border", "#FFFFFF" if t.is_dark() else "#0F172A")
         radius = 0 if t.is_brutal() or t.is_pixel() else 6
 
-        self.setStyleSheet(f"""
+        _MkThemeEngine.apply_style_sheet(self, f"""
             QComboBox#MkProTablePageSizeCombo {{
                 background-color: {surface};
                 border: 1px solid {border};
@@ -320,7 +321,7 @@ class MkProTableWidget(QTableWidget):
         """递归绑定悬停事件过滤与透明背景透传"""
         widget.setProperty("table_row_idx", row_idx)
         widget.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
-        widget.setStyleSheet("background: transparent;")
+        _MkThemeEngine.apply_style_sheet(widget, "background: transparent;")
         widget.installEventFilter(self)
         for child in widget.findChildren(QWidget):
             child.setProperty("table_row_idx", row_idx)
@@ -399,7 +400,7 @@ class MkProTableWidget(QTableWidget):
     def contextMenuEvent(self, event):
         # 右键上下文菜单：支持划词复制与整行复制
         menu = QMenu(self)
-        menu.setStyleSheet("""
+        _MkThemeEngine.apply_style_sheet(menu, """
             QMenu {
                 background-color: #18181B;
                 color: #F8FAFC;
@@ -967,8 +968,8 @@ class MkBadgeCell(MkQWidget):
         bg_col = "rgba(255, 255, 255, 0.08)" if is_dark else "#F1F5F9"
         border_col = "rgba(255, 255, 255, 0.16)" if is_dark else "#E2E8F0"
         text_col = "#E2E8F0" if is_dark else "#475569"
-        self.txt_lbl.setStyleSheet(f"color: {text_col}; background: transparent; border: none;")
-        self.pill.setStyleSheet(f"""
+        _MkThemeEngine.apply_style_sheet(self.txt_lbl, f"color: {text_col}; background: transparent; border: none;")
+        _MkThemeEngine.apply_style_sheet(self.pill, f"""
             QFrame#BadgePill {{
                 background-color: {bg_col};
                 border: 1px solid {border_col};
@@ -1159,10 +1160,10 @@ class MkStatusCell(MkQWidget):
         self.txt_label = QLabel(self.display_label, self.pill)
         self.txt_label.setFont(QFont('-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif', 9, QFont.Weight.Medium))
         self.txt_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse | Qt.TextInteractionFlag.TextSelectableByKeyboard)
-        self.txt_label.setStyleSheet(f"color: {colors['text']}; background: transparent; border: none; font-weight: 500;")
+        _MkThemeEngine.apply_style_sheet(self.txt_label, f"color: {colors['text']}; background: transparent; border: none; font-weight: 500;")
         pill_layout.addWidget(self.txt_label)
 
-        self.pill.setStyleSheet(f"""
+        _MkThemeEngine.apply_style_sheet(self.pill, f"""
             QFrame#StatusPill {{
                 background-color: {colors['bg']};
                 border: 1px solid {colors['border']};
@@ -1193,8 +1194,8 @@ class MkStatusCell(MkQWidget):
         self.status_icon._icon_type = icon_name
         self.status_icon.update_color(colors["text"])
         self.txt_label.setText(self.display_label)
-        self.txt_label.setStyleSheet(f"color: {colors['text']}; background: transparent; border: none; font-weight: 500;")
-        self.pill.setStyleSheet(f"""
+        _MkThemeEngine.apply_style_sheet(self.txt_label, f"color: {colors['text']}; background: transparent; border: none; font-weight: 500;")
+        _MkThemeEngine.apply_style_sheet(self.pill, f"""
             QFrame#StatusPill {{
                 background-color: {colors['bg']};
                 border: 1px solid {colors['border']};
@@ -1231,7 +1232,7 @@ class MkTextCell(MkQWidget):
         self.label = MkElidedLabel(self.text_value, self)
         self.label.setAlignment(align_flag)
         self.label.setFont(QFont('-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif', 9))
-        self.label.setStyleSheet("background: transparent; border: none;")
+        _MkThemeEngine.apply_style_sheet(self.label, "background: transparent; border: none;")
         layout.addWidget(self.label, stretch=1)
 
     def enterEvent(self, event):
@@ -1516,7 +1517,7 @@ class MkProTable(MkQWidget):
             self.top_toolbar = QWidget(self)
             self.top_toolbar.setObjectName("ProTableTopToolbar")
             self.top_toolbar.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
-            self.top_toolbar.setStyleSheet("background: transparent;")
+            _MkThemeEngine.apply_style_sheet(self.top_toolbar, "background: transparent;")
             top_layout = QVBoxLayout(self.top_toolbar)
             top_layout.setContentsMargins(0, 0, 0, 0)
             top_layout.setSpacing(12)
@@ -1524,7 +1525,7 @@ class MkProTable(MkQWidget):
             if has_title or has_desc:
                 title_container = QWidget(self.top_toolbar)
                 title_container.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
-                title_container.setStyleSheet("background: transparent;")
+                _MkThemeEngine.apply_style_sheet(title_container, "background: transparent;")
                 title_layout = QVBoxLayout(title_container)
                 title_layout.setContentsMargins(0, 0, 0, 0)
                 title_layout.setSpacing(3)
@@ -1546,7 +1547,7 @@ class MkProTable(MkQWidget):
             if self.searchable:
                 search_container = QWidget(self.top_toolbar)
                 search_container.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
-                search_container.setStyleSheet("background: transparent;")
+                _MkThemeEngine.apply_style_sheet(search_container, "background: transparent;")
                 s_layout = QHBoxLayout(search_container)
                 s_layout.setContentsMargins(0, 2, 0, 4)
 
@@ -1569,7 +1570,7 @@ class MkProTable(MkQWidget):
         self.table_container = QFrame(self)
         self.table_container.setObjectName("ProTableInnerContainer")
         self.table_container.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
-        self.table_container.setStyleSheet("background: transparent; border: none;")
+        _MkThemeEngine.apply_style_sheet(self.table_container, "background: transparent; border: none;")
         tc_layout = QVBoxLayout(self.table_container)
         tc_layout.setContentsMargins(0, 0, 0, 0)
         tc_layout.setSpacing(0)
@@ -1579,7 +1580,7 @@ class MkProTable(MkQWidget):
         self.table_widget.setObjectName("MkProTableWidget")
         self.table_widget.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.table_widget.viewport().setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
-        self.table_widget.viewport().setStyleSheet("background: transparent;")
+        _MkThemeEngine.apply_style_sheet(self.table_widget.viewport(), "background: transparent;")
         self.table_widget.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table_widget.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.table_widget.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
@@ -1608,7 +1609,7 @@ class MkProTable(MkQWidget):
         self.footer_toolbar = QWidget(self)
         self.footer_toolbar.setObjectName("ProTableFooter")
         self.footer_toolbar.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
-        self.footer_toolbar.setStyleSheet("background: transparent;")
+        _MkThemeEngine.apply_style_sheet(self.footer_toolbar, "background: transparent;")
         footer_layout = QHBoxLayout(self.footer_toolbar)
         footer_layout.setContentsMargins(0, 8, 0, 8)
         footer_layout.setSpacing(10)
@@ -2281,7 +2282,7 @@ class MkProTable(MkQWidget):
             btn.setIconSize(QSize(16, 16))
             btn.setToolTip(act.get("tooltip", act_name))
 
-            btn.setStyleSheet(f"""
+            _MkThemeEngine.apply_style_sheet(btn, f"""
                 QPushButton {{
                     background: transparent;
                     border: none;
@@ -2426,7 +2427,7 @@ class MkProTable(MkQWidget):
         )
 
         # 2. 更新表格与表头 QSS (仅整行由 paintEvent 统一悬停高亮，单个单元格不应用任何悬停或选中样式)
-        self.table_widget.setStyleSheet(f"""
+        _MkThemeEngine.apply_style_sheet(self.table_widget, f"""
             QTableWidget#MkProTableWidget,
             QTableWidget {{
                 background-color: transparent;
@@ -2515,11 +2516,11 @@ class MkProTable(MkQWidget):
 
         # 3. 更新标题栏与统计信息文字颜色
         if hasattr(self, "title_label"):
-            self.title_label.setStyleSheet(f"color: {fg}; background: transparent; border: none;")
+            _MkThemeEngine.apply_style_sheet(self.title_label, f"color: {fg}; background: transparent; border: none;")
         if hasattr(self, "desc_label"):
-            self.desc_label.setStyleSheet(f"color: {muted}; background: transparent; border: none;")
-        self.total_label.setStyleSheet(f"color: {muted}; background: transparent; border: none;")
-        self.page_size_label.setStyleSheet(f"color: {muted}; background: transparent; border: none;")
+            _MkThemeEngine.apply_style_sheet(self.desc_label, f"color: {muted}; background: transparent; border: none;")
+        _MkThemeEngine.apply_style_sheet(self.total_label, f"color: {muted}; background: transparent; border: none;")
+        _MkThemeEngine.apply_style_sheet(self.page_size_label, f"color: {muted}; background: transparent; border: none;")
 
         # 4. 更新翻页按钮组 QSS (严格对齐现代设计规范，参考图2)
         btn_radius = 0 if t.is_brutal() or t.is_pixel() else 6
@@ -2554,7 +2555,7 @@ class MkProTable(MkQWidget):
             active_fg = "#FFFFFF"
             active_bd = "1px solid #0F172A"
 
-        self.right_pager.setStyleSheet(f"""
+        _MkThemeEngine.apply_style_sheet(self.right_pager, f"""
             QPushButton {{
                 background-color: transparent;
                 border: 1px solid transparent;

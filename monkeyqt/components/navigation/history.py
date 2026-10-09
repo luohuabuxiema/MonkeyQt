@@ -3,7 +3,10 @@
 
 from __future__ import annotations
 
+from monkeyqt.themes.engine import ThemeEngine as _MkThemeEngine
 from PySide6.QtCore import (
+    QEvent,
+    QTimer,
     QEasingCurve,
     QPoint,
     QParallelAnimationGroup,
@@ -197,8 +200,7 @@ class MkHistoryNavigation(MkQWidget):
         button = QPushButton(self)
         button.setCursor(Qt.CursorShape.PointingHandCursor)
         button.setFixedSize(QSize(30, 30))
-        button.setStyleSheet(
-            """
+        _MkThemeEngine.apply_style_sheet(button, """
             QPushButton {
                 background: transparent;
                 border: none;
@@ -208,8 +210,7 @@ class MkHistoryNavigation(MkQWidget):
             QPushButton:hover { background: palette(midlight); }
             QPushButton:pressed { background: palette(mid); }
             QPushButton:disabled { background: transparent; }
-            """
-        )
+            """)
         return button
 
     def navigate(
@@ -321,4 +322,12 @@ class MkHistoryNavigation(MkQWidget):
 
     def changeEvent(self, event) -> None:
         super().changeEvent(event)
+        if event.type() in (QEvent.Type.PaletteChange, QEvent.Type.ApplicationPaletteChange):
+            # Palette propagation can send many changes in one GUI event turn.
+            if not getattr(self, "_palette_refresh_pending", False):
+                self._palette_refresh_pending = True
+                QTimer.singleShot(0, self._refresh_palette_buttons)
+
+    def _refresh_palette_buttons(self):
+        self._palette_refresh_pending = False
         self._update_buttons()

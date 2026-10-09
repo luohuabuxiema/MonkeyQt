@@ -3,6 +3,7 @@
 @File ：upload.py
 @Desc ：Modern web-style file drag-and-drop upload component for MonkeyQt.
 """
+from monkeyqt.themes.engine import ThemeEngine as _MkThemeEngine
 import os
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
@@ -99,7 +100,7 @@ class MkUpload(MkQWidget):
         if t.is_glow() or t.is_brutal() or t.is_pixel():
             active_border = t.get("--primary", "#409EFF")
 
-        self.setStyleSheet(f"""
+        _MkThemeEngine.apply_style_sheet(self, f"""
             QFrame#MkDropArea {{
                 border: 2px dashed {border};
                 border-radius: 8px;
@@ -272,7 +273,7 @@ class MkUpload(MkQWidget):
             file_name = os.path.basename(file_path)
             name_label = QLabel(file_name)
             name_label.setFont(QFont("Microsoft YaHei", 9))
-            name_label.setStyleSheet("color: #1e293b; background: transparent; border: none;")
+            _MkThemeEngine.apply_style_sheet(name_label, "color: #1e293b; background: transparent; border: none;")
             # Elide text if too long
             name_label.setToolTip(file_path)
             card_layout.addWidget(name_label, stretch=1)
@@ -282,7 +283,7 @@ class MkUpload(MkQWidget):
             size_text = self._format_file_size(size_bytes)
             size_label = QLabel(size_text)
             size_label.setFont(QFont("Microsoft YaHei", 8))
-            size_label.setStyleSheet("color: #64748b; background: transparent; border: none;")
+            _MkThemeEngine.apply_style_sheet(size_label, "color: #64748b; background: transparent; border: none;")
             card_layout.addWidget(size_label)
             
             # Delete button
@@ -290,7 +291,7 @@ class MkUpload(MkQWidget):
             btn_del.setFixedSize(20, 20)
             btn_del.setCursor(Qt.CursorShape.PointingHandCursor)
             btn_del.setIcon(MkPhosphorIcon.get_icon("trash", "#94a3b8", "#ef4444", 14))
-            btn_del.setStyleSheet("QPushButton { border: none; background: transparent; }")
+            _MkThemeEngine.apply_style_sheet(btn_del, "QPushButton { border: none; background: transparent; }")
             btn_del.clicked.connect(lambda checked=False, f=file_path: self.remove_file(f))
             card_layout.addWidget(btn_del)
             

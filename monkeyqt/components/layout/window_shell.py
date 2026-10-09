@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from monkeyqt.themes.engine import ThemeEngine as _MkThemeEngine
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
@@ -44,7 +45,7 @@ class MkTitleBarShell(QFrame):
         surface = t.get("--glass-surface", t.get("--surface", "#FFFFFF")) if t.is_glass() else t.get("--surface", "#FFFFFF")
         hover = t.get("--surface-muted", "#F1F5F9")
         radius = "0px" if t.is_brutal() or t.is_pixel() else t.get("--radius", "6px")
-        self.setStyleSheet(f"""
+        _MkThemeEngine.apply_style_sheet(self, f"""
             QFrame#themedTitleBar {{
                 background: {surface};
                 border-bottom: 1px solid {border};
@@ -97,7 +98,7 @@ class MkWindowShell(QFrame):
         surface = t.get("--glass-surface", t.get("--surface", "#FFFFFF")) if t.is_glass() else t.get("--surface", "#FFFFFF")
         radius = "0px" if t.is_brutal() or t.is_pixel() else t.get("--radius", "6px")
         border_rule = "2px solid #000000" if t.is_brutal() or t.is_pixel() else f"1px solid {border}"
-        self.setStyleSheet(f"""
+        _MkThemeEngine.apply_style_sheet(self, f"""
             QFrame#themedWindowShell {{
                 background: {surface};
                 border: {border_rule};

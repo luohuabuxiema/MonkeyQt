@@ -7,6 +7,7 @@ MonkeyQt 列表选择项交互组件与多选卡片组合组件
 完美自适应 MonkeyQt 全部 68 种主题风格。
 """
 
+from monkeyqt.themes.engine import ThemeEngine as _MkThemeEngine
 from typing import Any, Dict, List, Optional, Union
 from PySide6.QtCore import Qt, Signal, QSize, QPointF
 from PySide6.QtGui import QColor, QFont, QIcon, QPixmap, QPainter
@@ -56,7 +57,7 @@ class MkItemIndicator(QWidget):
         self._icon: Optional[QIcon] = None
         self.setFixedSize(size, size)
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
-        self.setStyleSheet("background: transparent;")
+        _MkThemeEngine.apply_style_sheet(self, "background: transparent;")
 
     def set_dot(self, color: Union[str, QColor], diameter: int = 10):
         self._dot_color = QColor(color) if isinstance(color, str) else color
@@ -193,7 +194,7 @@ class MkItemActionButton(QToolButton):
 
         curr_bg = hover_bg if self._is_hovered else normal_bg
 
-        self.setStyleSheet(f"""
+        _MkThemeEngine.apply_style_sheet(self, f"""
             QToolButton {{
                 border: none;
                 border-radius: 6px;
@@ -310,7 +311,7 @@ class MkSelectItem(QFrame):
 
         # 3. 文本列（主标题 + 副标题/指标）
         self.text_container = QWidget(self)
-        self.text_container.setStyleSheet("background: transparent;")
+        _MkThemeEngine.apply_style_sheet(self.text_container, "background: transparent;")
         text_layout = QVBoxLayout(self.text_container)
         text_layout.setContentsMargins(0, 0, 0, 0)
         text_layout.setSpacing(3)
@@ -320,14 +321,14 @@ class MkSelectItem(QFrame):
         title_font.setPointSize(10)
         title_font.setWeight(QFont.Weight.Normal)
         self.lbl_title.setFont(title_font)
-        self.lbl_title.setStyleSheet("background: transparent;")
+        _MkThemeEngine.apply_style_sheet(self.lbl_title, "background: transparent;")
         text_layout.addWidget(self.lbl_title)
 
         self.lbl_subtitle = QLabel(self._subtitle_text, self.text_container)
         sub_font = QFont()
         sub_font.setPointSize(9)
         self.lbl_subtitle.setFont(sub_font)
-        self.lbl_subtitle.setStyleSheet("background: transparent;")
+        _MkThemeEngine.apply_style_sheet(self.lbl_subtitle, "background: transparent;")
         self.lbl_subtitle.setVisible(bool(self._subtitle_text))
         text_layout.addWidget(self.lbl_subtitle)
 
@@ -432,7 +433,7 @@ class MkSelectItem(QFrame):
             hover_bg = "#F8F8F8" if not self._is_checked else "#F4F4F5"
             hover_border = "#E4E4E7" if self._is_checked else "transparent"
 
-        self.setStyleSheet(f"""
+        _MkThemeEngine.apply_style_sheet(self, f"""
             #MkSelectItem {{
                 background-color: {bg};
                 border: 1px solid {active_border};
@@ -448,8 +449,8 @@ class MkSelectItem(QFrame):
             }}
         """)
 
-        self.lbl_title.setStyleSheet(f"color: {title_color}; background: transparent; font-weight: normal;")
-        self.lbl_subtitle.setStyleSheet(f"color: {muted}; background: transparent;")
+        _MkThemeEngine.apply_style_sheet(self.lbl_title, f"color: {title_color}; background: transparent; font-weight: normal;")
+        _MkThemeEngine.apply_style_sheet(self.lbl_subtitle, f"color: {muted}; background: transparent;")
 
         if self._show_arrow:
             arrow_icon = _resolve_icon("caret-right", color=muted, size=13)
@@ -458,7 +459,7 @@ class MkSelectItem(QFrame):
                 self.btn_arrow.setIconSize(QSize(13, 13))
             arrow_bg = "#2E2E32" if is_dark else "#FFFFFF"
             arrow_hover = "rgba(255, 255, 255, 0.18)" if is_dark else "#F1F5F9"
-            self.btn_arrow.setStyleSheet(f"""
+            _MkThemeEngine.apply_style_sheet(self.btn_arrow, f"""
                 QToolButton {{
                     border: none;
                     border-radius: 5px;
@@ -663,8 +664,8 @@ class MkSelectGroupHeader(QFrame):
         if arrow_icon:
             self.lbl_arrow.setPixmap(arrow_icon.pixmap(12, 12))
 
-        self.lbl_title.setStyleSheet(f"color: {fg}; background: transparent;")
-        self.lbl_count.setStyleSheet(f"""
+        _MkThemeEngine.apply_style_sheet(self.lbl_title, f"color: {fg}; background: transparent;")
+        _MkThemeEngine.apply_style_sheet(self.lbl_count, f"""
             background-color: {count_bg};
             color: {muted};
             border-radius: 9px;
@@ -673,7 +674,7 @@ class MkSelectGroupHeader(QFrame):
         """)
 
         hover_bg = "rgba(255, 255, 255, 0.04)" if is_dark else "#F8FAFC"
-        self.setStyleSheet(f"""
+        _MkThemeEngine.apply_style_sheet(self, f"""
             #MkSelectGroupHeader {{
                 background-color: transparent;
                 border: none;
@@ -766,7 +767,7 @@ class MkSelectCard(QFrame):
         self.header_layout.setSpacing(8)
 
         self.lbl_hdr_icon = QLabel(self)
-        self.lbl_hdr_icon.setStyleSheet("background: transparent;")
+        _MkThemeEngine.apply_style_sheet(self.lbl_hdr_icon, "background: transparent;")
         self.header_layout.addWidget(self.lbl_hdr_icon)
 
         self.lbl_hdr_title = QLabel(self._title_text, self)
@@ -774,7 +775,7 @@ class MkSelectCard(QFrame):
         hdr_font.setPointSize(11)
         hdr_font.setWeight(QFont.Weight.Bold)
         self.lbl_hdr_title.setFont(hdr_font)
-        self.lbl_hdr_title.setStyleSheet("background: transparent;")
+        _MkThemeEngine.apply_style_sheet(self.lbl_hdr_title, "background: transparent;")
         self.header_layout.addWidget(self.lbl_hdr_title)
 
         self.header_layout.addStretch()
@@ -813,7 +814,7 @@ class MkSelectCard(QFrame):
         # 空状态占位提示
         self.lbl_empty = QLabel("暂无数据项", self.list_container)
         self.lbl_empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.lbl_empty.setStyleSheet("color: #71717A; padding: 20px; font-size: 11px;")
+        _MkThemeEngine.apply_style_sheet(self.lbl_empty, "color: #71717A; padding: 20px; font-size: 11px;")
         self.list_layout.addWidget(self.lbl_empty)
 
         self.list_layout.addStretch()
@@ -822,7 +823,7 @@ class MkSelectCard(QFrame):
 
         # ── 4. 底部扩展插槽 ──
         self.bottom_slot_widget = QWidget(self)
-        self.bottom_slot_widget.setStyleSheet("background: transparent;")
+        _MkThemeEngine.apply_style_sheet(self.bottom_slot_widget, "background: transparent;")
         self.bottom_slot_layout = QVBoxLayout(self.bottom_slot_widget)
         self.bottom_slot_layout.setContentsMargins(0, 0, 0, 0)
         self.bottom_slot_layout.setSpacing(6)
@@ -838,7 +839,7 @@ class MkSelectCard(QFrame):
 
         # 卡片外框整体样式（参考图三: 优雅柔和的面板背景）
         card_bg = "#121214" if is_dark else "#FAFAFA"
-        self.setStyleSheet(f"""
+        _MkThemeEngine.apply_style_sheet(self, f"""
             #MkSelectCard {{
                 background-color: {card_bg};
                 border: 1px solid {border};
@@ -853,7 +854,7 @@ class MkSelectCard(QFrame):
             }}
         """)
 
-        self.lbl_hdr_title.setStyleSheet(f"color: {fg}; font-weight: 700; background: transparent;")
+        _MkThemeEngine.apply_style_sheet(self.lbl_hdr_title, f"color: {fg}; font-weight: 700; background: transparent;")
 
         if self._icon_name:
             hdr_icon = _resolve_icon(self._icon_name, color=fg, size=18)
@@ -866,7 +867,7 @@ class MkSelectCard(QFrame):
             self.lbl_hdr_icon.hide()
 
         # 简约文本计数样式（告别经典蓝色胶囊）
-        self.lbl_badge.setStyleSheet(f"""
+        _MkThemeEngine.apply_style_sheet(self.lbl_badge, f"""
             background: transparent;
             color: {muted};
             font-size: 13px;

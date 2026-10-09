@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from monkeyqt.themes.engine import ThemeEngine as _MkThemeEngine
 from PySide6.QtWidgets import QPushButton, QWidget, QGraphicsDropShadowEffect
 from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve, Property, QRect
 from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QPainterPath, QFont, QLinearGradient, QIcon
@@ -91,7 +92,6 @@ class MkButton(QPushButton):
             if hasattr(self, "_liquid_timer") and self._liquid_timer.isActive():
                 self._liquid_timer.stop()
 
-        self.setStyleSheet("QPushButton { background: transparent; border: none; outline: none; }")
         self.setGraphicsEffect(None)
         self._apply_size_qss()
         self.update()
@@ -209,8 +209,10 @@ class MkButton(QPushButton):
             size_qss = "padding: 12px 19px; font-size: 14px;"
         elif getattr(self, "_mk_size", "default") == "small":
             size_qss = "padding: 5px 11px; font-size: 12px; border-radius: 3px;"
+        qss = "QPushButton { background: transparent; border: none; outline: none; }"
         if size_qss:
-            self.setStyleSheet(self.styleSheet() + f"\nQPushButton {{ {size_qss} }}")
+            qss += f"\nQPushButton {{ {size_qss} }}"
+        _MkThemeEngine.apply_style_sheet(self, qss)
 
     def paintEvent(self, event):
         t = ThemeEngine

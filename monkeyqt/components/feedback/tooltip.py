@@ -135,7 +135,10 @@ class MkTooltipPopover(MkQWidget):
     def cancel_open(cls):
         """Cancel any pending delayed popover open."""
         if cls._instance:
-            cls._instance._open_timer.stop()
+            try:
+                cls._instance._open_timer.stop()
+            except (RuntimeError, AttributeError):
+                pass
             cls._instance._pending_target = None
             cls._instance._pending_text = None
             cls._instance._pending_theme = None
@@ -145,15 +148,21 @@ class MkTooltipPopover(MkQWidget):
         """Dismiss the popover immediately and reset target widget hover state."""
         if cls._instance:
             cls.cancel_open()
-            cls._instance._close_timer.stop()
-            if cls._instance.isVisible():
-                cls._instance.hide()
+            try:
+                cls._instance._close_timer.stop()
+            except (RuntimeError, AttributeError):
+                pass
+            try:
+                if cls._instance.isVisible():
+                    cls._instance.hide()
+            except (RuntimeError, AttributeError):
+                pass
             if cls._instance._target_widget:
                 try:
                     if hasattr(cls._instance._target_widget, "_update_appearance"):
                         cls._instance._target_widget._is_hovered = False
                         cls._instance._target_widget._update_appearance()
-                except RuntimeError:
+                except (RuntimeError, AttributeError):
                     pass
 
     @classmethod
@@ -162,13 +171,19 @@ class MkTooltipPopover(MkQWidget):
         if cls._instance:
             cls.cancel_open()
             if cls._instance.isVisible():
-                cls._instance._close_timer.start(delay_ms)
+                try:
+                    cls._instance._close_timer.start(delay_ms)
+                except (RuntimeError, AttributeError):
+                    pass
 
     @classmethod
     def cancel_close(cls):
         """Cancel any pending auto-close."""
         if cls._instance:
-            cls._instance._close_timer.stop()
+            try:
+                cls._instance._close_timer.stop()
+            except (RuntimeError, AttributeError):
+                pass
 
     def _check_auto_close(self):
         """Grace timer callback: close popover if cursor is outside both anchor and popover."""
@@ -193,6 +208,7 @@ class MkTooltipPopover(MkQWidget):
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
         self._target_widget: Optional[QWidget] = None
@@ -386,6 +402,10 @@ class MkTooltipPopover(MkQWidget):
             target_w = 360
         self.label.setFixedWidth(int(target_w))
         self.adjustSize()
+
+        # 若富文本包含可点击链接，则恢复鼠标响应以供点击；常规纯文本气泡则开启完全穿透，杜绝邻近紧凑按钮遮挡与卡顿
+        has_interactive_link = bool(re.search(r"<a\s+[^>]*href", formatted))
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, not has_interactive_link)
 
     def enterEvent(self, event):
         self.cancel_close()

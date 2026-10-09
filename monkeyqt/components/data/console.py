@@ -10,6 +10,7 @@ MonkeyQt Console Component — 现代化前端/终端风格控制台日志组件
 - 彻底解决内边距截断、重影与滚动条伪影问题。
 """
 
+from monkeyqt.themes.engine import ThemeEngine as _MkThemeEngine
 import sys
 import os
 import datetime
@@ -78,7 +79,7 @@ class _ConsoleFilterPill(QPushButton):
 
         hover_fg = readable_text(active_bg) if is_color(active_bg) else "#FFFFFF"
 
-        self.setStyleSheet(f"""
+        _MkThemeEngine.apply_style_sheet(self, f"""
             QPushButton {{
                 background-color: {cur_bg};
                 color: {cur_fg};
@@ -120,7 +121,7 @@ class _ConsoleToolButton(QToolButton):
         cur_bg = active_bg if self.is_active_toggle else "transparent"
         
         self.setIcon(MkPhosphorIcon.get_icon(self.icon_name, cur_fg, hover_color="#FFFFFF" if is_dark else "#0F172A", size=14))
-        self.setStyleSheet(f"""
+        _MkThemeEngine.apply_style_sheet(self, f"""
             QToolButton {{
                 background-color: {cur_bg};
                 border: none;
@@ -485,7 +486,7 @@ class MkConsole(MkQWidget):
 
         top_rad = max(0, border_radius - 1)
 
-        self.setStyleSheet(f"""
+        _MkThemeEngine.apply_style_sheet(self, f"""
             MkConsole {{
                 background-color: {card_bg};
                 border: {border_width}px solid {border};
@@ -495,7 +496,7 @@ class MkConsole(MkQWidget):
 
         divider_css = f"border-bottom: {border_width}px solid {border};" if self.show_divider else "border-bottom: none;"
 
-        self.header_frame.setStyleSheet(f"""
+        _MkThemeEngine.apply_style_sheet(self.header_frame, f"""
             QFrame#MkConsoleHeader {{
                 background-color: {header_bg};
                 border: none;
@@ -510,7 +511,7 @@ class MkConsole(MkQWidget):
             }}
         """)
 
-        self.title_label.setStyleSheet(f"color: {fg_main}; background: transparent; border: none;")
+        _MkThemeEngine.apply_style_sheet(self.title_label, f"color: {fg_main}; background: transparent; border: none;")
         self.title_icon.setPixmap(MkPhosphorIcon.get_pixmap("terminal-window", fg_muted, 16))
 
         # 动态同步过滤徽章主题样式
@@ -525,7 +526,7 @@ class MkConsole(MkQWidget):
             if k in pill_defs:
                 p.update_colors(pill_defs[k])
 
-        self.search_input.setStyleSheet(f"""
+        _MkThemeEngine.apply_style_sheet(self.search_input, f"""
             QLineEdit {{
                 background-color: {search_bg};
                 color: {fg_main};
@@ -540,7 +541,7 @@ class MkConsole(MkQWidget):
         """)
 
         # 定制现代化无缝超细滚动条 (消除 Windows 灰底与溢出伪影)
-        self.text_edit.setStyleSheet(f"""
+        _MkThemeEngine.apply_style_sheet(self.text_edit, f"""
             QTextEdit#MkConsoleEditor {{
                 background-color: {editor_bg};
                 color: {fg_main};

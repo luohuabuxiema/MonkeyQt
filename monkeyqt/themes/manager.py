@@ -167,12 +167,14 @@ class _ThemeAutoApplier(QObject):
         self._installed_app: QApplication | None = None
 
     def eventFilter(self, obj, event):
+        event_type = event.type()
+        if event_type == QEvent.Type.Show and isinstance(obj, QWidget):
+            ThemeEngine.refresh_widget_palette(obj)
         if not self.enabled:
             return False
         if not ThemeEngine.current_theme():
             return False
 
-        event_type = event.type()
         if event_type == QEvent.Type.Show and isinstance(obj, QWidget):
             # Apply only after construction is complete. Inspecting ChildAdded
             # objects during native Qt widget construction can expose a base

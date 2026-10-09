@@ -5,6 +5,7 @@
 """
 from __future__ import annotations
 
+from monkeyqt.themes.engine import ThemeEngine as _MkThemeEngine
 from typing import Optional
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QScrollArea, QFrame, QWidget, QStackedWidget
@@ -108,7 +109,7 @@ class MkScrollArea(QScrollArea):
             width=self._scrollbar_width,
             radius=self._scrollbar_width // 2,
         )
-        self.setStyleSheet(f"""
+        _MkThemeEngine.apply_style_sheet(self, f"""
             QScrollArea#MkScrollArea {{
                 background: transparent;
                 border: none;

@@ -33,6 +33,8 @@ from .components.form.multicombobox import MkMultiComboBox
 
 # Data
 from .components.data.avatar import MkAvatar
+from .components.data.table import MkTable
+from .components.data.data_table import MkDataTable
 from .components.data.pro_table import MkProTable
 from .components.data.image_compare import MkImageCompare
 from .components.data.image_split import MkImageSplit
@@ -79,7 +81,7 @@ from .themes import (
     modern_scrollbar_qss,
 )
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 
 __all__ = [
     "MkButton",
@@ -113,6 +115,8 @@ __all__ = [
     "MkMessage",
     "MkUpload",
     "MkAvatar",
+    "MkTable",
+    "MkDataTable",
     "MkProTable",
     "MkImageCompare",
     "MkImageSplit",

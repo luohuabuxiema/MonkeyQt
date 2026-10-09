@@ -4,7 +4,7 @@ MonkeyQt Theme Engine — 全局风格引擎
 管理 68 套 Design Token 的切换与注入
 """
 
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QWidget
 from PySide6.QtCore import QObject, Signal, QTimer
 from .tokens import THEME_TOKENS, THEME_NAMES
 from .style_utils import darken, is_color, lighten, luminance, parse_px, qss_color, readable_text
@@ -30,6 +30,62 @@ class ThemeEngine(QObject):
     _current_tokens: dict = {}
     _overrides: dict = {}
     _qss_cache: dict = {}
+    _palette_theme_enabled = False
+    _palette_theme_active = False
+    _palette_app = None
+    _original_palette = None
+    _active_palette = None
+    _palette_qss_dirty = False
+
+    @classmethod
+    def enable_palette_theme(cls, enabled: bool = True) -> None:
+        """Opt into fixed geometry and palette-backed light/dark switching.
+
+        Call before creating widgets. Other theme families use the normal QSS
+        path, and returning to light/dark installs the palette stylesheet once.
+        """
+        enabled = bool(enabled)
+        if cls._palette_theme_enabled == enabled:
+            return
+        cls._palette_theme_enabled = enabled
+        app = QApplication.instance()
+        if not enabled and cls._palette_theme_active:
+            cls.set_theme(cls.current_theme())
+        cls._palette_theme_active = False
+        cls._palette_app = None
+        if enabled:
+            from .manager import _manager
+            _manager()
+
+    @classmethod
+    def refresh_widget_palette(cls, widget) -> None:
+        """Refresh one widget's cached palette brushes; hidden widgets wait for Show."""
+        if not cls._palette_theme_active or cls._active_palette is None:
+            return
+        if getattr(widget, "_mk_palette_version", None) == cls._theme_version:
+            return
+        if widget.property("mk_theme_disabled"):
+            return
+        widget._mk_palette_version = cls._theme_version
+        style = widget.style()
+        style.unpolish(widget)
+        widget.setPalette(cls._active_palette)
+        style.polish(widget)
+        QWidget.update(widget)
+
+    @classmethod
+    def apply_style_sheet(cls, widget, qss: str) -> None:
+        """Avoid repolishing unchanged local styles during a color update."""
+        if not cls._palette_theme_active or widget.property("mk_theme_disabled"):
+            widget.setStyleSheet(qss)
+            return
+        if cls._palette_theme_active:
+            from .palette_theme import palette_stylesheet
+            qss = palette_stylesheet(qss)
+        if widget.styleSheet() != qss:
+            if cls._palette_theme_active and cls._active_palette is not None:
+                widget.setPalette(cls._active_palette)
+            widget.setStyleSheet(qss)
 
     _theme_version: int = 1
 
@@ -50,7 +106,7 @@ class ThemeEngine(QObject):
 
     @classmethod
     def set_theme(cls, style_name: str) -> bool:
-        """切换到指定风格，由 Qt 原生 C++ 树下发全局 QSS 并触发毫秒级重绘"""
+        """切换风格；明暗快速模式复用 QSS，只刷新可见控件的颜色缓存。"""
         if not style_name or style_name in ("__monkeyqt_default__", "MonkeyQt Default"):
             return cls.clear_theme()
 
@@ -66,6 +122,10 @@ class ThemeEngine(QObject):
         if style_name not in THEME_TOKENS:
             return False
 
+        from .palette_theme import THEMES, make_palette, palette_stylesheet
+        palette_mode = cls._palette_theme_enabled and style_name in THEMES
+        was_palette_mode = cls._palette_theme_active
+        cls._palette_theme_active = palette_mode
         cls._current_name = style_name
         cls._current_tokens = cls._normalize_tokens(THEME_TOKENS[style_name])
         cls._theme_version += 1
@@ -82,8 +142,32 @@ class ThemeEngine(QObject):
 
         try:
             if app:
-                qss = cls._build_global_qss()
-                app.setStyleSheet(qss)
+                if palette_mode:
+                    if cls._palette_app is not app:
+                        cls._original_palette = app.palette()
+                    palette = make_palette(cls.current_tokens(), cls.is_dark(), cls._original_palette)
+                    cls._active_palette = palette
+                    app.setPalette(palette)
+                    if not was_palette_mode or cls._palette_app is not app or cls._palette_qss_dirty:
+                        app.setStyleSheet(palette_stylesheet(cls._build_global_qss()))
+                        cls._palette_app = app
+                        cls._palette_qss_dirty = False
+                    # QSS installs explicit palette roles on styled widgets.
+                    # Updating the application palette alone cannot override
+                    # those roles. Refresh visible widgets' cached brushes only;
+                    # hidden pages are refreshed by the existing Show filter.
+                    for widget in app.allWidgets():
+                        if widget.isVisible():
+                            cls.refresh_widget_palette(widget)
+                else:
+                    if was_palette_mode and cls._original_palette is not None:
+                        app.setPalette(cls._original_palette)
+                        for widget in app.allWidgets():
+                            if hasattr(widget, "_mk_palette_version"):
+                                widget.setPalette(cls._original_palette)
+                    qss = cls._build_global_qss()
+                    if app.styleSheet() != qss:
+                        app.setStyleSheet(qss)
 
             # 触发信号
             cls.instance().themeChanged.emit(style_name)
@@ -100,6 +184,8 @@ class ThemeEngine(QObject):
     @classmethod
     def clear_theme(cls) -> bool:
         """恢复 MonkeyQt 内置默认样式，应用默认的 QSS。"""
+        if cls._palette_theme_enabled:
+            return cls.set_theme(cls.DEFAULT_THEME_NAME)
         cls._current_name = cls.DEFAULT_THEME_NAME
         cls._current_tokens = cls._normalize_tokens(cls._default_tokens)
         cls._theme_version += 1
@@ -162,6 +248,7 @@ class ThemeEngine(QObject):
         """设置全局 Token 重写（如单独控制侧边栏/标题栏颜色）"""
         cls._overrides[key] = value
         cls._qss_cache.clear()
+        cls._palette_qss_dirty = True
         if cls._current_name:
             cls.set_theme(cls._current_name)
 
@@ -173,6 +260,7 @@ class ThemeEngine(QObject):
         for key, value in (updates or {}).items():
             cls._overrides[key] = value
         cls._qss_cache.clear()
+        cls._palette_qss_dirty = True
         if refresh and cls._current_name:
             cls.set_theme(cls._current_name)
 
@@ -181,6 +269,7 @@ class ThemeEngine(QObject):
         """清除所有全局 Token 重写"""
         cls._overrides.clear()
         cls._qss_cache.clear()
+        cls._palette_qss_dirty = True
         if cls._current_name:
             cls.set_theme(cls._current_name)
 

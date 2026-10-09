@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from monkeyqt.themes.engine import ThemeEngine as _MkThemeEngine
 import time
 from PySide6.QtCore import Qt, QPoint, QRect, QRectF, QEvent
 from PySide6.QtGui import QColor, QFont, QPainter, QPen, QBrush, QPainterPath, QKeyEvent
@@ -105,7 +106,7 @@ class MkDropdownPopup(MkQWidget):
             card_radius = radius
             card_bg = surface
 
-        self.card.setStyleSheet(f"""
+        _MkThemeEngine.apply_style_sheet(self.card, f"""
             QFrame#mkDropdownCard {{
                 background-color: {card_bg};
                 border: {card_border};
@@ -116,7 +117,7 @@ class MkDropdownPopup(MkQWidget):
         hover_bg = t.get('--surface-muted', '#f1f5f9') if not is_dark else 'rgba(255, 255, 255, 0.08)'
 
         if self.view is not None:
-            self.view.setStyleSheet(f"""
+            _MkThemeEngine.apply_style_sheet(self.view, f"""
                 QListView {{
                     background-color: transparent;
                     border: none;
@@ -342,7 +343,7 @@ class MkComboBox(QComboBox):
         selection_fg = readable_text(primary)
 
         if t.is_neumorphic() or t.is_glass() or t.is_brutal() or t.is_glow() or t.is_pixel():
-            self.setStyleSheet(f"""
+            _MkThemeEngine.apply_style_sheet(self, f"""
                 QComboBox {{
                     background: transparent;
                     border: none;
@@ -354,7 +355,7 @@ class MkComboBox(QComboBox):
                 QComboBox::down-arrow {{ image: none; width: 0; height: 0; }}
             """)
         else:
-            self.setStyleSheet(f"""
+            _MkThemeEngine.apply_style_sheet(self, f"""
                 QComboBox {{
                     background: transparent;
                     border: none;

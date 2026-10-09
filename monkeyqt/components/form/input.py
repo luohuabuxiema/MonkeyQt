@@ -1,3 +1,4 @@
+from monkeyqt.themes.engine import ThemeEngine as _MkThemeEngine
 from PySide6.QtWidgets import QLineEdit, QLabel, QPushButton, QHBoxLayout, QWidget
 from PySide6.QtCore import Qt, QSize, QPoint
 from PySide6.QtGui import QAction, QFocusEvent
@@ -36,7 +37,7 @@ class MkInput(QLineEdit):
             self.leading_label = QLabel(self)
             self.leading_label.setFixedSize(16, 16)
             self.leading_label.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-            self.leading_label.setStyleSheet("background: transparent;")
+            _MkThemeEngine.apply_style_sheet(self.leading_label, "background: transparent;")
             
         # 2. Setup trailing password toggle eye button
         if self.is_password:
@@ -49,7 +50,7 @@ class MkInput(QLineEdit):
             self.password_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
             self.password_btn.setAutoDefault(False)
             self.password_btn.setDefault(False)
-            self.password_btn.setStyleSheet("""
+            _MkThemeEngine.apply_style_sheet(self.password_btn, """
                 QPushButton {
                     background: transparent;
                     border: none;
@@ -81,7 +82,7 @@ class MkInput(QLineEdit):
         focus_border = t.get("--input-focus-border", "#FFFFFF" if t.is_dark() else "#0F172A")
         hover_border = t.get("--input-hover-border", "rgba(255, 255, 255, 0.40)" if t.is_dark() else "#94A3B8")
         
-        self.setStyleSheet(f"""
+        _MkThemeEngine.apply_style_sheet(self, f"""
             QLineEdit {{
                 background-color: {surface};
                 border: {border_rule};

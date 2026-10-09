@@ -18,6 +18,7 @@ Features:
 """
 from __future__ import annotations
 
+from monkeyqt.themes.engine import ThemeEngine as _MkThemeEngine
 from typing import Optional, List, Dict, Any, Union
 from PySide6.QtWidgets import (
     QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QLabel,
@@ -86,7 +87,7 @@ class MkSegmentedBadge(QLabel):
         font_sz = 9 if self.size_mode == "small" else (11 if self.size_mode == "large" else 10)
         top_margin = 2 if self.size_mode == "small" else (5 if self.size_mode == "large" else 4)
 
-        self.setStyleSheet(f"""
+        _MkThemeEngine.apply_style_sheet(self, f"""
             QLabel {{
                 background: transparent;
                 background-color: transparent;
@@ -294,7 +295,7 @@ class MkSegmentedButton(QPushButton):
             weight = "600" if self._is_active else "500"
 
         cur_color = active_color if self._is_active else inactive_color
-        self._text_label.setStyleSheet(f"""
+        _MkThemeEngine.apply_style_sheet(self._text_label, f"""
             QLabel {{
                 color: {cur_color};
                 font-weight: {weight};
@@ -307,7 +308,7 @@ class MkSegmentedButton(QPushButton):
         if self._is_active:
             hover_bg = "transparent"
 
-        self.setStyleSheet(f"""
+        _MkThemeEngine.apply_style_sheet(self, f"""
             QPushButton {{
                 background: transparent;
                 border: none;
@@ -399,7 +400,7 @@ class MkSegmentedIndicator(QFrame):
                 self._shadow_effect.setOffset(0, 2)
                 self._shadow_effect.setColor(QColor(0, 0, 0, 22))
 
-        self.setStyleSheet(f"""
+        _MkThemeEngine.apply_style_sheet(self, f"""
             QFrame {{
                 background-color: {bg};
                 border: {bd};
@@ -756,7 +757,7 @@ class MkSegmented(QWidget):
             bg = "#F1F5F9"
             bd = "1px solid rgba(0, 0, 0, 0.05)"
 
-        self.setStyleSheet(f"""
+        _MkThemeEngine.apply_style_sheet(self, f"""
             MkSegmented {{
                 background-color: {bg};
                 border: {bd};
@@ -821,7 +822,7 @@ class MkSegmentedTabs(MkQWidget):
 
         # 2. Content Stack Area (MkStackedWidget with adaptive geometry)
         self._stack = MkStackedWidget(self)
-        self._stack.setStyleSheet("QStackedWidget { background: transparent; border: none; }")
+        _MkThemeEngine.apply_style_sheet(self._stack, "QStackedWidget { background: transparent; border: none; }")
         self.inner_layout.addWidget(self._stack, stretch=1)
 
         self._tabs_map: Dict[str, QWidget] = {}

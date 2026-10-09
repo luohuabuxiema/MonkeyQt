@@ -3,6 +3,7 @@
 @File ：window.py
 @Desc ：Custom title bar and frameless window components for MonkeyQt.
 """
+from monkeyqt.themes.engine import ThemeEngine as _MkThemeEngine
 import sys
 from typing import Optional, List, Dict, Any, Union
 
@@ -41,9 +42,7 @@ class MkTitleBarCloseButton(QPushButton):
         self._icon_hover = QIcon()
         self.setAttribute(Qt.WidgetAttribute.WA_Hover, True)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setStyleSheet(
-            "QPushButton#TitleBarCloseButton { background: transparent; border: none; margin: 0px; padding: 0px; }"
-        )
+        _MkThemeEngine.apply_style_sheet(self, "QPushButton#TitleBarCloseButton { background: transparent; border: none; margin: 0px; padding: 0px; }")
 
     def set_icons(self, normal_icon: QIcon, hover_icon: QIcon = None):
         self._icon_normal = normal_icon
@@ -273,11 +272,11 @@ class MkTitleBar(MkQWidget):
             # Decorative: Show a green ready status indicator and a code-style path
             status_dot = QFrame()
             status_dot.setFixedSize(8, 8)
-            status_dot.setStyleSheet("background-color: #2ec872; border-radius: 4px;")
+            _MkThemeEngine.apply_style_sheet(status_dot, "background-color: #2ec872; border-radius: 4px;")
             self.center_layout.addWidget(status_dot)
             
             env_label = QLabel("[IDA Pro - Active Session]")
-            env_label.setStyleSheet("color: #858585; font-family: Consolas; font-size: 11px;")
+            _MkThemeEngine.apply_style_sheet(env_label, "color: #858585; font-family: Consolas; font-size: 11px;")
             self.center_layout.addWidget(env_label)
             self.center_layout.addStretch()
             
@@ -293,7 +292,7 @@ class MkTitleBar(MkQWidget):
             search_input = QLineEdit()
             search_input.setPlaceholderText("输入设备识别码以远程控制...")
             search_input.setFixedWidth(220)
-            search_input.setStyleSheet("""
+            _MkThemeEngine.apply_style_sheet(search_input, """
                 QLineEdit {
                     background-color: #2b2d30;
                     border: 1px solid #3f4247;
@@ -323,7 +322,7 @@ class MkTitleBar(MkQWidget):
             search_input = QLineEdit()
             search_input.setPlaceholderText("🔍 搜索音乐、歌手、歌单...")
             search_input.setFixedWidth(260)
-            search_input.setStyleSheet("""
+            _MkThemeEngine.apply_style_sheet(search_input, """
                 QLineEdit {
                     background-color: rgba(255, 255, 255, 0.1);
                     border: none;
@@ -442,7 +441,7 @@ class MkTitleBar(MkQWidget):
         tr_radius = window_radius
 
         self.setObjectName("MkTitleBar")
-        self.setStyleSheet(f"""
+        _MkThemeEngine.apply_style_sheet(self, f"""
             QWidget#MkTitleBar {{
                 background-color: {bg};
                 color: {text};
@@ -513,7 +512,7 @@ class MkTitleBar(MkQWidget):
             is_sidebar_full = True
         tl_radius = 0 if is_sidebar_full else window_radius
         tr_radius = window_radius
-        self.setStyleSheet(f"""
+        _MkThemeEngine.apply_style_sheet(self, f"""
             QWidget#MkTitleBar {{
                 background-color: {bg};
                 color: {text};
@@ -554,15 +553,15 @@ class MkTitleBar(MkQWidget):
             self.btn_min.setIcon(QIcon())
             self.btn_max.setIcon(QIcon())
             
-            self.btn_close.setStyleSheet(f"""
+            _MkThemeEngine.apply_style_sheet(self.btn_close, f"""
                 QPushButton {{ background-color: #ff5f56; border: none; border-radius: 6px; }}
                 QPushButton:hover {{ background-color: #e0443e; }}
             """)
-            self.btn_min.setStyleSheet(f"""
+            _MkThemeEngine.apply_style_sheet(self.btn_min, f"""
                 QPushButton {{ background-color: #ffbd2e; border: none; border-radius: 6px; }}
                 QPushButton:hover {{ background-color: #dfa220; }}
             """)
-            self.btn_max.setStyleSheet(f"""
+            _MkThemeEngine.apply_style_sheet(self.btn_max, f"""
                 QPushButton {{ background-color: #27c93f; border: none; border-radius: 6px; }}
                 QPushButton:hover {{ background-color: #1aab30; }}
             """)
@@ -587,22 +586,22 @@ class MkTitleBar(MkQWidget):
             window_radius = 0 if is_max else (getattr(self.parent_window, "_border_radius", 8) if self.parent_window else 8)
             pressed_color = "rgba(255, 255, 255, 0.14)" if self._is_dark_theme() else "rgba(0, 0, 0, 0.12)"
             
-            self.btn_min.setStyleSheet(f"""
+            _MkThemeEngine.apply_style_sheet(self.btn_min, f"""
                 QPushButton {{ background-color: transparent; border: none; border-radius: 0px; margin: 0px; padding: 0px; }}
                 QPushButton:hover {{ background-color: {hover_color}; }}
                 QPushButton:pressed {{ background-color: {pressed_color}; }}
             """)
-            self.btn_max.setStyleSheet(f"""
+            _MkThemeEngine.apply_style_sheet(self.btn_max, f"""
                 QPushButton {{ background-color: transparent; border: none; border-radius: 0px; margin: 0px; padding: 0px; }}
                 QPushButton:hover {{ background-color: {hover_color}; }}
                 QPushButton:pressed {{ background-color: {pressed_color}; }}
             """)
             if isinstance(self.btn_close, MkTitleBarCloseButton):
                 self.btn_close.set_icons(self._icon_close, self._icon_close_hover)
-                self.btn_close.setStyleSheet("QPushButton#TitleBarCloseButton { background-color: transparent; border: none; margin: 0px; padding: 0px; }")
+                _MkThemeEngine.apply_style_sheet(self.btn_close, "QPushButton#TitleBarCloseButton { background-color: transparent; border: none; margin: 0px; padding: 0px; }")
                 self.btn_close.update()
             else:
-                self.btn_close.setStyleSheet(self._get_close_btn_stylesheet(window_radius))
+                _MkThemeEngine.apply_style_sheet(self.btn_close, self._get_close_btn_stylesheet(window_radius))
 
     def rebuild_layout(self):
         # Remove all items first — handle both widgets and sub-layouts
@@ -974,13 +973,13 @@ class MkWindow(QMainWindow):
         if theme_active:
             # 极速路径：全局 QSS 已由 Qt C++ 级联引擎统一渲染，此处无需执行昂贵且卡顿的多重局部 setStyleSheet
             if self.container_frame and self.container_frame.styleSheet():
-                self.container_frame.setStyleSheet("")
+                _MkThemeEngine.apply_style_sheet(self.container_frame, "")
             if self._sidebar_host and self._sidebar_host.styleSheet():
-                self._sidebar_host.setStyleSheet("")
+                _MkThemeEngine.apply_style_sheet(self._sidebar_host, "")
             if self._content_host and self._content_host.styleSheet():
-                self._content_host.setStyleSheet("")
+                _MkThemeEngine.apply_style_sheet(self._content_host, "")
             if self._desktop_shell and self._desktop_shell.styleSheet():
-                self._desktop_shell.setStyleSheet("")
+                _MkThemeEngine.apply_style_sheet(self._desktop_shell, "")
 
             candidate_sidebar = self._promoted_sidebar
             if candidate_sidebar is None and self.user_central_widget is not None:
@@ -988,7 +987,7 @@ class MkWindow(QMainWindow):
                 if info:
                     candidate_sidebar = info[0]
             if candidate_sidebar and hasattr(candidate_sidebar, "inner_frame") and candidate_sidebar.inner_frame.styleSheet():
-                candidate_sidebar.inner_frame.setStyleSheet("")
+                _MkThemeEngine.apply_style_sheet(candidate_sidebar.inner_frame, "")
 
             if self.container_frame:
                 self.container_frame.setProperty("mk_maximized", "true" if is_max else "false")
@@ -1009,7 +1008,7 @@ class MkWindow(QMainWindow):
             return
 
         if self.container_frame:
-            self.container_frame.setStyleSheet(f"""
+            _MkThemeEngine.apply_style_sheet(self.container_frame, f"""
                 QWidget#MkWindowContainer, QFrame#MkWindowContainer {{
                     background-color: {window_bg};
                     border: {border_rule};
@@ -1024,7 +1023,7 @@ class MkWindow(QMainWindow):
 
         # Eliminate sharp dead corners by coordinating outer boundary widget radii
         if self._sidebar_host is not None:
-            self._sidebar_host.setStyleSheet(f"""
+            _MkThemeEngine.apply_style_sheet(self._sidebar_host, f"""
                 QWidget#MkWindowSidebarHost {{
                     border-top-left-radius: {radius}px;
                     border-bottom-left-radius: {radius}px;
@@ -1041,7 +1040,7 @@ class MkWindow(QMainWindow):
         if self._content_host is not None:
             is_sidebar_full = bool(getattr(self, "_sidebar_full_height", False))
             bl_r = 0 if is_sidebar_full else radius
-            self._content_host.setStyleSheet(f"""
+            _MkThemeEngine.apply_style_sheet(self._content_host, f"""
                 QWidget#MkWindowContentHost {{
                     border-bottom-right-radius: {radius}px;
                     border-bottom-left-radius: {bl_r}px;
@@ -1054,7 +1053,7 @@ class MkWindow(QMainWindow):
             self._content_host.setProperty("mk_maximized", "true" if is_max else "false")
 
         if self._desktop_shell is not None:
-            self._desktop_shell.setStyleSheet(f"""
+            _MkThemeEngine.apply_style_sheet(self._desktop_shell, f"""
                 QWidget#MkWindowDesktopShell {{
                     border-radius: {radius}px;
                 }}
@@ -1081,7 +1080,7 @@ class MkWindow(QMainWindow):
                 elif getattr(candidate_sidebar, "_border_right", None) == "none":
                     sb_border_right = "none"
 
-                candidate_sidebar.inner_frame.setStyleSheet(f"""
+                _MkThemeEngine.apply_style_sheet(candidate_sidebar.inner_frame, f"""
                     QFrame#SidebarInnerFrame {{
                         background-color: {sb_bg};
                         border: none;
@@ -1515,7 +1514,7 @@ class MkWindow(QMainWindow):
             new_stack.setCurrentIndex(0)
 
         new_stack.setObjectName(old_stack.objectName())
-        new_stack.setStyleSheet(old_stack.styleSheet())
+        _MkThemeEngine.apply_style_sheet(new_stack, old_stack.styleSheet())
 
         parent_layout.removeWidget(old_stack)
         parent_layout.insertWidget(index, new_stack, stretch=1)

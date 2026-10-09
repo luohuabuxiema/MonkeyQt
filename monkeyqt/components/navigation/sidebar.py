@@ -1,3 +1,4 @@
+from monkeyqt.themes.engine import ThemeEngine as _MkThemeEngine
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QScrollArea, QFrame, QSizePolicy
 from PySide6.QtCore import Qt, Signal, Property, QPropertyAnimation, QEasingCurve, QSize
 from PySide6.QtGui import QIcon, QPainter, QColor
@@ -84,7 +85,7 @@ class MkMenuItem(QPushButton):
             }
         """
         
-        self.setStyleSheet(self._base_style)
+        _MkThemeEngine.apply_style_sheet(self, self._base_style)
         self._apply_theme_style()
         try:
             ThemeEngine.instance().themeChanged.connect(self._apply_theme_style)
@@ -116,7 +117,7 @@ class MkMenuItem(QPushButton):
                 border-radius: 8px;
             }}
         """
-        self.setStyleSheet(self._base_style)
+        _MkThemeEngine.apply_style_sheet(self, self._base_style)
         self._label_style = f"""
             QLabel {{
                 color: {muted};
@@ -161,7 +162,7 @@ class MkMenuItem(QPushButton):
         super().enterEvent(event)
         if not self.isChecked():
             active_fg = ThemeEngine.get("--sidebar-active-fg", "#FFFFFF" if ThemeEngine.is_dark() else "#0F172A")
-            self.text_label.setStyleSheet(getattr(self, "_label_hover_style", ""))
+            _MkThemeEngine.apply_style_sheet(self.text_label, getattr(self, "_label_hover_style", ""))
             self._update_icon_color(active_fg)
 
     def leaveEvent(self, event):
@@ -172,10 +173,10 @@ class MkMenuItem(QPushButton):
         active_fg = ThemeEngine.get("--sidebar-active-fg", "#FFFFFF" if ThemeEngine.is_dark() else "#0F172A")
         muted = ThemeEngine.get("--sidebar-text-muted", "#A1A1AA" if ThemeEngine.is_dark() else "#64748B")
         if self.isChecked():
-            self.text_label.setStyleSheet(getattr(self, "_label_checked_style", ""))
+            _MkThemeEngine.apply_style_sheet(self.text_label, getattr(self, "_label_checked_style", ""))
             self._update_icon_color(active_fg)
         else:
-            self.text_label.setStyleSheet(getattr(self, "_label_style", ""))
+            _MkThemeEngine.apply_style_sheet(self.text_label, getattr(self, "_label_style", ""))
             self._update_icon_color(muted)
 
     def set_collapsed(self, is_collapsed):
@@ -224,7 +225,7 @@ class MkSubMenu(MkQWidget):
         self.title_btn.setObjectName("SubMenuTitleButton")
         self.title_btn.setFixedHeight(self._item_height) # 设置前端标准高度
         self.title_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.title_btn.setStyleSheet("""
+        _MkThemeEngine.apply_style_sheet(self.title_btn, """
             QPushButton {
                 border: none;
                 background-color: transparent;
@@ -280,7 +281,7 @@ class MkSubMenu(MkQWidget):
     def _apply_theme_style(self, theme_name=None):
         fg = ThemeEngine.get("--fg", "#303133")
         hover_bg = ThemeEngine.get("--sidebar-hover-bg", "rgba(255, 255, 255, 0.06)" if ThemeEngine.is_dark() else "rgba(0, 0, 0, 0.04)")
-        self.title_btn.setStyleSheet(f"""
+        _MkThemeEngine.apply_style_sheet(self.title_btn, f"""
             QPushButton {{
                 border: none;
                 background-color: transparent;
@@ -293,7 +294,7 @@ class MkSubMenu(MkQWidget):
                 border-radius: 8px;
             }}
         """)
-        self.text_label.setStyleSheet(f"color: {fg}; font-size: 14px; font-weight: 500;")
+        _MkThemeEngine.apply_style_sheet(self.text_label, f"color: {fg}; font-size: 14px; font-weight: 500;")
         if self._icon_str:
             pm = _resolve_icon_pixmap(self._icon_str, fg, 18)
             if pm:
@@ -309,12 +310,12 @@ class MkSubMenu(MkQWidget):
                 pm = _resolve_icon_pixmap(self._icon_str, active_fg, 18)
                 if pm:
                     self.icon_label.setPixmap(pm)
-                self.text_label.setStyleSheet(f"color: {active_fg}; font-size: 14px; font-weight: 500;")
+                _MkThemeEngine.apply_style_sheet(self.text_label, f"color: {active_fg}; font-size: 14px; font-weight: 500;")
             elif event.type() == event.Type.Leave:
                 pm = _resolve_icon_pixmap(self._icon_str, fg, 18)
                 if pm:
                     self.icon_label.setPixmap(pm)
-                self.text_label.setStyleSheet(f"color: {fg}; font-size: 14px; font-weight: 500;")
+                _MkThemeEngine.apply_style_sheet(self.text_label, f"color: {fg}; font-size: 14px; font-weight: 500;")
         return super().eventFilter(obj, event)
         return super().eventFilter(obj, event)
 
@@ -400,7 +401,7 @@ class MkMenu(MkQWidget):
         self.hamburger_btn.setObjectName("SidebarHamburgerButton")
         self.hamburger_btn.setFixedSize(64, 60)
         self.hamburger_btn.setCursor(Qt.PointingHandCursor)
-        self.hamburger_btn.setStyleSheet("""
+        _MkThemeEngine.apply_style_sheet(self.hamburger_btn, """
             QPushButton {
                 border: none;
                 background: transparent;
@@ -423,7 +424,7 @@ class MkMenu(MkQWidget):
         self.header_collapse_btn.setCursor(Qt.PointingHandCursor)
         self.header_collapse_btn.setIcon(MkPhosphorIcon.get_icon("sidebar", "#606266", size=20))
         self.header_collapse_btn.setIconSize(QSize(20, 20))
-        self.header_collapse_btn.setStyleSheet("""
+        _MkThemeEngine.apply_style_sheet(self.header_collapse_btn, """
             QPushButton {
                 background: transparent;
                 background-color: transparent;
@@ -520,7 +521,7 @@ class MkMenu(MkQWidget):
         self.scroll_area.setObjectName("SidebarScrollArea")
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
-        self.scroll_area.setStyleSheet("""
+        _MkThemeEngine.apply_style_sheet(self.scroll_area, """
             QScrollArea {
                 background-color: transparent;
                 border: none;
@@ -546,7 +547,7 @@ class MkMenu(MkQWidget):
         """)
 
         self.content_widget = QWidget()
-        self.content_widget.setStyleSheet("background: transparent; border: none;")
+        _MkThemeEngine.apply_style_sheet(self.content_widget, "background: transparent; border: none;")
         self._layout = QVBoxLayout(self.content_widget)
         self._layout.setContentsMargins(0, 10, 0, 0)
         self._layout.setSpacing(0)
@@ -570,7 +571,7 @@ class MkMenu(MkQWidget):
         self.collapse_btn.setObjectName("SidebarCollapseButton")
         self.collapse_btn.setFixedSize(24, 24)
         self.collapse_btn.setCursor(Qt.PointingHandCursor)
-        self.collapse_btn.setStyleSheet("""
+        _MkThemeEngine.apply_style_sheet(self.collapse_btn, """
             QPushButton {
                 background-color: #ffffff;
                 border: 1px solid #dcdfe6;
@@ -595,9 +596,9 @@ class MkMenu(MkQWidget):
         border = ThemeEngine.get("--border", "#E2E8F0")
         surface = ThemeEngine.get("--surface", "#FFFFFF")
         if hasattr(self, "title_label"):
-            self.title_label.setStyleSheet(f"color: {fg}; font-size: 15px; font-weight: bold;")
+            _MkThemeEngine.apply_style_sheet(self.title_label, f"color: {fg}; font-size: 15px; font-weight: bold;")
         if hasattr(self, "hamburger_btn"):
-            self.hamburger_btn.setStyleSheet(f"""
+            _MkThemeEngine.apply_style_sheet(self.hamburger_btn, f"""
                 QPushButton {{
                     border: none;
                     background: transparent;
@@ -613,7 +614,7 @@ class MkMenu(MkQWidget):
                 }}
             """)
         if hasattr(self, "collapse_btn"):
-            self.collapse_btn.setStyleSheet(f"""
+            _MkThemeEngine.apply_style_sheet(self.collapse_btn, f"""
                 QPushButton {{
                     background-color: {surface};
                     border: 1px solid {border};
