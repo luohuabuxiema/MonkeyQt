@@ -300,9 +300,13 @@ class PhosphorIconBase:
         secondary_opacity: float = 0.2,
         mirrored: bool = False,
         rotation: int = 0,
-        dpr: float = 1.0
+        dpr: Optional[float] = None
     ) -> QtGui.QPixmap:
         """Returns a QPixmap for this icon."""
+        if dpr is None:
+            app = QtWidgets.QApplication.instance()
+            screen = app.primaryScreen() if app else None
+            dpr = screen.devicePixelRatio() if screen else 1.0
         w, h = (size, size) if isinstance(size, int) else size
         c_str = _parse_color(color)
         sc_str = _parse_color(secondary_color) if secondary_color else None
@@ -400,8 +404,12 @@ class PhFactory:
         secondary_opacity: float = 0.2,
         mirrored: bool = False,
         rotation: int = 0,
-        dpr: float = 1.0
+        dpr: Optional[float] = None
     ) -> QtGui.QPixmap:
+        if dpr is None:
+            app = QtWidgets.QApplication.instance()
+            screen = app.primaryScreen() if app else None
+            dpr = screen.devicePixelRatio() if screen else 1.0
         w, h = (size, size) if isinstance(size, int) else size
         c_str = _parse_color(color)
         sc_str = _parse_color(secondary_color) if secondary_color else None
