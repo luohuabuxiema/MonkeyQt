@@ -46,8 +46,9 @@ class MkMenuItem(QPushButton):
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         
         self._layout = QHBoxLayout(self)
-        self._layout.setContentsMargins(12, 0, 12, 0)
-        self._layout.setSpacing(12)
+        self._layout.setContentsMargins(14, 0, 12, 0)
+        self._layout.setSpacing(10)
+        self._leading_stretch = self._layout.addStretch(0)
         
         self.icon_label = QLabel()
         self.icon_label.setFixedWidth(24)
@@ -65,7 +66,7 @@ class MkMenuItem(QPushButton):
         
         self._layout.addWidget(self.icon_label)
         self._layout.addWidget(self.text_label)
-        self._layout.addStretch()
+        self._trailing_stretch = self._layout.addStretch(1)
         
         self._base_style = """
             MkMenuItem {
@@ -92,6 +93,9 @@ class MkMenuItem(QPushButton):
         except Exception:
             pass
         self.toggled.connect(self._on_toggled)
+
+    def minimumSizeHint(self):
+        return QSize(24, self._item_height)
 
     def _apply_theme_style(self, theme_name=None):
         active_bg = ThemeEngine.get("--sidebar-active-bg", "rgba(255, 255, 255, 0.12)" if ThemeEngine.is_dark() else "rgba(0, 0, 0, 0.08)")
@@ -180,28 +184,45 @@ class MkMenuItem(QPushButton):
             self._update_icon_color(muted)
 
     def set_collapsed(self, is_collapsed):
+        trailing_idx = self._layout.indexOf(self._trailing_stretch)
         if is_collapsed:
             self.text_label.hide()
             self.setToolTip(self._original_text)
-            self._layout.setContentsMargins(20, 0, 20, 0)
+            self._layout.setContentsMargins(0, 0, 0, 0)
+            self._layout.setSpacing(0)
+            self._layout.setStretch(0, 1)
+            if trailing_idx != -1:
+                self._layout.setStretch(trailing_idx, 1)
             self.icon_label.setAlignment(Qt.AlignCenter)
         else:
             self.text_label.show()
             self.setToolTip("")
-            # Submenu items might need more left margin, we can handle that by setting margins externally
-            self._layout.setContentsMargins(self._current_left_margin, 0, 20, 0)
+            self._layout.setContentsMargins(self._current_left_margin, 0, 12, 0)
+            self._layout.setSpacing(10)
+            self._layout.setStretch(0, 0)
+            if trailing_idx != -1:
+                self._layout.setStretch(trailing_idx, 1)
 
     @property
     def _current_left_margin(self):
-        return getattr(self, '_left_margin_val', 20)
+        return getattr(self, '_left_margin_val', 14)
 
     def set_left_margin(self, margin):
         self._left_margin_val = margin
         if not self.text_label.isHidden(): # meaning not collapsed
-            self._layout.setContentsMargins(margin, 0, 20, 0)
+            self._layout.setContentsMargins(margin, 0, 12, 0)
 
 
 from ..layout.widget import MkQWidget
+
+
+class MkSubMenuTitleButton(QPushButton):
+    def __init__(self, height=50, parent=None):
+        super().__init__(parent)
+        self._item_height = height
+
+    def minimumSizeHint(self):
+        return QSize(24, self._item_height)
 
 
 class MkSubMenu(MkQWidget):
@@ -221,7 +242,7 @@ class MkSubMenu(MkQWidget):
         self._layout.setSpacing(0)
 
         # 标题按钮（使用与 MkMenuItem 类似的布局以保证对齐）
-        self.title_btn = QPushButton()
+        self.title_btn = MkSubMenuTitleButton(height=self._item_height)
         self.title_btn.setObjectName("SubMenuTitleButton")
         self.title_btn.setFixedHeight(self._item_height) # 设置前端标准高度
         self.title_btn.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -240,8 +261,9 @@ class MkSubMenu(MkQWidget):
         """)
         
         self.title_layout = QHBoxLayout(self.title_btn)
-        self.title_layout.setContentsMargins(12, 0, 12, 0)
-        self.title_layout.setSpacing(12)
+        self.title_layout.setContentsMargins(14, 0, 12, 0)
+        self.title_layout.setSpacing(10)
+        self._leading_stretch = self.title_layout.addStretch(0)
         
         self.icon_label = QLabel()
         self.icon_label.setFixedWidth(24)
@@ -259,7 +281,7 @@ class MkSubMenu(MkQWidget):
         
         self.title_layout.addWidget(self.icon_label)
         self.title_layout.addWidget(self.text_label)
-        self.title_layout.addStretch()
+        self._trailing_stretch = self.title_layout.addStretch(1)
 
         self.title_btn.clicked.connect(self.toggle)
         
@@ -277,6 +299,9 @@ class MkSubMenu(MkQWidget):
         # 初始状态隐藏
         self.content_widget.setVisible(False)
         self._layout.addWidget(self.content_widget)
+
+    def minimumSizeHint(self):
+        return QSize(24, self._item_height)
 
     def _apply_theme_style(self, theme_name=None):
         fg = ThemeEngine.get("--fg", "#303133")
@@ -329,12 +354,26 @@ class MkSubMenu(MkQWidget):
         self.content_widget.setVisible(self._is_expanded)
         self.toggled.emit(self._is_expanded)
 
+    @property
+    def _current_left_margin(self):
+        return getattr(self, '_left_margin_val', 14)
+
+    def set_left_margin(self, margin):
+        self._left_margin_val = margin
+        if not self.text_label.isHidden():
+            self.title_layout.setContentsMargins(margin, 0, 12, 0)
+
     def set_collapsed(self, is_collapsed):
+        trailing_idx = self.title_layout.indexOf(self._trailing_stretch)
         if is_collapsed:
             self.text_label.hide()
             self.title_btn.setToolTip(self._original_title)
             self.content_widget.setVisible(False) # 强制收起子项
-            self.title_layout.setContentsMargins(20, 0, 20, 0)
+            self.title_layout.setContentsMargins(0, 0, 0, 0)
+            self.title_layout.setSpacing(0)
+            self.title_layout.setStretch(0, 1)
+            if trailing_idx != -1:
+                self.title_layout.setStretch(trailing_idx, 1)
             for i in range(self.title_layout.count()):
                 item = self.title_layout.itemAt(i)
                 w = item.widget() if item else None
@@ -344,7 +383,11 @@ class MkSubMenu(MkQWidget):
             self.text_label.show()
             self.title_btn.setToolTip("")
             self.content_widget.setVisible(self._is_expanded) # 恢复原来的展开状态
-            self.title_layout.setContentsMargins(20, 0, 20, 0)
+            self.title_layout.setContentsMargins(self._current_left_margin, 0, 12, 0)
+            self.title_layout.setSpacing(10)
+            self.title_layout.setStretch(0, 0)
+            if trailing_idx != -1:
+                self.title_layout.setStretch(trailing_idx, 1)
             for i in range(self.title_layout.count()):
                 item = self.title_layout.itemAt(i)
                 w = item.widget() if item else None
@@ -521,6 +564,7 @@ class MkMenu(MkQWidget):
         self.scroll_area.setObjectName("SidebarScrollArea")
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         _MkThemeEngine.apply_style_sheet(self.scroll_area, """
             QScrollArea {
                 background-color: transparent;
@@ -657,10 +701,13 @@ class MkMenu(MkQWidget):
         self.inner_frame.style().polish(self.inner_frame)
         self.inner_frame.update()
 
+    DEFAULT_ITEM_LEFT_MARGIN = 14
+    DEFAULT_SUBITEM_LEFT_MARGIN = 34
+
     def add_item(self, item_id: str, text: str, icon=None) -> MkMenuItem:
         """添加一级菜单项"""
         item = MkMenuItem(item_id, text, icon, height=self._item_height)
-        item.set_left_margin(20)
+        item.set_left_margin(self.DEFAULT_ITEM_LEFT_MARGIN)
         self._register_item(item)
         self._layout.insertWidget(self._layout.count() - 1, item)
         return item
@@ -668,6 +715,7 @@ class MkMenu(MkQWidget):
     def add_submenu(self, title: str, icon=None) -> MkSubMenu:
         """添加一个折叠子菜单"""
         submenu = MkSubMenu(title, icon, height=self._item_height)
+        submenu.set_left_margin(self.DEFAULT_ITEM_LEFT_MARGIN)
         self._all_submenus.append(submenu)
         self._layout.insertWidget(self._layout.count() - 1, submenu)
         return submenu
@@ -676,7 +724,7 @@ class MkMenu(MkQWidget):
         """向子菜单中添加项"""
         item = MkMenuItem(item_id, text, icon, height=self._item_height)
         item._parent_submenu = submenu
-        item.set_left_margin(40) # 子菜单项缩进
+        item.set_left_margin(self.DEFAULT_SUBITEM_LEFT_MARGIN) # 子菜单项缩进
         self._register_item(item)
         submenu.add_item(item)
         return item
