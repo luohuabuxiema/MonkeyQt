@@ -13,6 +13,7 @@ from monkeyqt import (
     MkButton, MkCheckBox, MkSelectItem, MkSelectCard, MkMenu, MkTopbar, MkBreadcrumb, MkTabs,
     MkSegmented, MkSegmentedTabs,
     MkAlert, MkProgressBar, MkProgressRing, MkCard,
+    MkModal, MkDialog, MkMessageBox,
     MkTooltip, MkInfoIcon, create_field_header, create_input_field, create_switch_field,
     MkPagination, MkDropdown, MkSwitch, MkSlider, MkDatePicker, MkForm,
     MkInput, MkCaptchaWidget, MkAuthScreen, MkMessage,
@@ -638,6 +639,130 @@ class FeedbackGallery(MkQWidget):
         ring_layout.addWidget(MkProgressRing(percentage=50, status="exception"))
         ring_layout.addStretch()
         layout.addLayout(ring_layout)
+
+        # 4. 现代化模态弹窗与对话框 (Modal & MessageBox)
+        label_modal = QLabel("4. 现代化模态弹窗与对话框 (Modal & MessageBox)")
+        label_modal.setFont(title_font)
+        layout.addWidget(label_modal)
+
+        modal_desc = QLabel("对标现代 Web 前端设计（Ultralytics HUB 规范），支持大圆角悬浮卡片、柔和阴影、软红底 Danger 危险按钮、富文本与 68 种主题自适应。")
+        modal_desc.setStyleSheet("color: #64748B;")
+        layout.addWidget(modal_desc)
+
+        modal_btn_row1 = QHBoxLayout()
+        modal_btn_row1.setSpacing(12)
+
+        # 4.1 对标参考图的 Delete model 确认弹窗
+        btn_del = MkButton("危险操作删除确认 (Delete model?)", type="danger")
+        btn_del.clicked.connect(lambda: MkMessageBox.confirm(
+            self,
+            title="Delete model?",
+            content="<b>yolo26n-seg</b> will move to Trash. Items can be restored within 30 days.",
+            danger=True,
+            ok_text="Delete model",
+            cancel_text="Cancel"
+        ))
+        modal_btn_row1.addWidget(btn_del)
+
+        # 4.2 中文经典删除确认
+        btn_del_zh = MkButton("中文模型删除确认", type="danger")
+        btn_del_zh.clicked.connect(lambda: MkMessageBox.delete_confirm(
+            self,
+            item_name="yolov8x-pose.pt",
+            item_type="模型权重",
+            retention_days=30,
+            lang="zh"
+        ))
+        modal_btn_row1.addWidget(btn_del_zh)
+
+        # 4.3 提示与成功
+        btn_info = MkButton("信息提示 (Info)", type="primary")
+        btn_info.clicked.connect(lambda: MkMessageBox.info(
+            self,
+            title="导出任务已启动",
+            content="数据集切片导出任务已在后台执行，完成后将自动发送系统通知。"
+        ))
+        modal_btn_row1.addWidget(btn_info)
+
+        btn_succ = MkButton("操作成功 (Success)", type="success")
+        btn_succ.clicked.connect(lambda: MkMessageBox.success(
+            self,
+            title="模型权重同步成功",
+            content="最新迭代权重文件 <b>best_weights.pt</b> (mAP50-95: <b>89.4%</b>) 已成功上传至云端存储。"
+        ))
+        modal_btn_row1.addWidget(btn_succ)
+
+        modal_btn_row1.addStretch()
+        layout.addLayout(modal_btn_row1)
+
+        modal_btn_row2 = QHBoxLayout()
+        modal_btn_row2.setSpacing(12)
+
+        # 4.4 警告与错误
+        btn_warn = MkButton("系统警告 (Warning)", type="warning")
+        btn_warn.clicked.connect(lambda: MkMessageBox.warning(
+            self,
+            title="存储空间不足警告",
+            content="检测到当前缓存分区剩余可用空间不足 <b>1.5 GB</b>，请及时清理缓存以防训练中断。"
+        ))
+        modal_btn_row2.addWidget(btn_warn)
+
+        btn_err = MkButton("运行异常 (Error)", type="danger")
+        btn_err.clicked.connect(lambda: MkMessageBox.error(
+            self,
+            title="CUDA Out of Memory",
+            content="显存分配失败：尝试分配 <b>4.20 GiB</b> 失败，建议调小 batch-size 或启用 fp16 半精度训练。"
+        ))
+        modal_btn_row2.addWidget(btn_err)
+
+        # 4.5 带输入的 Prompt 弹窗
+        btn_prompt = MkButton("文本输入弹窗 (Prompt)", type="default")
+        def _on_prompt_click():
+            ok, val = MkMessageBox.prompt(
+                self,
+                title="重命名项目",
+                content="请输入新的模型项目名称：",
+                default_value="yolov11-seg-custom",
+                placeholder="例如: project-v2"
+            )
+            if ok:
+                MkMessageBox.success(self, "重命名成功", f"项目已成功重命名为: <b>{val}</b>")
+        btn_prompt.clicked.connect(_on_prompt_click)
+        modal_btn_row2.addWidget(btn_prompt)
+
+        # 4.6 深度自定义控件 (Custom Widget Modal)
+        btn_custom = MkButton("嵌入自定义组件 (Custom Widget)", type="default")
+        def _on_custom_click():
+            custom_w = MkQWidget(layout="v", spacing=8, role="transparent")
+            lbl = QLabel("请选择导出的格式与量化等级：")
+            lbl.setStyleSheet("color: #64748B;")
+            custom_w.add_widget(lbl)
+
+            from monkeyqt import MkComboBox, MkCheckBox
+            cbo = MkComboBox()
+            cbo.addItems(["ONNX (FP16)", "TensorRT Engine", "CoreML", "OpenVINO (INT8)"])
+            custom_w.add_widget(cbo)
+
+            chk = MkCheckBox("导出后自动校验模型推理精度", variant="neutral")
+            chk.setChecked(True)
+            custom_w.add_widget(chk)
+
+            modal = MkModal(
+                parent=self,
+                title="导出模型配置",
+                content="配置导出目标引擎格式：",
+                ok_text="开始导出",
+                cancel_text="取消",
+                card_width=440,
+                custom_widget=custom_w
+            )
+            if modal.exec():
+                MkMessageBox.success(self, "已加入导出队列", f"选定格式: <b>{cbo.currentText()}</b>")
+        btn_custom.clicked.connect(_on_custom_click)
+        modal_btn_row2.addWidget(btn_custom)
+
+        modal_btn_row2.addStretch()
+        layout.addLayout(modal_btn_row2)
 
         layout.addStretch()
 
@@ -1514,7 +1639,7 @@ class MainGallery(MkWindow):
             sidebar_full_height=True,
         )
         self.setWindowTitle("MonkeyQt - Enterprise Gallery")
-        self.resize(1500, 1000)
+        self.resize_adaptive(1500, 1000)
         
         # 自定义标题栏：高度加高，移除下边框线 (参考 mainui.py)
         self.titlebar._height = 48

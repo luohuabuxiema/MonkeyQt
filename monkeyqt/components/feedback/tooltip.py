@@ -390,17 +390,20 @@ class MkTooltipPopover(MkQWidget):
         self.shadow.setBlurRadius(shadow_blur)
         self.shadow.setOffset(shadow_offset[0], shadow_offset[1])
 
-        # 根据纯文本长度动态伸缩卡片宽度
-        plain_len = len(re.sub(r"<[^>]+>", "", formatted))
-        if plain_len < 25:
-            target_w = max(180, plain_len * 12 + 40)
-        elif plain_len < 60:
-            target_w = 270
-        elif plain_len < 100:
-            target_w = 320
-        else:
-            target_w = 360
-        self.label.setFixedWidth(int(target_w))
+        # Measure rendered text, including code/link formatting, instead of
+        # reserving a fixed minimum width for short hints.
+        self.label.ensurePolished()
+        self.label.setMinimumWidth(0)
+        self.label.setMaximumWidth(16777215)  # QWidget's unconstrained maximum
+        self.label.setWordWrap(False)
+        natural_width = self.label.sizeHint().width() + 1
+        self.label.setWordWrap(True)
+        margins = self.box_layout.contentsMargins()
+        screen = self.screen() or QApplication.primaryScreen()
+        max_width = 360
+        if screen:
+            max_width = min(max_width, screen.availableGeometry().width() - margins.left() - margins.right() - 16)
+        self.label.setFixedWidth(max(1, min(natural_width, max_width)))
         self.adjustSize()
 
         # 若富文本包含可点击链接，则恢复鼠标响应以供点击；常规纯文本气泡则开启完全穿透，杜绝邻近紧凑按钮遮挡与卡顿

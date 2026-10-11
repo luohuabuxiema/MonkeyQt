@@ -47,10 +47,13 @@ def _set_windows_corner_preference(widget: QWidget, rounded: bool) -> bool:
     if sys.platform != "win32":
         return False
     try:
-        hwnd = getattr(widget, "_mk_cached_hwnd", None)
-        if hwnd is None:
+        try:
             hwnd = int(widget.winId())
             widget._mk_cached_hwnd = hwnd
+        except Exception:
+            hwnd = getattr(widget, "_mk_cached_hwnd", None)
+        if not hwnd:
+            return False
         # ROUND_SMALL matches the restrained Windows 11/Codex window radius.
         preference = ctypes.c_int(3 if rounded else 1)  # ROUND_SMALL / DO_NOT_ROUND
         result = ctypes.windll.dwmapi.DwmSetWindowAttribute(

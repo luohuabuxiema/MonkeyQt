@@ -41,8 +41,20 @@ class MkTitleBarCloseButton(QPushButton):
         self._icon_normal = QIcon()
         self._icon_hover = QIcon()
         self.setAttribute(Qt.WidgetAttribute.WA_Hover, True)
+        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         _MkThemeEngine.apply_style_sheet(self, "QPushButton#TitleBarCloseButton { background: transparent; border: none; margin: 0px; padding: 0px; }")
+
+    def showEvent(self, event):
+        self._is_hovered = False
+        self._is_pressed = False
+        super().showEvent(event)
+        self.update()
+
+    def hideEvent(self, event):
+        self._is_hovered = False
+        self._is_pressed = False
+        super().hideEvent(event)
 
     def set_icons(self, normal_icon: QIcon, hover_icon: QIcon = None):
         self._icon_normal = normal_icon
@@ -117,6 +129,11 @@ class MkTitleBarCloseButton(QPushButton):
         w = float(self.width())
         h = float(self.height())
         r = self.get_effective_radius()
+
+        if self._is_hovered and not self._is_pressed:
+            local_pos = self.mapFromGlobal(QCursor.pos())
+            if not self.rect().contains(local_pos):
+                self._is_hovered = False
 
         if self._is_hovered or self._is_pressed:
             bg_color = QColor("#c42b1c" if self._is_pressed else "#e81123")
@@ -228,7 +245,10 @@ class MkTitleBar(MkQWidget):
         self.btn_max.clicked.connect(self._on_maximize)
         self.btn_close.clicked.connect(self._on_close)
         
-        # Set cursor
+        # Set cursor & NoFocus policy to prevent titlebar buttons from stealing/retaining focus
+        self.btn_min.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.btn_max.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.btn_close.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btn_min.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_max.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_close.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -759,12 +779,15 @@ class MkWindow(QMainWindow):
         parent=None,
         sidebar_full_height=False,
         auto_scroll=True,
+        auto_center=True,
     ):
         super().__init__(parent)
         self.use_custom_title_bar = use_custom_title_bar
         self._preset = preset
         self._sidebar_full_height = bool(sidebar_full_height)
         self._auto_scroll = bool(auto_scroll)
+        self._auto_center = bool(auto_center)
+        self._has_centered_on_first_show = False
         self.content_scroll_area = None
         self._auto_content_container = None
         self._close_behavior = "close"  # "close" or "hide"
@@ -1582,10 +1605,8 @@ class MkWindow(QMainWindow):
         if getattr(self, "_use_native_corner_surface", False):
             try:
                 import ctypes
-                hwnd = getattr(self, "_mk_cached_hwnd", None)
-                if hwnd is None:
-                    hwnd = int(self.winId())
-                    self._mk_cached_hwnd = hwnd
+                hwnd = int(self.winId())
+                self._mk_cached_hwnd = hwnd
                 if is_max is None:
                     is_max = self.isMaximized()
                 # Windows 11 DWMWA_WINDOW_CORNER_PREFERENCE (33):
@@ -1619,10 +1640,8 @@ class MkWindow(QMainWindow):
         if sys.platform != "win32" or not self._use_native_corner_surface:
             return False
         try:
-            hwnd = getattr(self, "_mk_cached_hwnd", None)
-            if hwnd is None:
-                hwnd = int(self.winId())
-                self._mk_cached_hwnd = hwnd
+            hwnd = int(self.winId())
+            self._mk_cached_hwnd = hwnd
 
             set_window_pos = ctypes.windll.user32.SetWindowPos
             set_window_pos.argtypes = [
@@ -1769,22 +1788,95 @@ class MkWindow(QMainWindow):
         self._normal_geometry = safe_geo
         self._apply_window_state_immediate(False, force=True)
 
+    def center_on_screen(
+        self,
+        fit_screen: bool = True,
+        max_ratio_w: float = 0.88,
+        max_ratio_h: float = 0.85,
+    ):
+        """
+        将窗口自动移动到当前屏幕可用区域（排除任务栏）的正中央。
+        
+        自适应多分辨率与显示缩放引擎:
+        1. 自动检测屏幕可用工作区几何尺寸（排除任务栏高度与多屏偏移）；
+        2. 若当前窗口尺寸在目标屏幕上可能溢出（常见于 1366x768 屏幕，或 1080p 笔记本设置了 125%/150% 缩放），
+           自动安全等比收敛至 max_ratio（默认不超过屏幕的 88% 宽 / 85% 高），保证四周留白均匀且不超屏；
+        3. 自动将窗口精确放置在目标显示器正中心坐标。
+        """
+        screen = self.screen() or QGuiApplication.primaryScreen()
+        if screen:
+            geo = screen.availableGeometry()
+            if fit_screen:
+                max_w = int(geo.width() * max_ratio_w)
+                max_h = int(geo.height() * max_ratio_h)
+                new_w = min(self.width(), max_w)
+                new_h = min(self.height(), max_h)
+                
+                # 保证在极端紧凑屏幕上不小于合理下限
+                min_safe_w = min(960, max(600, geo.width() - 40))
+                min_safe_h = min(600, max(400, geo.height() - 40))
+                new_w = max(new_w, min_safe_w)
+                new_h = max(new_h, min_safe_h)
+
+                if new_w != self.width() or new_h != self.height():
+                    self.resize(new_w, new_h)
+
+            x = geo.x() + (geo.width() - self.width()) // 2
+            y = geo.y() + (geo.height() - self.height()) // 2
+            self.move(max(geo.x(), x), max(geo.y(), y))
+            self._normal_geometry = self.geometry()
+
+    def resize_adaptive(
+        self,
+        target_w: int = 1500,
+        target_h: int = 1000,
+        max_ratio_w: float = 0.88,
+        max_ratio_h: float = 0.85,
+    ):
+        """
+        根据当前屏幕可用分辨率智能自适应调整窗口尺寸并居中显示。
+        无论在 4K/2K 大屏、标准 1080p、还是带 125%/150% 缩放的笔记本、老款 768p 屏幕上，
+        均能计算出最佳视觉尺寸与几何中心，绝不发生窗口超屏截断。
+        """
+        self.resize(target_w, target_h)
+        self.center_on_screen(fit_screen=True, max_ratio_w=max_ratio_w, max_ratio_h=max_ratio_h)
+
     def showEvent(self, event):
         super().showEvent(event)
+        self._mk_cached_hwnd = int(self.winId())
+        if getattr(self, "_auto_center", False) and not getattr(self, "_has_centered_on_first_show", False):
+            self._has_centered_on_first_show = True
+            if not self.isMaximized():
+                self.center_on_screen()
         if not self.isMaximized():
             if self._normal_geometry is None or not self._normal_geometry.isValid():
                 self._normal_geometry = self._get_safe_normal_geometry(self.geometry())
         is_max = True if getattr(self, "_is_maximizing", False) else self.isMaximized()
         self._apply_window_state_immediate(is_max, force=True)
         if self._use_native_corner_surface:
-            # A custom frameless HWND needs one explicit non-client refresh on
-            # first show. Re-apply the DWM preference afterwards because frame
-            # recalculation may recreate its visible corner state.
-            if not self._native_frame_synced:
-                self._native_frame_synced = self._notify_native_frame_changed()
-                self._enable_native_corners(is_max)
+            # Re-apply the DWM preference and notify frame recalculation on every show
+            self._native_frame_synced = self._notify_native_frame_changed()
+            self._enable_native_corners(is_max)
             QTimer.singleShot(0, self._refresh_native_chrome)
             QTimer.singleShot(80, self._refresh_native_chrome)
+
+    def hideEvent(self, event):
+        self._native_frame_synced = False
+        self._mk_cached_hwnd = None
+        if hasattr(self, "titlebar") and self.titlebar and hasattr(self.titlebar, "btn_close"):
+            self.titlebar.btn_close._is_hovered = False
+            self.titlebar.btn_close._is_pressed = False
+            self.titlebar.btn_close.update()
+        super().hideEvent(event)
+
+    def closeEvent(self, event):
+        self._native_frame_synced = False
+        self._mk_cached_hwnd = None
+        if hasattr(self, "titlebar") and self.titlebar and hasattr(self.titlebar, "btn_close"):
+            self.titlebar.btn_close._is_hovered = False
+            self.titlebar.btn_close._is_pressed = False
+            self.titlebar.btn_close.update()
+        super().closeEvent(event)
 
     def resizeEvent(self, event):
         super().resizeEvent(event)

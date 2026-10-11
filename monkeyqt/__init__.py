@@ -45,6 +45,7 @@ from .components.feedback.alert import MkAlert
 from .components.feedback.progress_bar import MkProgressBar
 from .components.feedback.progress_ring import MkProgressRing
 from .components.feedback.card import MkCard
+from .components.feedback.message_box import MkModal, MkDialog, MkMessageBox
 from .components.feedback.tooltip import (
     MkTooltipPopover,
     MkInfoIcon,
@@ -125,6 +126,9 @@ __all__ = [
     "MkProgressBar",
     "MkProgressRing",
     "MkCard",
+    "MkModal",
+    "MkDialog",
+    "MkMessageBox",
     "MkTooltipPopover",
     "MkInfoIcon",
     "MkInfoIconButton",

@@ -320,6 +320,15 @@ class MkComboBox(QComboBox):
             self._popup_widget.hide()
         super().hideEvent(event)
 
+    def add_items(self, texts):
+        """Pythonic snake_case 别名，兼容 addItems"""
+        self.addItems(texts)
+
+    def current_text(self) -> str:
+        """Pythonic snake_case 别名，兼容 currentText"""
+        return self.currentText()
+
+
 
     def set_theme_style(self, style_name: str = None):
         t = ThemeEngine
