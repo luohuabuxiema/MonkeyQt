@@ -524,13 +524,23 @@ class NavMiscGallery(MkQWidget):
         layout.addWidget(label_dropdown)
         
         dropdown_layout = QHBoxLayout()
-        self.dropdown = MkDropdown("操作菜单")
-        self.dropdown.add_item("新增", "add")
-        self.dropdown.add_item("编辑", "edit")
+        self.dropdown = MkDropdown("操作菜单", icon="list")
+        self.dropdown.add_item("新增", "add", icon="plus", suffix_icon="arrow-right")
+        self.dropdown.add_item("编辑", "edit", icon="pencil-simple")
         self.dropdown.add_separator()
-        self.dropdown.add_item("删除", "delete")
+        self.dropdown.add_item("删除", "delete", icon="trash", danger=True)
+        self.dropdown.add_separator()
+        self.dropdown.add_check_item("自动保存", "autosave", checked=True, icon="floppy-disk")
         
         dropdown_layout.addWidget(self.dropdown)
+        self.dropdown_more = MkDropdown("显示设置", trigger="more", menu_width=240)
+        self.dropdown_more.add_label("显示设置")
+        self.dropdown_more.add_check_item("显示图例", "legend", checked=True)
+        self.dropdown_more.add_check_item("显示网格", "grid", checked=True)
+        self.dropdown_more.add_separator()
+        self.dropdown_more.add_item("全部显示", "all", icon="eye", close_on_click=False,
+                                    callback=lambda: self.dropdown_more.set_all_checked(True))
+        dropdown_layout.addWidget(self.dropdown_more)
         dropdown_layout.addStretch()
         layout.addLayout(dropdown_layout)
 

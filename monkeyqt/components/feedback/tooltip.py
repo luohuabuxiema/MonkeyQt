@@ -62,6 +62,11 @@ class MkTooltipPopover(MkQWidget):
             return
         inst = cls.get_instance()
         inst.cancel_close()
+        # Prevent visual flicker if already showing the exact same text on the exact same target
+        if (inst.isVisible() and inst._target_widget is target_widget and
+            getattr(inst, "_current_raw_text", None) == text):
+            return
+        inst._current_raw_text = text
         inst._target_widget = target_widget
         inst.set_content(text, theme_override=theme_override)
 
@@ -147,6 +152,7 @@ class MkTooltipPopover(MkQWidget):
     def hide_popover(cls):
         """Dismiss the popover immediately and reset target widget hover state."""
         if cls._instance:
+            cls._instance._current_raw_text = None
             cls.cancel_open()
             try:
                 cls._instance._close_timer.stop()
@@ -582,6 +588,11 @@ class _MkTooltipFilter(QObject):
                 if self.hint_text:
                     MkTooltipPopover.show_popover(self.target_widget, self.hint_text)
             elif event.type() == QEvent.Type.Leave:
+                try:
+                    if self.target_widget.rect().contains(self.target_widget.mapFromGlobal(QCursor.pos())):
+                        return False
+                except Exception:
+                    pass
                 MkTooltipPopover.schedule_close(180)
             elif event.type() in (QEvent.Type.Hide, QEvent.Type.Close):
                 MkTooltipPopover.hide_popover()

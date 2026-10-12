@@ -15,7 +15,7 @@ from PySide6.QtCore import (
     Qt,
     Signal,
 )
-from PySide6.QtGui import QPalette
+from PySide6.QtGui import QPalette, QPainter, QColor
 from PySide6.QtWidgets import QHBoxLayout, QPushButton, QStackedWidget, QWidget, QSizePolicy
 
 from monkeyqt.core.icons import MkPhosphorIcon
@@ -148,6 +148,88 @@ class MkAnimatedStackedWidget(QStackedWidget):
 from ..layout.widget import MkQWidget
 
 
+class MkHistoryNavButton(QPushButton):
+    """Clean, high-performance navigation button for back/forward page history.
+
+    Prevents Qt's built-in disabled icon double-bleaching and eliminates
+    unwanted hover backgrounds on disabled states.
+    """
+
+    def __init__(self, icon_name: str, tooltip: str = "", parent=None):
+        super().__init__(parent)
+        self._icon_name = icon_name
+        if tooltip:
+            self.setToolTip(tooltip)
+        self.setFixedSize(QSize(28, 28))
+        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self._update_cursor()
+
+    def set_icon_name(self, icon_name: str):
+        self._icon_name = icon_name
+        self.update()
+
+    def setEnabled(self, enabled: bool):
+        super().setEnabled(enabled)
+        self._update_cursor()
+        self.update()
+
+    def _update_cursor(self):
+        self.setCursor(
+            Qt.CursorShape.PointingHandCursor if self.isEnabled() else Qt.CursorShape.ArrowCursor
+        )
+
+    def enterEvent(self, event):
+        super().enterEvent(event)
+        if self.isEnabled():
+            self.update()
+
+    def leaveEvent(self, event):
+        super().leaveEvent(event)
+        if self.isEnabled():
+            self.update()
+
+    def mousePressEvent(self, event):
+        super().mousePressEvent(event)
+        if self.isEnabled():
+            self.update()
+
+    def mouseReleaseEvent(self, event):
+        super().mouseReleaseEvent(event)
+        if self.isEnabled():
+            self.update()
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+
+        is_dark = _MkThemeEngine.is_dark() if hasattr(_MkThemeEngine, "is_dark") else False
+
+        # 1. Subtle rounded hover/pressed background (ONLY when enabled)
+        if self.isEnabled():
+            if self.isDown():
+                bg = QColor(255, 255, 255, 45) if is_dark else QColor(0, 0, 0, 26)
+                painter.setBrush(bg)
+                painter.setPen(Qt.PenStyle.NoPen)
+                painter.drawRoundedRect(self.rect().adjusted(1, 1, -1, -1), 5, 5)
+            elif self.underMouse():
+                bg = QColor(255, 255, 255, 22) if is_dark else QColor(0, 0, 0, 15)
+                painter.setBrush(bg)
+                painter.setPen(Qt.PenStyle.NoPen)
+                painter.drawRoundedRect(self.rect().adjusted(1, 1, -1, -1), 5, 5)
+
+        # 2. Phosphor Icon with distinct active vs disabled contrast
+        if self.isEnabled():
+            fg_color = _MkThemeEngine.get("--fg", "#F8FAFC" if is_dark else "#0F172A")
+        else:
+            fg_color = "#52525B" if is_dark else "#94A3B8"
+
+        pm = MkPhosphorIcon.get_pixmap(self._icon_name, fg_color, 16)
+        x = (self.width() - 16) // 2
+        y = (self.height() - 16) // 2
+        painter.drawPixmap(x, y, pm)
+
+
 class MkHistoryNavigation(MkQWidget):
     """Back/forward buttons with browser-like page history."""
 
@@ -178,13 +260,18 @@ class MkHistoryNavigation(MkQWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(2)
 
-        self.back_button = self._make_button("返回")
-        self.forward_button = self._make_button("前进")
+        self.back_button = self._make_button("返回", "caret-left")
+        self.forward_button = self._make_button("前进", "caret-right")
         layout.addWidget(self.back_button)
         layout.addWidget(self.forward_button)
 
         self.back_button.clicked.connect(self.back)
         self.forward_button.clicked.connect(self.forward)
+
+        try:
+            _MkThemeEngine.instance().themeChanged.connect(self._on_theme_changed)
+        except Exception:
+            pass
 
         initial = initial_page or self._page_for_index(stack.currentIndex())
         if initial in self.pages:
@@ -196,22 +283,8 @@ class MkHistoryNavigation(MkQWidget):
 
         self._update_buttons()
 
-    def _make_button(self, tooltip: str) -> QPushButton:
-        button = QPushButton(self)
-        button.setCursor(Qt.CursorShape.PointingHandCursor)
-        button.setFixedSize(QSize(30, 30))
-        _MkThemeEngine.apply_style_sheet(button, """
-            QPushButton {
-                background: transparent;
-                border: none;
-                border-radius: 5px;
-                padding: 5px;
-            }
-            QPushButton:hover { background: palette(midlight); }
-            QPushButton:pressed { background: palette(mid); }
-            QPushButton:disabled { background: transparent; }
-            """)
-        return button
+    def _make_button(self, tooltip: str, icon_name: str = "caret-left") -> MkHistoryNavButton:
+        return MkHistoryNavButton(icon_name, tooltip, self)
 
     def navigate(
         self,
@@ -303,31 +376,19 @@ class MkHistoryNavigation(MkQWidget):
         can_forward = self.can_go_forward()
         self.back_button.setEnabled(can_back)
         self.forward_button.setEnabled(can_forward)
-
-        palette = self.palette()
-        normal = palette.color(QPalette.ColorRole.WindowText).name()
-        active = palette.color(QPalette.ColorRole.Highlight).name()
-        disabled = palette.color(QPalette.ColorRole.PlaceholderText).name()
-        self.back_button.setIcon(
-            MkPhosphorIcon.get_icon(
-                "caret-left", active if can_back else disabled, normal, 18
-            )
-        )
-        self.forward_button.setIcon(
-            MkPhosphorIcon.get_icon(
-                "caret-right", active if can_forward else disabled, normal, 18
-            )
-        )
         self.historyChanged.emit(can_back, can_forward)
+
+    def _on_theme_changed(self, theme_name: str = "") -> None:
+        self.back_button.update()
+        self.forward_button.update()
 
     def changeEvent(self, event) -> None:
         super().changeEvent(event)
         if event.type() in (QEvent.Type.PaletteChange, QEvent.Type.ApplicationPaletteChange):
-            # Palette propagation can send many changes in one GUI event turn.
             if not getattr(self, "_palette_refresh_pending", False):
                 self._palette_refresh_pending = True
                 QTimer.singleShot(0, self._refresh_palette_buttons)
 
     def _refresh_palette_buttons(self):
         self._palette_refresh_pending = False
-        self._update_buttons()
+        self._on_theme_changed()
