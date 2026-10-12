@@ -31,6 +31,10 @@ MonkeyQt supports 67+ design styles (themes). Here are some previews:
 
 ## 📖 Documentation
 
+For responsive page navigation, owned async tasks and theme-aware skeletons, see
+the [page loading guide](examples/loading_demo.md) and run
+`python examples/loading_demo.py`.
+
 You can access our complete usage guide, theme style preview, and all component manuals via the following link:
 
 👉 **[Official MonkeyQt Documentation](https://luohuabuxiema.github.io/MonkeyQt/)**

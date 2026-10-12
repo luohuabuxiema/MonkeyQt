@@ -38,6 +38,12 @@ class MkAnimatedStackedWidget(QStackedWidget):
     def set_animation_duration(self, duration: int) -> None:
         self._animation_duration = max(0, int(duration))
 
+    def set_transition_enabled(self, enabled: bool) -> None:
+        """Allow heavy pages/reduced-motion preferences to use immediate switching."""
+        self._transition_enabled = bool(enabled)
+        if not enabled and self._is_animating:
+            self._interrupt_and_finish_animation()
+
     def is_animating(self) -> bool:
         return self._is_animating
 
@@ -80,7 +86,7 @@ class MkAnimatedStackedWidget(QStackedWidget):
         if current_index == index:
             return False
 
-        if self._animation_duration <= 0 or self.width() <= 1:
+        if not getattr(self, "_transition_enabled", True) or self._animation_duration <= 0 or self.width() <= 1:
             self.setCurrentIndex(index)
             self.animationFinished.emit(index)
             return True
@@ -293,7 +299,7 @@ class MkHistoryNavigation(MkQWidget):
         direction: str | None = None,
     ) -> bool:
         current_page = self.current_page()
-        if current_page == page_id and not getattr(self.stack, "_is_animating", False):
+        if current_page == page_id:
             self._update_buttons()
             return False
 
@@ -332,7 +338,9 @@ class MkHistoryNavigation(MkQWidget):
         return moved
 
     def current_page(self) -> str | None:
-        return self._page_for_index(self.stack.currentIndex())
+        # Logical navigation changes when requested, not at animation completion.
+        target = getattr(self.stack, "_anim_target_index", None)
+        return self._page_for_index(target if target is not None else self.stack.currentIndex())
 
     def can_go_back(self) -> bool:
         return self._history_index > 0

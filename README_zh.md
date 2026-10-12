@@ -31,6 +31,9 @@ MonkeyQt 支持 67+ 种内置主题样式。以下是部分代表性风格的效
 
 ## 📖 使用文档
 
+页面快速响应、异步任务、骨架屏和增量列表更新请参阅
+[页面加载接入指南](examples/loading_demo.md)，运行 `python examples/loading_demo.py` 可查看演示。
+
 你可以通过以下链接访问我们的完整使用指南、主题样式预览以及所有组件的使用手册：
 
 👉 **[MonkeyQt 官方使用文档](https://luohuabuxiema.github.io/MonkeyQt/)**

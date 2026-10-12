@@ -77,7 +77,8 @@ class ThemeEngine(QObject):
     def apply_style_sheet(cls, widget, qss: str) -> None:
         """Avoid repolishing unchanged local styles during a color update."""
         if not cls._palette_theme_active or widget.property("mk_theme_disabled"):
-            widget.setStyleSheet(qss)
+            if widget.styleSheet() != qss:
+                widget.setStyleSheet(qss)
             return
         if cls._palette_theme_active:
             from .palette_theme import palette_stylesheet

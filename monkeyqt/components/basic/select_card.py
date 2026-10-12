@@ -9,6 +9,7 @@ MonkeyQt 列表选择项交互组件与多选卡片组合组件
 
 from monkeyqt.themes.engine import ThemeEngine as _MkThemeEngine
 from typing import Any, Dict, List, Optional, Union
+from contextlib import contextmanager
 from PySide6.QtCore import Qt, Signal, QSize, QPointF
 from PySide6.QtGui import QColor, QFont, QIcon, QPixmap, QPainter
 from PySide6.QtWidgets import (
@@ -627,6 +628,41 @@ class MkSelectItem(QFrame):
     def set_data(self, data: Any):
         self._user_data = data
 
+    def update_data(self, values: Dict[str, Any]):
+        """Apply changed fields without replacing this row or its connections."""
+        fields = (
+            ("title", "_title_text", self.set_title),
+            ("subtitle", "_subtitle_text", self.set_subtitle),
+            ("dot_color", "_dot_color", self.set_dot_color),
+            ("icon", "_icon_val", self.set_icon),
+            ("selectable", "_selectable", self.set_selectable),
+            ("show_arrow", "_show_arrow", self.set_show_arrow),
+            ("group_id", "_group_id", lambda v: setattr(self, "group_id", v)),
+            ("target_page", "_target_page", lambda v: setattr(self, "target_page", v)),
+            ("checked", "_is_checked", lambda v: self.set_checked(v, block_signal=True)),
+        )
+        for key, attr, setter in fields:
+            if key in values and getattr(self, attr) != values[key]:
+                setter(values[key])
+        if "data" in values:
+            self.set_data(values["data"])
+        for key in ("actions_visible_on_hover", "checkable_by_click", "navigate_on_click"):
+            if key in values:
+                setattr(self, "_" + key, bool(values[key]))
+        if "actions" in values and self._actions_config != (values["actions"] or []):
+            for button in self._action_buttons:
+                self.actions_layout.removeWidget(button)
+                button.hide()
+                button.deleteLater()
+            self._action_buttons.clear()
+            self._actions_config = list(values["actions"] or [])
+            for action in self._actions_config:
+                self.add_action(action.get("key", ""), action.get("icon"),
+                                action.get("tooltip", ""), action.get("danger", False))
+        self.actions_container.setVisible(
+            (not self._actions_visible_on_hover or self._is_hovered)
+            and bool(self._action_buttons or self._show_arrow))
+
 
 class MkSelectGroupHeader(QFrame):
     """
@@ -784,6 +820,9 @@ class MkSelectCard(QFrame):
         self._groups: Dict[str, MkSelectGroupHeader] = {}
         self._updating_select_all = False
 
+        self._batch_depth = 0
+        self._batch_selection_dirty = False
+
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setMinimumWidth(0)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -933,9 +972,39 @@ class MkSelectCard(QFrame):
 
     def _on_item_checked(self, item_id: Any, checked: bool):
         self._sync_select_all_and_badge()
-        self.selection_changed.emit(self.get_selected_ids())
+        self._emit_selection_changed()
+
+    @contextmanager
+    def batch_update(self):
+        """Coalesce counts, repaint and selection signals; supports nesting."""
+        outer = self._batch_depth == 0
+        if outer:
+            updates_enabled = self.list_container.updatesEnabled()
+            self.list_container.setUpdatesEnabled(False)
+        self._batch_depth += 1
+        try:
+            yield self
+        finally:
+            self._batch_depth -= 1
+            if outer:
+                try:
+                    self._sync_select_all_and_badge()
+                    self._sync_group_counts()
+                finally:
+                    self.list_container.setUpdatesEnabled(updates_enabled)
+                if self._batch_selection_dirty:
+                    self._batch_selection_dirty = False
+                    self.selection_changed.emit(self.get_selected_ids())
+
+    def _emit_selection_changed(self):
+        if self._batch_depth:
+            self._batch_selection_dirty = True
+        else:
+            self.selection_changed.emit(self.get_selected_ids())
 
     def _sync_select_all_and_badge(self):
+        if self._batch_depth:
+            return
         total = len(self._items)
         selected_count = sum(1 for item in self._items if item.is_checked())
 
@@ -958,6 +1027,8 @@ class MkSelectCard(QFrame):
 
     def _sync_group_counts(self):
         """动态同步各个分组下的条目数量徽标"""
+        if self._batch_depth:
+            return
         group_counts: Dict[str, int] = {}
         for item in self._items:
             gid = item.group_id
@@ -1068,8 +1139,62 @@ class MkSelectCard(QFrame):
         return item_widget
 
     def add_items(self, items: List[Union[MkSelectItem, Dict[str, Any]]]):
-        for item in items:
-            self.add_item(item)
+        with self.batch_update():
+            for item in items:
+                self.add_item(item)
+
+    def set_items(self, items: List[Dict[str, Any]]):
+        """Reconcile rows by ID, retaining widgets, selection and group state.
+
+        Missing fields on existing rows are retained. Explicit ``checked`` wins;
+        otherwise the previous selection is preserved. IDs must be unique.
+        Group headers retain their insertion order; rows follow input order
+        within each group, followed by ungrouped rows.
+        """
+        rows = list(items)
+        ids = [row.get("id", row.get("item_id")) for row in rows]
+        ids = [row.get("title", "") if iid is None else iid for row, iid in zip(rows, ids)]
+        if len(set(ids)) != len(ids):
+            raise ValueError("set_items() requires unique item IDs")
+        previous_selection = self.get_selected_ids()
+        previous_dirty = self._batch_selection_dirty
+        scroll = self.scroll_area.verticalScrollBar().value()
+        with self.batch_update():
+            wanted = set(ids)
+            for iid in list(self._item_map):
+                if iid not in wanted:
+                    self.remove_item(iid)
+            ordered = []
+            for iid, row in zip(ids, rows):
+                item = self._item_map.get(iid)
+                if item is None:
+                    item = self.add_item(row)
+                else:
+                    item.update_data(row)
+                ordered.append(item)
+            self._items = ordered
+            grouped = {}
+            for item in ordered:
+                grouped.setdefault(item.group_id, []).append(item)
+            position = 1  # Empty-state label stays first.
+            for gid, header in self._groups.items():
+                if self.list_layout.itemAt(position).widget() is not header:
+                    self.list_layout.insertWidget(position, header)
+                position += 1
+                for item in grouped.get(gid, ()):
+                    if self.list_layout.itemAt(position).widget() is not item:
+                        self.list_layout.insertWidget(position, item)
+                    item.setVisible(not header.is_collapsed())
+                    position += 1
+            for item in ordered:
+                if item.group_id not in self._groups:
+                    if self.list_layout.itemAt(position).widget() is not item:
+                        self.list_layout.insertWidget(position, item)
+                    item.show()
+                    position += 1
+            self.lbl_empty.setVisible(not ordered and not self._groups)
+            self._batch_selection_dirty = previous_dirty or previous_selection != self.get_selected_ids()
+        self.scroll_area.verticalScrollBar().setValue(scroll)
 
     def remove_item(self, item_id: Any):
         item = self._item_map.pop(item_id, None)
@@ -1084,7 +1209,7 @@ class MkSelectCard(QFrame):
 
             self._sync_select_all_and_badge()
             self._sync_group_counts()
-            self.selection_changed.emit(self.get_selected_ids())
+            self._emit_selection_changed()
 
     def clear_items(self):
         for item in list(self._items):
@@ -1095,7 +1220,7 @@ class MkSelectCard(QFrame):
         self.lbl_empty.show()
         self._sync_select_all_and_badge()
         self._sync_group_counts()
-        self.selection_changed.emit([])
+        self._emit_selection_changed()
 
     def get_item(self, item_id: Any) -> Optional[MkSelectItem]:
         return self._item_map.get(item_id)
@@ -1114,13 +1239,13 @@ class MkSelectCard(QFrame):
         for item in self._items:
             item.set_checked(item.item_id in id_set, block_signal=True)
         self._sync_select_all_and_badge()
-        self.selection_changed.emit(self.get_selected_ids())
+        self._emit_selection_changed()
 
     def select_all(self, checked: bool):
         for item in self._items:
             item.set_checked(checked, block_signal=True)
         self._sync_select_all_and_badge()
-        self.selection_changed.emit(self.get_selected_ids())
+        self._emit_selection_changed()
 
     def set_title(self, title: str):
         self._title_text = title

@@ -5,8 +5,8 @@ Eliminates Qt QWidget styling boilerplate and repetitive layout code.
 """
 
 from typing import Union, Tuple, Optional, Sequence
-import time
-from PySide6.QtCore import Qt, QRectF, QRunnable, QThreadPool, QObject, Signal, QTimer
+import weakref
+from PySide6.QtCore import Qt, QRectF
 from PySide6.QtGui import QPainter, QColor, QPen, QBrush
 from PySide6.QtWidgets import (
     QWidget,
@@ -21,27 +21,6 @@ from PySide6.QtWidgets import (
 
 from monkeyqt.themes.engine import ThemeEngine
 from monkeyqt.themes.style_utils import qcolor, parse_px
-
-
-class _AsyncWorkerSignals(QObject):
-    finished = Signal(object)
-    error = Signal(Exception)
-
-
-class _AsyncWorker(QRunnable):
-    def __init__(self, fn, *args, **kwargs):
-        super().__init__()
-        self.fn = fn
-        self.args = args
-        self.kwargs = kwargs
-        self.signals = _AsyncWorkerSignals()
-
-    def run(self):
-        try:
-            res = self.fn(*self.args, **self.kwargs)
-            self.signals.finished.emit(res)
-        except Exception as e:
-            self.signals.error.emit(e)
 
 
 def _parse_margins(margins: Union[int, Sequence[int], None]) -> Tuple[int, int, int, int]:
@@ -557,8 +536,11 @@ class MkQWidget(QWidget):
         """
         self._loading = bool(loading)
         if recursive:
-            for child in self.findChildren(QWidget):
+            for child in self._iter_loading_targets():
                 if child is not self and hasattr(child, "set_loading") and callable(getattr(child, "set_loading")):
+                    from shiboken6 import isValid
+                    if not isValid(child):
+                        continue
                     try:
                         child.set_loading(self._loading, recursive=False)
                     except TypeError:
@@ -568,99 +550,59 @@ class MkQWidget(QWidget):
                             pass
         self.update()
 
+    def _iter_loading_targets(self):
+        from shiboken6 import isValid
+        refs = getattr(self, "_mk_loading_target_refs", None)
+        if refs is not None:
+            yield from (ref() for ref in refs)
+            return
+        pending = self.findChildren(QWidget, options=Qt.FindChildOption.FindDirectChildrenOnly)
+        while pending:
+            child = pending.pop()
+            if not isValid(child):
+                continue
+            if child.property("mk_auto_loading") is not False:
+                yield child
+            # A card owns its mask; a page loader owns its state machine.
+            if not child.property("mk_loading_boundary"):
+                pending.extend(child.findChildren(QWidget, options=Qt.FindChildOption.FindDirectChildrenOnly))
+
+    def set_loading_targets(self, targets=None):
+        """Limit automatic loading to these widgets; None restores recursive lookup.
+
+        Use an explicit list for large pages to avoid traversing every descendant.
+        An empty list disables propagation. Targets must support set_loading().
+        """
+        if targets is None:
+            self._mk_loading_target_refs = None
+            return
+        targets = list(targets)
+        if any(not isinstance(target, QWidget) or not callable(getattr(target, "set_loading", None))
+               for target in targets):
+            raise TypeError("Loading targets must be widgets with set_loading()")
+        self._mk_loading_target_refs = [weakref.ref(target) for target in targets]
+
     def run_async(
-        self,
-        worker_fn,
-        *args,
-        on_success=None,
-        on_error=None,
-        auto_loading: bool = True,
-        loading_delay_ms: int = 150,
-        min_loading_ms: int = 200,
+        self, worker_fn, *args, on_success=None, on_error=None,
+        auto_loading: bool = True, loading_delay_ms: int = 150,
+        min_loading_ms: int = 0, task_key=None, pass_cancel_event: bool = False,
         **kwargs
     ):
+        """后台执行数据任务，主线程交付结果，返回可取消的 MkTask。
+
+        同一容器中相同 task_key 的新任务会取消旧任务的结果交付。
+        多个任务共享加载状态，最后一个任务结束后才关闭骨架。
+        默认不为了动画延迟结果；min_loading_ms 可显式设置最短展示时间。
+        pass_cancel_event=True 时向 worker_fn 传入 cancel_event，供协作取消。
+        worker_fn 不得创建/操作 QWidget；on_success 应避免长时间阻塞主线程。
         """
-        内置原生异步执行器。
-        自动在全局线程池后台异步执行耗时任务（如读取文件、数据库查询、数据分析），
-        绝不卡顿 Qt 主事件循环。任务完成或异常时，自动安全回到主线程执行回调。
-
-        具备现代前端级【防抖流光屏】(Loading Debounce) 机制：
-        若后台任务在 loading_delay_ms (默认150ms) 内瞬间完成（如极快的本地 SQLite 查询或缓存读取），
-        则完全不触发流光骨架屏，避免界面突兀闪烁 (Flicker)；
-        若任务超过 loading_delay_ms，则优雅展示骨架屏，且保证至少持续 min_loading_ms，确保动画自然完整。
-
-        参数:
-            worker_fn: 在后台工作线程执行的耗时函数
-            on_success: 任务成功完成时在主线程调用的回调，接收 worker_fn 的返回值
-            on_error: 任务异常时在主线程调用的回调，接收 Exception 对象
-            auto_loading: 是否自动管理骨架屏（任务开始前按防抖规则激活，完成后关闭）
-            loading_delay_ms: 骨架屏触发延迟阈值（毫秒）。低于此耗时的极速任务不触发流光屏，防止闪烁
-            min_loading_ms: 骨架屏一旦触发后的最小持续显示时间（毫秒），确保过渡自然不掉帧
-        """
-        state = {
-            "loading_shown": False,
-            "loading_start_time": 0.0,
-            "is_finished": False,
-            "timer": None
-        }
-
-        if auto_loading:
-            if loading_delay_ms <= 0:
-                self.set_loading(True)
-                state["loading_shown"] = True
-                state["loading_start_time"] = time.time()
-            else:
-                def _trigger_loading():
-                    if not state["is_finished"]:
-                        state["loading_shown"] = True
-                        state["loading_start_time"] = time.time()
-                        self.set_loading(True)
-
-                timer = QTimer(self)
-                timer.setSingleShot(True)
-                timer.timeout.connect(_trigger_loading)
-                timer.start(loading_delay_ms)
-                state["timer"] = timer
-
-        worker = _AsyncWorker(worker_fn, *args, **kwargs)
-
-        def _cleanup_and_finish(callback, arg):
-            state["is_finished"] = True
-            if state["timer"] and state["timer"].isActive():
-                state["timer"].stop()
-
-            if auto_loading and state["loading_shown"]:
-                elapsed_ms = (time.time() - state["loading_start_time"]) * 1000
-                remaining_ms = max(0, int(min_loading_ms - elapsed_ms))
-                if remaining_ms > 0:
-                    def _delayed_done():
-                        self.set_loading(False)
-                        if callback and callable(callback):
-                            callback(arg)
-                    QTimer.singleShot(remaining_ms, _delayed_done)
-                    return
-                else:
-                    self.set_loading(False)
-
-            if callback and callable(callback):
-                callback(arg)
-
-        def _handle_finished(result):
-            _cleanup_and_finish(on_success, result)
-
-        def _handle_error(err):
-            def _err_cb(e):
-                if on_error and callable(on_error):
-                    on_error(e)
-                else:
-                    import logging
-                    logging.error(f"Async worker error in {self.__class__.__name__}: {e}", exc_info=True)
-            _cleanup_and_finish(_err_cb, err)
-
-        worker.signals.finished.connect(_handle_finished)
-        worker.signals.error.connect(_handle_error)
-
-        QThreadPool.globalInstance().start(worker)
+        from monkeyqt.common.tasks import start_task
+        return start_task(
+            self, worker_fn, *args, on_success=on_success, on_error=on_error,
+            auto_loading=auto_loading, loading_delay_ms=loading_delay_ms,
+            min_loading_ms=min_loading_ms, task_key=task_key,
+            pass_cancel_event=pass_cancel_event, **kwargs
+        )
 
 
 # 友好别名导出

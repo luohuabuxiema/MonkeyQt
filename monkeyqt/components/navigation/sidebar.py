@@ -733,19 +733,21 @@ class MkMenu(MkQWidget):
         self._all_items.append(item)
         item.clicked.connect(lambda checked=False, i=item: self._on_item_clicked(i))
 
-    def _on_item_clicked(self, clicked_item: MkMenuItem):
+    def _on_item_clicked(self, clicked_item: MkMenuItem, emit: bool = True):
         # 实现类似 QButtonGroup 的排他性（互斥）
         for item in self._all_items:
-            if item != clicked_item:
+            if item != clicked_item and item.isChecked():
                 item.setChecked(False)
-        clicked_item.setChecked(True)
-        self.itemClicked.emit(clicked_item.item_id)
+        if not clicked_item.isChecked():
+            clicked_item.setChecked(True)
+        if emit:
+            self.itemClicked.emit(clicked_item.item_id)
 
-    def set_active(self, item_id: str):
-        """代码层面设置高亮"""
+    def set_active(self, item_id: str, emit: bool = True):
+        """设置高亮；emit=False 可同步导航状态而不再次触发业务回调。"""
         for item in self._all_items:
             if item.item_id == item_id:
-                self._on_item_clicked(item)
+                self._on_item_clicked(item, emit=emit)
                 parent_sub = getattr(item, "_parent_submenu", None)
                 if parent_sub and not parent_sub._is_expanded:
                     parent_sub.toggle()

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from monkeyqt.themes.engine import ThemeEngine as _MkThemeEngine
 from PySide6.QtWidgets import QPushButton, QWidget, QGraphicsDropShadowEffect
-from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve, Property, QRect
+from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve, Property, QRect, QRectF, Slot
 from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QPainterPath, QFont, QLinearGradient, QIcon
 from monkeyqt.themes.engine import ThemeEngine
 from monkeyqt.themes.style_utils import (
@@ -63,6 +63,10 @@ class MkButton(QPushButton):
         self._hovered = False
         self._pressed = False
         self._ph_icon_spec = None
+        self._loading = False
+        self._bound_task = None
+        self._busy_angle = 0.0
+        self.setProperty("mk_auto_loading", False)
 
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setMinimumHeight(36)
@@ -86,7 +90,7 @@ class MkButton(QPushButton):
                 from PySide6.QtCore import QTimer
                 self._liquid_timer = QTimer(self)
                 self._liquid_timer.timeout.connect(self._on_liquid_timeout)
-            if not self._liquid_timer.isActive():
+            if self.isVisible() and not self._liquid_timer.isActive():
                 self._liquid_timer.start(33)
         else:
             if hasattr(self, "_liquid_timer") and self._liquid_timer.isActive():
@@ -218,7 +222,7 @@ class MkButton(QPushButton):
         hint = super().sizeHint()
         fm = self.fontMetrics()
         text_w = fm.horizontalAdvance(self.text()) if self.text() else 0
-        icon_w = self.iconSize().width() if not self.icon().isNull() else 0
+        icon_w = self.iconSize().width() if self._loading or not self.icon().isNull() else 0
         spacing = 8 if (icon_w and text_w) else 0
         padding_h = 28 if text_w else 0
         w = max(hint.width(), icon_w + text_w + spacing + padding_h)
@@ -418,7 +422,7 @@ class MkButton(QPushButton):
 
         icon = self.icon()
         text = self.text()
-        has_icon = not icon.isNull()
+        has_icon = self._loading or not icon.isNull()
 
         if has_icon:
             icon_sz = self.iconSize()
@@ -432,7 +436,16 @@ class MkButton(QPushButton):
             start_x = rect.left() + (rect.width() - total_w) // 2
             icon_y = rect.top() + (rect.height() - icon_h) // 2
 
-            icon.paint(painter, QRect(start_x, icon_y, icon_w, icon_h))
+            if self._loading:
+                painter.setBrush(Qt.BrushStyle.NoBrush)
+                pen = QPen(text_color, 2)
+                pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+                painter.setPen(pen)
+                painter.drawArc(QRectF(start_x + 2, icon_y + 2, icon_w - 4, icon_h - 4),
+                                int(-self._busy_angle * 16), 260 * 16)
+                painter.setPen(text_color)
+            else:
+                icon.paint(painter, QRect(start_x, icon_y, icon_w, icon_h))
 
             if text:
                 text_rect = QRect(start_x + icon_w + spacing, rect.top(), text_w + 10, rect.height())
@@ -441,6 +454,73 @@ class MkButton(QPushButton):
             painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, text)
 
         painter.end()
+
+    def set_loading(self, loading=True, loading_text="处理中…"):
+        """Show a vector busy indicator and prevent repeat submissions."""
+        loading = bool(loading)
+        if self._loading == loading:
+            return
+        from monkeyqt.components.feedback.skeleton import _skeleton_clock
+        if loading:
+            self._busy_restore = (self.text(), self.isEnabledTo(self.parentWidget()), self.minimumWidth())
+            width = self.width() if self.isVisible() else self.sizeHint().width()
+            self.setMinimumWidth(max(self.minimumWidth(), width, self.sizeHint().width()))
+            self._loading = True
+            if loading_text is not None:
+                self.setText(loading_text)
+            self.setEnabled(False)
+            if self.isVisible():
+                _skeleton_clock().add(self)
+        else:
+            self._loading = False
+            _skeleton_clock().remove(self)
+            text, enabled, minimum = self._busy_restore
+            self.setText(text)
+            self.setMinimumWidth(minimum)
+            self.setEnabled(enabled)
+        self.updateGeometry()
+        self.update()
+
+    def bind_task(self, task, loading_text="处理中…"):
+        """Bind a MkTask's completion/cancellation to this button's busy state."""
+        if self._bound_task is not None:
+            try:
+                self._bound_task.finished.disconnect(self._bound_task_finished)
+            except (RuntimeError, TypeError):
+                pass
+        self._bound_task = task
+        self.set_loading(not task.done, loading_text)
+        if not task.done:
+            task.finished.connect(self._bound_task_finished)
+        else:
+            self._bound_task = None
+        return task
+
+    @Slot()
+    def _bound_task_finished(self):
+        if self._bound_task is not None:
+            self._bound_task.finished.disconnect(self._bound_task_finished)
+        self._bound_task = None
+        self.set_loading(False)
+
+    def _on_skeleton_frame(self, elapsed):
+        self._busy_angle = (elapsed * 360 / 1.2) % 360
+        self.update()
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        if self._loading:
+            from monkeyqt.components.feedback.skeleton import _skeleton_clock
+            _skeleton_clock().add(self)
+        if ThemeEngine.is_liquid_glass() and hasattr(self, "_liquid_timer"):
+            self._liquid_timer.start(33)
+
+    def hideEvent(self, event):
+        from monkeyqt.components.feedback.skeleton import _skeleton_clock
+        _skeleton_clock().remove(self)
+        if hasattr(self, "_liquid_timer"):
+            self._liquid_timer.stop()
+        super().hideEvent(event)
 
     def enterEvent(self, event):
         self._hovered = True
@@ -535,7 +615,7 @@ class MkButton(QPushButton):
                 from PySide6.QtCore import QTimer
                 self._liquid_timer = QTimer(self)
                 self._liquid_timer.timeout.connect(self._on_liquid_timeout)
-            if not self._liquid_timer.isActive():
+            if self.isVisible() and not self._liquid_timer.isActive():
                 self._liquid_timer.start(33)
         else:
             if hasattr(self, "_liquid_timer") and self._liquid_timer.isActive():

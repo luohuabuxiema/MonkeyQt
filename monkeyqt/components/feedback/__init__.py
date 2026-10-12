@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from .alert import MkAlert
 from .card import MkCard
+from .skeleton import MkSkeleton, MkSkeletonBlock
 from .progress_bar import MkProgressBar
 from .progress_ring import MkProgressRing
 from .message_box import MkModal, MkDialog, MkMessageBox
@@ -17,6 +18,8 @@ from .tooltip import (
 __all__ = [
     "MkAlert",
     "MkCard",
+    "MkSkeleton",
+    "MkSkeletonBlock",
     "MkProgressBar",
     "MkProgressRing",
     "MkModal",

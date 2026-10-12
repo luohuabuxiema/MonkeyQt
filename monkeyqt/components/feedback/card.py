@@ -5,6 +5,7 @@ from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout
 
 from monkeyqt.themes.engine import ThemeEngine
 from monkeyqt.themes.style_utils import draw_liquid_glass, parse_px, qcolor
+from .skeleton import _skeleton_clock
 
 
 class MkCard(QFrame):
@@ -41,9 +42,9 @@ class MkCard(QFrame):
         self._show_title = show_title
         self._hovered = False
         self._time_angle = 0.0
-        self._loading = bool(loading)
+        self._loading = False
         self._shimmer_progress = 0.0
-        self._shimmer_timer = None
+        self.setProperty("mk_loading_boundary", True)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setMinimumSize(200, 120)
 
@@ -74,13 +75,8 @@ class MkCard(QFrame):
 
         ThemeEngine.instance().themeChanged.connect(self.set_theme_style)
 
-        if self._loading:
-            self._content_widget.setVisible(False)
-            self._title_label.setVisible(False)
-            self._shimmer_timer = QTimer(self)
-            self._shimmer_timer.setInterval(30)
-            self._shimmer_timer.timeout.connect(self._on_shimmer_step)
-            self._shimmer_timer.start()
+        if loading:
+            self.set_loading(True)
 
     @property
     def content_widget(self) -> QFrame:
@@ -95,7 +91,7 @@ class MkCard(QFrame):
                 from PySide6.QtCore import QTimer
                 self._liquid_timer = QTimer(self)
                 self._liquid_timer.timeout.connect(self._on_liquid_timeout)
-            if not self._liquid_timer.isActive():
+            if self.isVisible() and not self._liquid_timer.isActive():
                 self._liquid_timer.start(33)  # 30 fps
         else:
             if hasattr(self, "_liquid_timer") and self._liquid_timer.isActive():
@@ -307,24 +303,26 @@ class MkCard(QFrame):
             return
         self._loading = bool(loading)
         if self._loading:
+            self._loading_visibility = []
+            for widget in (self._content_widget, self._title_label):
+                policy = widget.sizePolicy()
+                visible = not widget.isHidden()
+                self._loading_visibility.append((widget, visible, policy))
+                retained = widget.sizePolicy()
+                retained.setRetainSizeWhenHidden(visible)
+                widget.setSizePolicy(retained)
             self._content_widget.setVisible(False)
             self._title_label.setVisible(False)
-            if not hasattr(self, "_shimmer_timer") or self._shimmer_timer is None:
-                self._shimmer_timer = QTimer(self)
-                self._shimmer_timer.setInterval(30)
-                self._shimmer_timer.timeout.connect(self._on_shimmer_step)
-            if not self._shimmer_timer.isActive() and self.isVisible():
-                self._shimmer_timer.start()
+            if self.isVisible():
+                _skeleton_clock().add(self)
         else:
-            if hasattr(self, "_shimmer_timer") and self._shimmer_timer and self._shimmer_timer.isActive():
-                self._shimmer_timer.stop()
-            self._content_widget.setVisible(True)
+            _skeleton_clock().remove(self)
+            for widget, visible, policy in self._loading_visibility:
+                widget.setSizePolicy(policy)
+                widget.setVisible(visible)
             self._title_label.setVisible(bool(self._title) and self._show_title)
             self._content_widget.updateGeometry()
             self.updateGeometry()
-            if self.parentWidget() and self.parentWidget().layout():
-                self.parentWidget().layout().invalidate()
-                self.parentWidget().layout().activate()
         self.update()
 
     def sizeHint(self) -> QSize:
@@ -344,15 +342,21 @@ class MkCard(QFrame):
             self._shimmer_progress = 0.0
         self.update()
 
+    def _on_skeleton_frame(self, elapsed):
+        self._shimmer_progress = (elapsed / 1.2) % 1.0
+        self.update()
+
     def hideEvent(self, event):
-        if hasattr(self, "_shimmer_timer") and self._shimmer_timer and self._shimmer_timer.isActive():
-            self._shimmer_timer.stop()
+        _skeleton_clock().remove(self)
+        if hasattr(self, "_liquid_timer"):
+            self._liquid_timer.stop()
         super().hideEvent(event)
 
     def showEvent(self, event):
         if getattr(self, "_loading", False):
-            if hasattr(self, "_shimmer_timer") and self._shimmer_timer and not self._shimmer_timer.isActive():
-                self._shimmer_timer.start()
+            _skeleton_clock().add(self)
+        if ThemeEngine.is_liquid_glass() and hasattr(self, "_liquid_timer"):
+            self._liquid_timer.start(33)
         super().showEvent(event)
 
     def enterEvent(self, event):
