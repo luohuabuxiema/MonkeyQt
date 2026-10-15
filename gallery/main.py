@@ -17,7 +17,8 @@ from monkeyqt import (
     MkTooltip, MkInfoIcon, create_field_header, create_input_field, create_switch_field,
     MkPagination, MkDropdown, MkSwitch, MkSlider, MkDatePicker, MkForm,
     MkInput, MkCaptchaWidget, MkAuthScreen, MkMessage,
-    MkAvatar, MkProTable, MkImageCompare, MkImageSplit,
+    MkAvatar, MkProTable, MkImageCompare, MkImageSplit, MkLineChart, MkSeries,
+    MkChartGroup, MkChartDashboard,
     MkTitleBar, MkWindow, MkUpload, MkComboBox, MkMultiComboBox,
     MkConsole, MkQWidget, MkWidget, MkScrollArea, MkStackedWidget,
     ThemeEngine, MkThemeSelector, apply_monkeyqt_theme, use_theme
@@ -805,7 +806,184 @@ class DataGallery(MkQWidget):
         avatar_layout.addStretch()
         layout.addLayout(avatar_layout)
         
+        # 2. 现代轻量折线图与监控看板 (MkLineChart)
+        label_chart = QLabel("现代化折线图与指标看板 (MkLineChart)")
+        label_chart.setFont(title_font)
+        layout.addWidget(label_chart)
+
+        chart_desc = QLabel(
+            "对标现代 Web 前端数据可视化（Ultralytics HUB 规范）：\n"
+            "• 悬浮操作胶囊：鼠标移入图表卡片右上角平滑浮现 [⤢ 全屏] 与 [··· 更多] 按钮，移出自动隐藏；\n"
+            "• 内置 MkDropdown 下拉菜单：支持一键导出 PNG 高清图、CSV 结构化表格、JSON 数据及平滑切换；\n"
+            "• 沉浸式全屏放大 (Fullscreen)：一键最大化呈现高精度大图，支持 Esc / F11 或右上角 ✕ 退出；\n"
+            "• 满帧 60 FPS 硬件加速微秒级绘制，垂直十字吸附线 (verticalLine) 与曲线就近聚焦 (nearestLine)。"
+        )
+        chart_desc.setWordWrap(True)
+        chart_desc.setStyleSheet("color: #64748b; font-size: 13px; line-height: 20px;")
+        layout.addWidget(chart_desc)
+
+        # 构造 Ultralytics HUB 风格指标双卡看板 (并排显示对标图一、图二、图三)
+        import math
+        epochs = 250
+        data_p_blue = [(i, 0.25 + 0.38 * (1.0 - math.exp(-0.06 * i)) + 0.01 * math.sin(i * 0.3)) for i in range(epochs)]
+        data_p_red = []
+        for i in range(epochs):
+            if i < 30:
+                val = 0.0
+            elif i < 70:
+                val = 0.95 + 0.05 * math.sin(i)
+            elif i < 80:
+                val = 0.45 + 0.1 * math.cos(i)
+            elif i < 110:
+                val = 0.78 + 0.04 * math.sin(i * 0.5)
+            else:
+                val = 0.0
+            data_p_red.append((i, val))
+
+        data_r_blue = [(i, 0.22 + 0.27 * (1.0 - math.exp(-0.08 * i)) + 0.01 * math.cos(i * 0.4)) for i in range(epochs)]
+        data_r_red = []
+        for i in range(epochs):
+            if i < 30:
+                val = 0.0
+            elif i < 60:
+                val = 0.45 + 0.05 * math.sin(i * 0.8)
+            elif i < 75:
+                val = 0.48 + 0.05 * math.sin(i)
+            elif i < 110:
+                val = 0.95 + 0.04 * math.cos(i * 0.5)
+            else:
+                val = 0.0
+            data_r_red.append((i, val))
+
+        charts_row = QHBoxLayout()
+        charts_row.setSpacing(16)
+
+        self.chart_precision = MkLineChart(
+            title="precision(B)",
+            x_label="Epoch",
+            title_alignment="center",
+            auto_hide_actions=True,
+        )
+        self.chart_precision.setMinimumHeight(340)
+        self.chart_precision.add_series("yolo26n", data_p_blue, color="#2563EB", smooth=True, area=False)
+        self.chart_precision.add_series("val/precision", [pt for pt in data_p_red if pt[1] > 0], color="#DC2626", smooth=False, area=False)
+        charts_row.addWidget(self.chart_precision, 1)
+
+        self.chart_recall = MkLineChart(
+            title="recall(B)",
+            x_label="Epoch",
+            title_alignment="center",
+            auto_hide_actions=True,
+        )
+        self.chart_recall.setMinimumHeight(340)
+        self.chart_recall.add_series("yolo26n", data_r_blue, color="#2563EB", smooth=True, area=False)
+        self.chart_recall.add_series("val/recall", [pt for pt in data_r_red if pt[1] > 0], color="#DC2626", smooth=False, area=False)
+        charts_row.addWidget(self.chart_recall, 1)
+
+        layout.addLayout(charts_row)
+
+        # 3. 卡片分组管理与监控看板 (MkChartGroup & MkChartDashboard)
+        label_group = QLabel("卡片分组图表管理与监控看板 (MkChartGroup & MkChartDashboard)")
+        label_group.setFont(title_font)
+        layout.addWidget(label_group)
+
+        group_desc = QLabel(
+            "对标 Ultralytics HUB / Roboflow Visualizer 现代看板规范：\n"
+            "• 卡片分组收纳：支持折叠/展开多组图表（如 Metrics, Loss, Learning Rate），极大提升多图管理与展示效率；\n"
+            "• 胶囊悬停特效：鼠标放置在右上角更多按钮 [···] 时激活胶囊轮廓与微光底色，移出恢复极简形态（对标图二）；\n"
+            "• 下拉清单可见性管理：点击 [···] 呼出下拉清单，实时勾选/取消显示图表，支持 [Show All] / [Hide All]（对标图一、图三）；\n"
+            "• 双向无缝兼容：用户只需填入真实数据即可自动生成图表，也可直接插入已有 MkLineChart 实例，亦可完全不用卡片单独使用单图。"
+        )
+        group_desc.setWordWrap(True)
+        group_desc.setStyleSheet("color: #64748b; font-size: 13px; line-height: 20px;")
+        layout.addWidget(group_desc)
+
+        # 看板控制栏
+        group_ctrl = QHBoxLayout()
+        group_ctrl.setSpacing(8)
+
+        self.btn_expand_all = MkButton("全部展开", type="default", size="small")
+        self.btn_expand_all.clicked.connect(lambda: self.chart_dashboard.expand_all())
+        group_ctrl.addWidget(self.btn_expand_all)
+
+        self.btn_collapse_all = MkButton("全部折叠", type="default", size="small")
+        self.btn_collapse_all.clicked.connect(lambda: self.chart_dashboard.collapse_all())
+        group_ctrl.addWidget(self.btn_collapse_all)
+
+        self.btn_mock_step = MkButton("模拟训练迭代 (+10 Epoch)", type="primary", size="small")
+        self.btn_mock_step.clicked.connect(self._mock_training_step)
+        group_ctrl.addWidget(self.btn_mock_step)
+
+        group_ctrl.addStretch()
+        layout.addLayout(group_ctrl)
+
+        # 构建看板容器
+        self.chart_dashboard = MkChartDashboard(self, scrollable=False, spacing=14)
+        layout.addWidget(self.chart_dashboard)
+
+        # ── Group 1: Metrics (6/8) ──
+        self.group_metrics = self.chart_dashboard.add_group("Metrics", columns=3, is_expanded=True)
+        metric_configs = [
+            ("precision_b", "precision(B)", True, [(i, 0.5 + 0.35 * (1 - math.exp(-0.05 * i)) + 0.02 * math.sin(i * 0.4)) for i in range(50)]),
+            ("recall_b", "recall(B)", True, [(i, 0.45 + 0.32 * (1 - math.exp(-0.06 * i)) + 0.02 * math.cos(i * 0.3)) for i in range(50)]),
+            ("map50_95_b", "mAP50-95(B)", True, [(i, 0.3 + 0.45 * (1 - math.exp(-0.04 * i))) for i in range(50)]),
+            ("precision_m", "precision(M)", True, [(i, 0.48 + 0.36 * (1 - math.exp(-0.05 * i))) for i in range(50)]),
+            ("recall_m", "recall(M)", True, [(i, 0.42 + 0.34 * (1 - math.exp(-0.06 * i))) for i in range(50)]),
+            ("map50_95_m", "mAP50-95(M)", True, [(i, 0.28 + 0.46 * (1 - math.exp(-0.04 * i))) for i in range(50)]),
+            ("map50_b", "mAP50(B)", False, [(i, 0.6 + 0.32 * (1 - math.exp(-0.08 * i))) for i in range(50)]),
+            ("map50_m", "mAP50(M)", False, [(i, 0.58 + 0.33 * (1 - math.exp(-0.08 * i))) for i in range(50)]),
+        ]
+        for cid, title, vis, pts in metric_configs:
+            c = self.group_metrics.add_chart(cid, title, default_visible=vis, x_label="Epoch", chart_min_height=220)
+            c.add_series(title, pts, color="#2563EB", smooth=True, area=True)
+
+        # ── Group 2: Loss (5/5) ──
+        self.group_loss = self.chart_dashboard.add_group(
+            "Loss", columns=3, is_expanded=True, enable_series_toggle=True
+        )
+        loss_configs = [
+            ("box_loss", "train/box_loss", [(i, 2.8 * math.exp(-0.06 * i) + 0.35) for i in range(50)]),
+            ("cls_loss", "train/cls_loss", [(i, 3.2 * math.exp(-0.07 * i) + 0.25) for i in range(50)]),
+            ("dfl_loss", "train/dfl_loss", [(i, 1.9 * math.exp(-0.05 * i) + 0.4) for i in range(50)]),
+            ("val_box", "val/box_loss", [(i, 3.0 * math.exp(-0.05 * i) + 0.45 + 0.05 * math.sin(i * 0.5)) for i in range(50)]),
+            ("val_cls", "val/cls_loss", [(i, 3.5 * math.exp(-0.06 * i) + 0.32 + 0.04 * math.cos(i * 0.5)) for i in range(50)]),
+        ]
+        for cid, title, pts in loss_configs:
+            c = self.group_loss.add_chart(cid, title, default_visible=True, x_label="Epoch", chart_min_height=220)
+            c.add_series(title, pts, color="#0EA5E9", smooth=True, area=True)
+
+        # ── Group 3: Learning Rate (4/4) ──
+        self.group_lr = self.chart_dashboard.add_group("Learning Rate", columns=3, is_expanded=False)
+        lr_configs = [
+            ("lr0", "lr/pg0", [(i, 0.01 * (1.0 - i / 100.0)) for i in range(50)]),
+            ("lr1", "lr/pg1", [(i, 0.01 * (1.0 - i / 100.0)) for i in range(50)]),
+            ("lr2", "lr/pg2", [(i, 0.01 * (1.0 - i / 100.0)) for i in range(50)]),
+            ("momentum", "lr/momentum", [(i, 0.937 - 0.037 * (1.0 - i / 100.0)) for i in range(50)]),
+        ]
+        for cid, title, pts in lr_configs:
+            c = self.group_lr.add_chart(cid, title, default_visible=True, x_label="Epoch", chart_min_height=220)
+            c.add_series(title, pts, color="#8B5CF6", smooth=True, area=True)
+
+        self._cur_mock_epoch = 50
+
         layout.addStretch()
+
+    def _mock_training_step(self):
+        import random
+        for _ in range(10):
+            self._cur_mock_epoch += 1
+            ep = self._cur_mock_epoch
+            # 批量更新 Metrics
+            self.group_metrics.update_metrics({
+                "precision(B)": min(0.96, 0.82 + 0.002 * (ep - 50) + random.uniform(-0.01, 0.01)),
+                "recall(B)": min(0.94, 0.78 + 0.002 * (ep - 50) + random.uniform(-0.01, 0.01)),
+                "mAP50-95(B)": min(0.85, 0.72 + 0.002 * (ep - 50) + random.uniform(-0.01, 0.01)),
+            }, step=ep)
+            # 批量更新 Loss
+            self.group_loss.update_metrics({
+                "train/box_loss": max(0.15, 0.45 * (0.98 ** (ep - 50))),
+                "train/cls_loss": max(0.10, 0.38 * (0.97 ** (ep - 50))),
+            }, step=ep)
 
 
 class ProTableGallery(MkQWidget):
@@ -1684,7 +1862,7 @@ class MainGallery(MkWindow):
         self.sidebar.add_submenu_item(sub_form, "upload", "Upload 上传组件", icon="upload-simple")
         
         sub_data = self.sidebar.add_submenu("数据展示", icon="table")
-        self.sidebar.add_submenu_item(sub_data, "data", "头像展示 (Avatar)", icon="user-circle")
+        self.sidebar.add_submenu_item(sub_data, "data", "图表与头像 (Chart & Avatar)", icon="chart-line-up")
         self.sidebar.add_submenu_item(sub_data, "pro_table", "ProTable 数据表格", icon="table")
         self.sidebar.add_submenu_item(sub_data, "image_compare", "图像对比 Slider", icon="images")
         self.sidebar.add_submenu_item(sub_data, "image_split", "图像分屏 Split", icon="columns")
@@ -1774,6 +1952,8 @@ class MainGallery(MkWindow):
         self.content_area.setCurrentWidget(page)
 
 if __name__ == "__main__":
+    from PySide6.QtGui import QGuiApplication
+    QGuiApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
     app = QApplication(sys.argv)
     use_theme("雅致亮色")
     window = MainGallery()

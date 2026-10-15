@@ -861,7 +861,13 @@ class MkWindow(QMainWindow):
 
     def init_custom_frame(self):
         # Custom frameless behavior
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Window)
+        self.setWindowFlags(
+            Qt.WindowType.FramelessWindowHint
+            | Qt.WindowType.Window
+            | Qt.WindowType.WindowMinimizeButtonHint
+            | Qt.WindowType.WindowMaximizeButtonHint
+            | Qt.WindowType.WindowSystemMenuHint
+        )
         self.setAttribute(
             Qt.WidgetAttribute.WA_TranslucentBackground,
             not self._use_native_corner_surface,
@@ -1633,7 +1639,34 @@ class MkWindow(QMainWindow):
                 return True
             except Exception:
                 return False
-        return False
+    def _ensure_win32_taskbar_styles(self):
+        """
+        Ensure Win32 window styles include WS_MINIMIZEBOX, WS_MAXIMIZEBOX, and WS_SYSMENU.
+        When Qt applies FramelessWindowHint, the OS non-client frame and style flags are
+        stripped. As a result, the Windows Explorer taskbar assumes the window cannot be
+        minimized and completely ignores click-to-minimize gestures.
+        Injecting WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU restores standard
+        native taskbar minimize, restore, and system menu interactions.
+        """
+        if sys.platform != "win32" or not self.use_custom_title_bar:
+            return
+        try:
+            import ctypes
+            hwnd = int(self.winId())
+            self._mk_cached_hwnd = hwnd
+            GWL_STYLE = -16
+            WS_MINIMIZEBOX = 0x00020000
+            WS_MAXIMIZEBOX = 0x00010000
+            WS_SYSMENU = 0x00080000
+
+            style = ctypes.windll.user32.GetWindowLongW(hwnd, GWL_STYLE)
+            target_style = style | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU
+            if style != target_style:
+                ctypes.windll.user32.SetWindowLongW(hwnd, GWL_STYLE, target_style)
+                # SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED = 0x0027
+                ctypes.windll.user32.SetWindowPos(hwnd, 0, 0, 0, 0, 0, 0x0027)
+        except Exception:
+            pass
 
     def _notify_native_frame_changed(self) -> bool:
         """Force one Win32 non-client recalculation after the first show."""
@@ -1661,7 +1694,7 @@ class MkWindow(QMainWindow):
             flags = 0x0001 | 0x0002 | 0x0004 | 0x0010 | 0x0020
             res = bool(set_window_pos(hwnd, 0, 0, 0, 0, 0, flags))
             try:
-                ctypes.windll.user32.RedrawWindow(hwnd, None, None, 0x0401)  # RDW_FRAME | RDW_INVALIDATE
+                ctypes.windll.user32.RedrawWindow(hwnd, None, None, 0x0400)  # RDW_FRAME
             except Exception:
                 pass
             return res
@@ -1703,7 +1736,7 @@ class MkWindow(QMainWindow):
                 getattr(self, "_content_host", None),
                 getattr(self, "_desktop_shell", None),
             ):
-                if target is not None:
+                if target is not None and target.property("mk_maximized") != max_str:
                     target.setProperty("mk_maximized", max_str)
                     st = target.style()
                     st.unpolish(target)
@@ -1716,15 +1749,17 @@ class MkWindow(QMainWindow):
                     candidate_sidebar = info[0]
 
             if candidate_sidebar is not None:
-                candidate_sidebar.setProperty("mk_maximized", max_str)
-                st = candidate_sidebar.style()
-                st.unpolish(candidate_sidebar)
-                st.polish(candidate_sidebar)
+                if candidate_sidebar.property("mk_maximized") != max_str:
+                    candidate_sidebar.setProperty("mk_maximized", max_str)
+                    st = candidate_sidebar.style()
+                    st.unpolish(candidate_sidebar)
+                    st.polish(candidate_sidebar)
                 if hasattr(candidate_sidebar, "inner_frame"):
-                    candidate_sidebar.inner_frame.setProperty("mk_maximized", max_str)
-                    st2 = candidate_sidebar.inner_frame.style()
-                    st2.unpolish(candidate_sidebar.inner_frame)
-                    st2.polish(candidate_sidebar.inner_frame)
+                    if candidate_sidebar.inner_frame.property("mk_maximized") != max_str:
+                        candidate_sidebar.inner_frame.setProperty("mk_maximized", max_str)
+                        st2 = candidate_sidebar.inner_frame.style()
+                        st2.unpolish(candidate_sidebar.inner_frame)
+                        st2.polish(candidate_sidebar.inner_frame)
 
             if self.titlebar:
                 self.titlebar.set_maximized_state(is_max)
@@ -1775,18 +1810,20 @@ class MkWindow(QMainWindow):
         if not self.isMaximized():
             self._normal_geometry = self._get_safe_normal_geometry(self.geometry())
         self._is_maximizing = True
-        self._apply_window_state_immediate(True, force=True)
         super().showMaximized()
         self._is_maximizing = False
-        self._apply_window_state_immediate(True, force=True)
+        self._apply_window_state_immediate(True)
 
     def showNormal(self):
-        self._apply_window_state_immediate(False, force=True)
         super().showNormal()
-        safe_geo = self._get_safe_normal_geometry(self._normal_geometry)
-        self.setGeometry(safe_geo)
-        self._normal_geometry = safe_geo
-        self._apply_window_state_immediate(False, force=True)
+        if not self._normal_geometry or not self._normal_geometry.isValid():
+            self._normal_geometry = self._get_safe_normal_geometry(self.geometry())
+        elif not self.isMaximized():
+            safe_geo = self._get_safe_normal_geometry(self._normal_geometry)
+            # Only adjust geometry if significantly off-screen or out of sync
+            if abs(self.x() - safe_geo.x()) > 50 or abs(self.y() - safe_geo.y()) > 50:
+                self.setGeometry(safe_geo)
+        self._apply_window_state_immediate(False)
 
     def center_on_screen(
         self,
@@ -1844,6 +1881,8 @@ class MkWindow(QMainWindow):
     def showEvent(self, event):
         super().showEvent(event)
         self._mk_cached_hwnd = int(self.winId())
+        if self.use_custom_title_bar:
+            self._ensure_win32_taskbar_styles()
         if getattr(self, "_auto_center", False) and not getattr(self, "_has_centered_on_first_show", False):
             self._has_centered_on_first_show = True
             if not self.isMaximized():
@@ -1896,7 +1935,21 @@ class MkWindow(QMainWindow):
         if sys.platform == "win32" and eventType == b"windows_generic_MSG" and self.use_custom_title_bar:
             try:
                 msg = _MSG.from_address(int(message))
-                if msg.message == 0x0084:  # WM_NCHITTEST
+                if msg.message == 0x0112:  # WM_SYSCOMMAND
+                    cmd = msg.wParam & 0xFFF0
+                    if cmd == 0xF020:  # SC_MINIMIZE
+                        self.showMinimized()
+                        return True, 0
+                    elif cmd == 0xF120:  # SC_RESTORE
+                        if self.isMaximized():
+                            self.showMaximized()
+                        else:
+                            self.showNormal()
+                        return True, 0
+                    elif cmd == 0xF030:  # SC_MAXIMIZE
+                        self.showMaximized()
+                        return True, 0
+                elif msg.message == 0x0084:  # WM_NCHITTEST
                     if self.isMaximized():
                         return super().nativeEvent(eventType, message)
 
@@ -1944,9 +1997,15 @@ class MkWindow(QMainWindow):
     def changeEvent(self, event: QEvent):
         super().changeEvent(event)
         if event.type() == QEvent.Type.WindowStateChange:
+            if self.isMinimized():
+                return
             is_max = self.isMaximized()
             if getattr(self, "_current_is_max_state", None) != is_max:
                 self._apply_window_state_immediate(is_max)
+            elif getattr(self, "_use_native_corner_surface", False):
+                self._refresh_native_chrome()
+            if self.use_custom_title_bar:
+                self._ensure_win32_taskbar_styles()
 
     def _handle_window_state_change(self):
         self._apply_window_state_immediate(self.isMaximized())

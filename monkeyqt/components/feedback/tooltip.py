@@ -70,7 +70,8 @@ class MkTooltipPopover(MkQWidget):
         inst._target_widget = target_widget
         inst.set_content(text, theme_override=theme_override)
 
-        target_rect = QRect(target_widget.mapToGlobal(QPoint(0, 0)), target_widget.size())
+        target_size = target_widget.size() if callable(getattr(target_widget, "size", None)) else target_widget.sizeHint()
+        target_rect = QRect(target_widget.mapToGlobal(QPoint(0, 0)), target_size)
         target_center_x = target_rect.center().x()
 
         screen = target_widget.screen() or QApplication.primaryScreen()
@@ -198,7 +199,8 @@ class MkTooltipPopover(MkQWidget):
             return
         if self._target_widget and self._target_widget.isVisible():
             try:
-                tw_rect = QRect(self._target_widget.mapToGlobal(QPoint(0, 0)), self._target_widget.size())
+                t_sz = self._target_widget.size() if callable(getattr(self._target_widget, "size", None)) else self._target_widget.sizeHint()
+                tw_rect = QRect(self._target_widget.mapToGlobal(QPoint(0, 0)), t_sz)
                 if tw_rect.adjusted(-6, -6, 6, 6).contains(cursor_pos):
                     return
             except Exception:

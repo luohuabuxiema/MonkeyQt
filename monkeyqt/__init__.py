@@ -39,6 +39,8 @@ from .components.data.pro_table import MkProTable
 from .components.data.image_compare import MkImageCompare
 from .components.data.image_split import MkImageSplit
 from .components.data.console import MkConsole
+from .components.data.line_chart import MkLineChart, MkSeries
+from .components.data.chart_group import MkChartGroup, MkChartDashboard
 
 # Feedback
 from .components.feedback.alert import MkAlert
@@ -125,6 +127,10 @@ __all__ = [
     "MkImageCompare",
     "MkImageSplit",
     "MkConsole",
+    "MkLineChart",
+    "MkSeries",
+    "MkChartGroup",
+    "MkChartDashboard",
     "MkAlert",
     "MkProgressBar",
     "MkProgressRing",

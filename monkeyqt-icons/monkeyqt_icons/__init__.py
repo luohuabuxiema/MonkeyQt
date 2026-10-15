@@ -6,6 +6,7 @@ monkeyqt-icons: High-Performance Phosphor Icons for PySide6 / PyQt5 / PyQt6.
 from .qt_compat import QT_LIB
 from .core import PhosphorEngine, PhosphorIconBase, PhFactory, Ph
 from .widget import PhIconWidget
+from . import icons
 from .icons import *
 
 __version__ = "2.1.2"

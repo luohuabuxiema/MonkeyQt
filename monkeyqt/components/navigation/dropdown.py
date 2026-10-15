@@ -262,7 +262,7 @@ class MkDropdown(QPushButton):
             raise ValueError("size must be small, default or large")
         if placement not in ("bottom-start", "bottom-end", "top-start", "top-end"):
             raise ValueError("placement must be bottom-start, bottom-end, top-start or top-end")
-        self.trigger, self.variant, self.size = trigger, variant, size
+        self.trigger, self.variant, self.size_variant = trigger, variant, size
         self.prefix_icon, self.suffix_icon = icon, suffix_icon
         self.show_arrow = bool(show_arrow) or trigger == "split"
         self.icon_size, self.icon_gap = max(8, int(icon_size)), max(0, int(icon_gap))
@@ -319,7 +319,7 @@ class MkDropdown(QPushButton):
             QMenu::indicator {{ width: 0; height: 0; }}
         """)
         ThemeEngine.apply_style_sheet(self, "QPushButton { background: transparent; border: none; padding: 0; }")
-        self.setMinimumHeight({"small": 28, "default": 36, "large": 44}[self.size])
+        self.setMinimumHeight({"small": 28, "default": 36, "large": 44}[self.size_variant])
         self.updateGeometry()
         self.update()
         self.menu.updateGeometry()
@@ -341,7 +341,7 @@ class MkDropdown(QPushButton):
         return self.prefix_icon if _has_icon(self.prefix_icon) else self.icon(), self.suffix_icon, self.show_arrow and self.trigger != "icon"
 
     def sizeHint(self):
-        height = max({"small": 28, "default": 36, "large": 44}[self.size], self.fontMetrics().height() + 14, self.icon_size + 12)
+        height = max({"small": 28, "default": 36, "large": 44}[self.size_variant], self.fontMetrics().height() + 14, self.icon_size + 12)
         if self.trigger in ("more", "more-vertical", "icon"):
             return QSize(height, height)
         prefix, suffix, arrow = self._button_icons()
