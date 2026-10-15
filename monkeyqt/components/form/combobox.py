@@ -298,26 +298,39 @@ class MkComboBox(QComboBox):
 
     def setView(self, itemView):
         super().setView(itemView)
-        if hasattr(self, "_popup_widget") and self._popup_widget is not None:
-            self._popup_widget.set_view(itemView)
+        try:
+            if hasattr(self, "_popup_widget") and self._popup_widget is not None:
+                self._popup_widget.set_view(itemView)
+        except (RuntimeError, AttributeError):
+            self._popup_widget = None
 
     def showPopup(self):
         if time.time() - getattr(self, "_last_close_time", 0) < 0.25:
             return
         if self.count() == 0:
             return
-        if not hasattr(self, "_popup_widget") or self._popup_widget is None:
+        try:
+            if not hasattr(self, "_popup_widget") or self._popup_widget is None:
+                self._popup_widget = MkDropdownPopup(self)
+            self._popup_widget.show_at_combo()
+        except (RuntimeError, AttributeError):
             self._popup_widget = MkDropdownPopup(self)
-        self._popup_widget.show_at_combo()
+            self._popup_widget.show_at_combo()
 
     def hidePopup(self):
-        if hasattr(self, "_popup_widget") and self._popup_widget is not None:
-            self._popup_widget.hide()
+        try:
+            if hasattr(self, "_popup_widget") and self._popup_widget is not None:
+                self._popup_widget.hide()
+        except (RuntimeError, AttributeError):
+            self._popup_widget = None
         super().hidePopup()
 
     def hideEvent(self, event):
-        if hasattr(self, "_popup_widget") and self._popup_widget is not None:
-            self._popup_widget.hide()
+        try:
+            if hasattr(self, "_popup_widget") and self._popup_widget is not None:
+                self._popup_widget.hide()
+        except (RuntimeError, AttributeError):
+            self._popup_widget = None
         super().hideEvent(event)
 
     def add_items(self, texts):
@@ -383,8 +396,11 @@ class MkComboBox(QComboBox):
                 QComboBox::down-arrow {{ image: none; width: 0; height: 0; }}
             """)
 
-        if hasattr(self, "_popup_widget") and self._popup_widget is not None:
-            self._popup_widget.update_theme_style()
+        try:
+            if hasattr(self, "_popup_widget") and self._popup_widget is not None:
+                self._popup_widget.update_theme_style()
+        except (RuntimeError, AttributeError):
+            self._popup_widget = None
 
         self.update()
 
