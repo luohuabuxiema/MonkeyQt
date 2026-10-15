@@ -1223,7 +1223,7 @@ class MkLineChart(MkQWidget):
         event.ignore()
 
     def _setup_ui(self):
-        is_header_legend = self.show_legend and self.legend_position in ("header-left", "top-left", "header", "auto")
+        is_header_legend = self.legend_position in ("header-left", "top-left", "header", "auto")
 
         # ── 1. 顶部标题栏与工具/图例按钮 ──
         self.header_layout = QHBoxLayout()
@@ -1235,6 +1235,7 @@ class MkLineChart(MkQWidget):
         self.legend_layout = QHBoxLayout(self.legend_container)
         self.legend_layout.setContentsMargins(0, 0, 0, 0)
         self.legend_layout.setSpacing(6)
+        self.legend_container.setVisible(False)
 
         if is_header_legend:
             self.header_layout.addWidget(self.legend_container)
@@ -1265,6 +1266,7 @@ class MkLineChart(MkQWidget):
         if is_header_legend and self.title_alignment == "center" and self.enable_actions:
             self.header_right_spacer = QWidget(self)
             self.header_right_spacer.setFixedWidth(64)
+            self.header_right_spacer.setVisible(False)
             self.header_layout.addWidget(self.header_right_spacer)
 
         # 工具栏操作按钮 (全矢量图标驱动)
@@ -1398,6 +1400,49 @@ class MkLineChart(MkQWidget):
         if self.highlight_series != name:
             self.highlight_series = name
             self.canvas.update()
+
+    def set_loading(self, loading: bool = True):
+        """设置单图骨架屏加载态 (优雅流光占位，对标 Ultralytics HUB)"""
+        self._is_loading = bool(loading)
+        if self._is_loading:
+            if getattr(self, "_skeleton_widget", None) is None:
+                from monkeyqt.components.feedback.skeleton import MkSkeleton, MkSkeletonBlock
+                blocks = [
+                    MkSkeletonBlock(x=0.30, y=6, width=0.40, height=16, radius=4),
+                    MkSkeletonBlock(x=0.04, y=36, width=0.92, height=max(60, self.height() - 56), radius=8),
+                ]
+                self._skeleton_widget = MkSkeleton(blocks=blocks, animated=True, parent=self)
+                self.add_widget(self._skeleton_widget, stretch=1)
+            self.canvas.setVisible(False)
+            if hasattr(self, "title_label"):
+                self.title_label.setVisible(False)
+            if hasattr(self, "subtitle_label"):
+                self.subtitle_label.setVisible(False)
+            if hasattr(self, "legend_container"):
+                self.legend_container.setVisible(False)
+            if hasattr(self, "header_right_spacer"):
+                self.header_right_spacer.setVisible(False)
+            if hasattr(self, "action_bar"):
+                self.action_bar.setVisible(False)
+            self._skeleton_widget.setVisible(True)
+        else:
+            if getattr(self, "_skeleton_widget", None) is not None:
+                self._skeleton_widget.setVisible(False)
+            if hasattr(self, "title_label"):
+                self.title_label.setVisible(bool(self._title_text))
+            if hasattr(self, "subtitle_label"):
+                self.subtitle_label.setVisible(bool(self._subtitle_text))
+            should_show_legend = self._should_show_legend()
+            if hasattr(self, "legend_container"):
+                self.legend_container.setVisible(should_show_legend)
+            if hasattr(self, "header_right_spacer"):
+                self.header_right_spacer.setVisible(should_show_legend and self.title_alignment == "center")
+            self.canvas.setVisible(True)
+
+    @property
+    def is_loading(self) -> bool:
+        return getattr(self, "_is_loading", False)
+
 
     def clear_highlight(self):
         """清除高亮状态"""
@@ -1625,6 +1670,25 @@ class MkLineChart(MkQWidget):
             return f"{int(round(val))}"
         return f"{val:.1f}"
 
+    def _should_show_legend(self) -> bool:
+        """
+        判断当前图表是否应该显示图例胶囊
+        - 若 show_legend 为 False 或 legend_position == "none"：始终不显示
+        - 若只有 0 或 1 条曲线 (无对比，对标 Ultralytics HUB)：自动隐藏图例与切换按钮
+        - 若有 2 条及以上曲线 (存在对比)：在 show_legend 为 True 或 "auto" 时显示
+        - 若 show_legend 为 "always"：强制始终显示
+        """
+        if not self.show_legend or self.legend_position == "none":
+            return False
+        if str(self.show_legend).lower() != "always" and len(self.series_list) <= 1:
+            return False
+        return bool(self.series_list)
+
+    def set_show_legend(self, show: Union[bool, str]):
+        """动态设置图例可见策略 (True/False/'always')"""
+        self.show_legend = show
+        self._rebuild_legend()
+
     def _rebuild_legend(self):
         # 清除旧图例
         while self.legend_layout.count() > 0:
@@ -1635,18 +1699,19 @@ class MkLineChart(MkQWidget):
                 w.deleteLater()
         self._legend_pills.clear()
 
-        is_header = self.legend_position in ("header-left", "top-left", "header", "auto")
+        should_show = self._should_show_legend()
+        if should_show:
+            is_header = self.legend_position in ("header-left", "top-left", "header", "auto")
+            for s in self.series_list:
+                pill = _LegendItemPill(s, self, self.legend_container)
+                self.legend_layout.addWidget(pill)
+                self._legend_pills.append(pill)
+            if not is_header:
+                self.legend_layout.addStretch(1)
 
-        # 重新生成图例胶囊
-        for s in self.series_list:
-            pill = _LegendItemPill(s, self, self.legend_container)
-            self.legend_layout.addWidget(pill)
-            self._legend_pills.append(pill)
-
-        if not is_header:
-            self.legend_layout.addStretch(1)
-
-        self.legend_container.setVisible(bool(self.series_list) and self.show_legend and self.legend_position != "none")
+        self.legend_container.setVisible(should_show)
+        if hasattr(self, "header_right_spacer"):
+            self.header_right_spacer.setVisible(should_show and self.title_alignment == "center")
 
     def _update_legend_states(self):
         for pill in self._legend_pills:
